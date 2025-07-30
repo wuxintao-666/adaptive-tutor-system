@@ -61,5 +61,4 @@ Thumbs.db
 
 # 敏感信息 (secrets)
 *.env
-.env.*
 secrets.ini
