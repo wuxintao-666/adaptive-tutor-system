@@ -1,0 +1,65 @@
+# 字节码和缓存文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.py,cover
+
+# 虚拟环境
+# 注意：根据你创建虚拟环境的名称修改，例如 venv/ 或 env/
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# 打包和分发
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 测试与代码覆盖率报告
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# 类型检查器缓存 (Mypy, Pyre, Pytype)
+.mypy_cache/
+.pyre/
+.pytype/
+
+# Jupyter Notebook 检查点
+.ipynb_checkpoints
+
+# IDE/编辑器配置 (VSCode, PyCharm, Sublime...)
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# 敏感信息 (secrets)
+*.env
+.env.*
+secrets.ini
