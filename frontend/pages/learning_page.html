@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元素选择+知识点展示</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="main-container">
+      <!-- 顶部标题栏 -->
+        <header class="top-header">
+            <h1 class="header-title">标题</h1>
+            <div class="user-profile">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRTVFNkU3Ii8+CjxjaXJjbGUgY3g9IjIwIiBjeT0iMTUiIHI9IjUiIGZpbGw9IiM4ODg4ODgiLz4KPHBhdGggZD0iTTIwIDI1QzE1IDI1IDEyIDI3IDEyIDMwTDI4IDMwQzI4IDI3IDI1IDI1IDIwIDI1WiIgZmlsbD0iIzg4ODg4OCIvPgo8L3N2Zz4K"
+                    alt="用户头像" class="user-avatar">
+            </div>
+        </header>
+        <div class="content-container">
+          <!-- 左侧网页预览区 -->
+          <div class="preview-panel">
+              <iframe
+                id="element-selector-iframe"
+                src="./index01.html"
+                sandbox="allow-scripts allow-same-origin"
+                style="width:100%;height:100%;border:none;flex:1 1 auto;min-height:0;"
+              ></iframe>
+          </div>
+          <!-- 中间AI对话区 -->
+          <div class="chat-panel">
+            <div class="panel-header">
+              <h2>AI对话</h2>
+            </div>
+            <div class="chat-history">
+              <div class="ai-chat-messages" id="ai-chat-messages">
+                <div class="user-message">
+                  <div class="user-content">
+                        我想学习html的表格，请给我介绍一下，和外界html初学者
+                  </div>
+                </div>
+                <div class="ai-message">
+                  <div class="ai-content">
+                    <div class="markdown-content">
+                            当然可以！作为 HTML 初学者，学习“表格（Table）”是非常实用的一步。它能帮助你做网页中最常见的数据结构，比如成绩单、产品价格表等。<br><br><b>HTML 表格的基本结构</b><br>HTML 使用 <code>&lt;table&gt;</code> 标签来创建表格，基本结构如下：<br>
+                            <pre style="background:#f9f9f9;padding:8px;border-radius:4px;">&lt;table&gt;
+                                &lt;tr&gt;
+                                  &lt;th&gt;标题1&lt;/th&gt;
+                                  &lt;th&gt;标题2&lt;/th&gt;
+                                &lt;/tr&gt;
+                                &lt;tr&gt;
+                                  &lt;td&gt;单元格1&lt;/td&gt;
+                                  &lt;td&gt;单元格2&lt;/td&gt;
+                                &lt;/tr&gt;
+                            &lt;/table&gt;</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="ai-chat-input">
+              <button id="startSelector" class="btn btn-select">选取元素</button>
+              <button id="stopSelector" class="btn btn-select btn-stop-selector">停止选择</button>
+              <textarea id="user-message" placeholder="请输入信息"></textarea>
+              <button type="button" id="send-message" class="btn btn-primary"
+                onclick="directSendMessage()">发送信息</button>
+            </div>
+            <div style="padding: 0 32px 12px 32px;">
+              <span id="statusBadge" style="display:none;font-size:13px;margin-right:12px;"></span>
+            </div>
+            <div style="padding: 0 32px 12px 32px;">
+              <!-- 选择历史和元素信息已移除 -->
+            </div>
+          </div>
+          <!-- 右侧知识点/代码区 -->
+          <div class="info-panel">
+              <div class="info-tabs">
+                  <button class="info-tab active" id="tab-knowledge">知识点展示</button>
+                  <button class="info-tab" id="tab-code">代码展示</button>
+              </div>
+              <div class="info-content" id="knowledge-content">
+                  <!-- docs_module 知识点目录和内容将动态插入此处 -->
+              </div>
+              <div class="info-content" id="code-content" style="display:none;">
+                  <h2>选中元素代码</h2>
+                  <pre id="selectedElementCode" style="background:#f7f7f7;border-radius:6px;padding:10px;min-height:60px;border:1px solid #e0e0e0;"></pre>
+                  <button id="showSourceBtn" style="margin-top:12px;padding:6px 16px;font-size:1rem;border-radius:6px;border:1px solid #2196f3;background:#fff;color:#2196f3;cursor:pointer;">返回源代码</button>
+              </div>
+              <div class="info-footer">
+                  <div>
+                      难度选择：
+                      <select>
+                          <option>简单</option>
+                          <option>中等</option>
+                          <option>困难</option>
+                      </select>
+                  </div>
+                  <button class="btn btn-primary">开始练习</button>
+              </div>
+          </div>
+        </div>
+    </div>
+
+</body>
+</html>
