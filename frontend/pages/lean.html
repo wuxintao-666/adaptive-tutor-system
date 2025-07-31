@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元素选择+知识点展示</title>
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+    <div class="main-container">
+      <!-- 顶部标题栏 -->
+        <header class="top-header">
+            <h1 class="header-title">标题</h1>
+            <div class="user-profile">
+                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRTVFNkU3Ii8+CjxjaXJjbGUgY3g9IjIwIiBjeT0iMTUiIHI9IjUiIGZpbGw9IiM4ODg4ODgiLz4KPHBhdGggZD0iTTIwIDI1QzE1IDI1IDEyIDI3IDEyIDMwTDI4IDMwQzI4IDI3IDI1IDI1IDIwIDI1WiIgZmlsbD0iIzg4ODg4OCIvPgo8L3N2Zz4K"
+                    alt="用户头像" class="user-avatar">
+            </div>
+        </header>
+        <div class="content-container">
+          <!-- 左侧网页预览区 -->
+          <div class="preview-panel">
+              <iframe
+                id="element-selector-iframe"
+                src="./index01.html"
+                sandbox="allow-scripts allow-same-origin"
+                style="width:100%;height:100%;border:none;flex:1 1 auto;min-height:0;"
+              ></iframe>
+          </div>
+          <!-- 中间AI对话区 -->
+          <div class="chat-panel">
+            <div class="panel-header">
+              <h2>AI对话</h2>
+            </div>
+            <div class="chat-history">
+              <div class="ai-chat-messages" id="ai-chat-messages">
+                <div class="user-message">
+                  <div class="user-content">
+                        我想学习html的表格，请给我介绍一下，和外界html初学者
+                  </div>
+                </div>
+                <div class="ai-message">
+                  <div class="ai-content">
+                    <div class="markdown-content">
+                            当然可以！作为 HTML 初学者，学习“表格（Table）”是非常实用的一步。它能帮助你做网页中最常见的数据结构，比如成绩单、产品价格表等。<br><br><b>HTML 表格的基本结构</b><br>HTML 使用 <code>&lt;table&gt;</code> 标签来创建表格，基本结构如下：<br>
+                            <pre style="background:#f9f9f9;padding:8px;border-radius:4px;">&lt;table&gt;
+                                &lt;tr&gt;
+                                  &lt;th&gt;标题1&lt;/th&gt;
+                                  &lt;th&gt;标题2&lt;/th&gt;
+                                &lt;/tr&gt;
+                                &lt;tr&gt;
+                                  &lt;td&gt;单元格1&lt;/td&gt;
+                                  &lt;td&gt;单元格2&lt;/td&gt;
+                                &lt;/tr&gt;
+                            &lt;/table&gt;</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="ai-chat-input">
+              <button id="startSelector" class="btn btn-select">选取元素</button>
+              <button id="stopSelector" class="btn btn-select btn-stop-selector">停止选择</button>
+              <textarea id="user-message" placeholder="请输入信息"></textarea>
+              <button type="button" id="send-message" class="btn btn-primary"
+                onclick="directSendMessage()">发送信息</button>
+            </div>
+            <div style="padding: 0 32px 12px 32px;">
+              <span id="statusBadge" style="display:none;font-size:13px;margin-right:12px;"></span>
+            </div>
+            <div style="padding: 0 32px 12px 32px;">
+              <!-- 选择历史和元素信息已移除 -->
+            </div>
+          </div>
+          <!-- 右侧知识点/代码区 -->
+          <div class="info-panel">
+              <div class="info-tabs">
+                  <button class="info-tab active" id="tab-knowledge">知识点展示</button>
+                  <button class="info-tab" id="tab-code">代码展示</button>
+              </div>
+              <div class="info-content" id="knowledge-content">
+                  <!-- docs_module 知识点目录和内容将动态插入此处 -->
+              </div>
+              <div class="info-content" id="code-content" style="display:none;">
+                  <h2>选中元素代码</h2>
+                  <pre id="selectedElementCode" style="background:#f7f7f7;border-radius:6px;padding:10px;min-height:60px;border:1px solid #e0e0e0;"></pre>
+                  <button id="showSourceBtn" style="margin-top:12px;padding:6px 16px;font-size:1rem;border-radius:6px;border:1px solid #2196f3;background:#fff;color:#2196f3;cursor:pointer;">返回源代码</button>
+              </div>
+              <div class="info-footer">
+                  <div>
+                      难度选择：
+                      <select>
+                          <option>简单</option>
+                          <option>中等</option>
+                          <option>困难</option>
+                      </select>
+                  </div>
+                  <button class="btn btn-primary">开始练习</button>
+              </div>
+          </div>
+        </div>
+    </div>
+    <!-- 页面底部脚本，集成元素选择功能 -->
+    <script type="module">
+        // 导入模块
+        import { createSelectorBridge } from '../js/iframe-bridge.js';
+        import { ApiClient } from '../js/api.js';
+        // import { ModuleAPI } from '../js/main.js'; // 已删除，避免模块导入报错
+        // import { initDocsModule } from '../js/docs-module.js'; // 不再用模块化，直接插入原生逻辑
+        let allowedTags = [];
+        const userId = 'user123'; // 实际项目中应动态获取
+        document.addEventListener('DOMContentLoaded', function() {
+          // 获取DOM元素
+          const startButton = document.getElementById('startSelector');
+          const stopButton = document.getElementById('stopSelector');
+          const statusBadge = document.getElementById('statusBadge');
+          const elementInfoContent = document.getElementById('elementInfoContent');
+          const historyContainer = document.getElementById('historyItems');
+          const sendMessageBtn = document.getElementById('sendMessageBtn');
+          const iframe = document.getElementById('element-selector-iframe');
+          // 选择历史
+          let selectionHistory = [];
+          // 桥接对象
+          let bridge = null;
+    
+          // 禁用按钮，防止 allowedTags 未获取时误操作
+          startButton.disabled = true;
+    
+          // 页面加载时获取allowed_tags
+          ApiClient.get(`/users/${userId}/allowed-tags`).then(data => {
+            allowedTags = data.allowed_tags || [];
+            // allowedTags 获取到后，强制 reload iframe，确保 load 事件会触发
+            iframe.src = iframe.src; // 重新加载 iframe
+            startButton.disabled = false;
+          });
+    
+          // 页面加载后，显示iframe页面的完整源码到代码展示tab
+          iframe.addEventListener('load', function() {
+            try {
+              const doc = iframe.contentDocument || iframe.contentWindow.document;
+              const html = doc.documentElement.outerHTML;
+              document.getElementById('selectedElementCode').textContent = html;
+            } catch (e) {
+              document.getElementById('selectedElementCode').textContent = '无法获取iframe页面源码（可能跨域或加载未完成）';
+            }
+          });
+    
+          // 等待iframe加载完成
+          if (iframe) {
+            iframe.addEventListener('load', function() {
+              console.log('预览框架已加载:', iframe.src);
+              showStatus('info', '预览页面已加载，选择器已就绪');
+              // 初始化桥接
+              initBridge();
+            });
+          }
+          // 初始化选择器桥接
+          function initBridge() {
+            // 如果已存在，先销毁
+            if (bridge) {
+              bridge.destroy();
+            }
+            // 创建新的桥接
+            bridge = createSelectorBridge({
+              iframeWindow: iframe.contentWindow,
+              onChosen: handleElementSelected,
+              onError: handleError
+            });
+            console.log('选择器桥接已初始化');
+          }
+          // 启动选择器
+          startButton.addEventListener('click', function() {
+            if (!bridge) {
+              showStatus('error', '桥接未初始化，请刷新页面重试');
+              return;
+            }
+            startButton.style.display = 'none';
+            stopButton.style.display = 'inline-block';
+            showStatus('info', '请在预览区域中选择一个元素');
+            // 启动选择器
+            bridge.start(allowedTags); // 传递 allowedTags
+          });
+          // 停止选择器
+          stopButton.addEventListener('click', function() {
+            stopSelector();
+          });
+          // 刷新iframe
+          // if (refreshFrameButton) { // This line was removed from the new_code, so it's removed here.
+          //   refreshFrameButton.addEventListener('click', function() {
+          //     if (loadingIndicator) loadingIndicator.style.display = 'flex';
+          //     iframe.src = iframe.src;
+          //   });
+          // }
+          // 目标页面切换
+          // tab切换逻辑
+          document.getElementById('tab-knowledge').addEventListener('click', function() {
+            document.getElementById('knowledge-content').style.display = '';
+            document.getElementById('code-content').style.display = 'none';
+            this.classList.add('active');
+            document.getElementById('tab-code').classList.remove('active');
+          });
+          document.getElementById('tab-code').addEventListener('click', function() {
+            document.getElementById('knowledge-content').style.display = 'none';
+            document.getElementById('code-content').style.display = '';
+            this.classList.add('active');
+            document.getElementById('tab-knowledge').classList.remove('active');
+          });
+          // 右侧知识点展示区插入渐进式文档UI
+          document.getElementById('knowledge-content').innerHTML = `
+            <div class="input-row">
+              <input type="text" id="tag-id" placeholder="知识点分组ID">
+              <button id="tag-btn">获取分组标签</button>
+              <input type="text" id="tag-input" placeholder="组件名称">
+              <button id="test-btn">查找组件</button>
+            </div>
+            <div id="tag-select-container" style="margin: 12px 0;"></div>
+            <div class="card-container">
+              <div id="card-content" class="card">
+                <h2 id="tag-title" class="card-title">请选择组件</h2>
+                <div id="tag-content"></div>
+              </div>
+            </div>
+            <div class="timer-display">
+              <div class="timer-item"><span class="timer-label">基础内容：</span><span id="basic-time">00:00</span></div>
+              <div class="timer-item"><span class="timer-label">进阶内容：</span><span id="advanced-time">00:00</span></div>
+            </div>
+          `;
+
+          // 核心JS逻辑
+          const DIFFICULTY = [
+            { key: 'basic', label: '基础介绍', category: 'basic' },
+            { key: 'intermediate', label: '语法和基本用法', category: 'basic' },
+            { key: 'advanced', label: '实际应用', category: 'advanced' },
+            { key: 'expert', label: '深入原理', category: 'advanced' }
+          ];
+          let currentTag = null;
+          let currentLevelIndex = 0;
+          let contents = {};
+          let basicTimer = 0;
+          let advancedTimer = 0;
+          let basicInterval;
+          let advancedInterval;
+
+          document.getElementById('tag-btn').onclick = async function() {
+            const tagId = document.getElementById('tag-id').value.trim();
+            if (!tagId) {
+              showError('请输入知识点分组ID');
+              return;
+            }
+            try {
+              const response = await fetch('idTotag.json');
+              if (!response.ok) throw new Error('获取标签分组失败');
+              const data = await response.json();
+              const tags = data['knowledge_map'][tagId];
+              if (!tags || tags.length === 0) throw new Error('未找到相关标签');
+              renderTagSelect(tags);
+            } catch (e) {
+              showError(e.message);
+            }
+          };
+
+          function renderTagSelect(tags) {
+            const container = document.getElementById('tag-select-container');
+            container.innerHTML = `
+              <div style="margin-bottom: 12px;">
+                <label for="tag-select" style="font-weight:bold;">请选择标签：</label>
+                <select id="tag-select"><option value="">-- 请选择 --</option>${tags.map(tag => `<option value="${tag}">${tag}</option>`).join('')}</select>
+              </div>
+            `;
+            document.getElementById('tag-select').onchange = function(e) {
+              if (e.target.value) loadDocumentForTag(e.target.value);
+            };
+          }
+
+          document.getElementById('test-btn').onclick = function() {
+            const tagName = document.getElementById('tag-input').value.trim();
+            if (!tagName) {
+              showError('请输入组件名称');
+              return;
+            }
+            loadDocumentForTag(tagName);
+          };
+
+          async function loadDocumentForTag(tagName) {
+            try {
+              const response = await fetch('http://localhost:8000/api/module/docs_module', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ tag_name: tagName, action: 'docs_content' })
+              });
+              const contentsData = await response.json();
+              if (contentsData.status !== 'success') throw new Error(contentsData.message || '未找到内容');
+              currentTag = { id: tagName, title: `${tagName} 组件` };
+              currentLevelIndex = 0;
+              contents = contentsData['data']['contents'];
+              renderDocContent();
+              startTimer();
+            } catch (e) {
+              showError(e.message);
+            }
+          }
+
+          function renderDocContent() {
+            const tagTitle = document.getElementById('tag-title');
+            const tagContent = document.getElementById('tag-content');
+            if (!currentTag) {
+              tagTitle.textContent = '请选择组件';
+              tagContent.innerHTML = '';
+              return;
+            }
+            const level = DIFFICULTY[currentLevelIndex];
+            let content = contents[level.key] || `暂无${level.label}内容。`;
+            tagTitle.textContent = `${currentTag.title}`;
+            tagContent.innerHTML = `
+              <div class="level-block">
+                <h3>${level.label}</h3>
+                <pre class="content-text">${content}</pre>
+                <div class="level-btns">
+                  <button id="prev-btn" ${currentLevelIndex===0?'disabled':''}>上一级</button>
+                  <button id="next-btn" ${currentLevelIndex===DIFFICULTY.length-1?'disabled':''}>下一级</button>
+                  ${currentLevelIndex===3 ? '<button id="complete-btn">阅读完毕</button>' : ''}
+                </div>
+              </div>
+            `;
+            // 绑定分级切换按钮
+            document.getElementById('prev-btn').onclick = function() {
+              if (currentLevelIndex > 0) {
+                currentLevelIndex--;
+                renderDocContent();
+              }
+            };
+            document.getElementById('next-btn').onclick = function() {
+              if (currentLevelIndex < DIFFICULTY.length-1) {
+                currentLevelIndex++;
+                renderDocContent();
+              }
+            };
+            // 绑定“阅读完毕”按钮
+            if (currentLevelIndex === 3) {
+              document.getElementById('complete-btn').onclick = async function(e) {
+                e.preventDefault();
+                stopTimer();
+                await sendTimeToBackend();
+                this.textContent = '您已完成此组件学习';
+                this.disabled = true;
+              };
+            }
+            // 启动计时器
+            startTimer();
+            updateTimeDisplay();
+          }
+
+          function startTimer() {
+            stopTimer();
+            const level = DIFFICULTY[currentLevelIndex];
+            if (level.category === 'basic') {
+              basicInterval = setInterval(() => {
+                basicTimer++;
+                updateTimeDisplay();
+              }, 1000);
+            } else {
+              advancedInterval = setInterval(() => {
+                advancedTimer++;
+                updateTimeDisplay();
+              }, 1000);
+            }
+          }
+
+          function stopTimer() {
+            clearInterval(basicInterval);
+            clearInterval(advancedInterval);
+          }
+
+          function updateTimeDisplay() {
+            document.getElementById('basic-time').textContent = formatTime(basicTimer);
+            document.getElementById('advanced-time').textContent = formatTime(advancedTimer);
+          }
+
+          function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+          }
+
+          async function sendTimeToBackend() {
+            const userId = document.getElementById('user-id').value.trim();
+            try {
+              const response = await fetch('http://localhost:8000/api/module/docs_module', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ base_time: basicTimer, advanced_time: advancedTimer, action: 'record_time', user_id: userId })
+              });
+              const data = await response.json();
+              basicTimer = 0;
+              advancedTimer = 0;
+              updateTimeDisplay();
+              if (data.status !== 'success') showError(data.message || '时间记录失败');
+            } catch (e) {
+              showError('时间记录失败');
+            }
+          }
+
+          function showError(msg) {
+            let statusDiv = document.getElementById('statusContainer');
+            if (!statusDiv) {
+              statusDiv = document.createElement('div');
+              statusDiv.id = 'statusContainer';
+              statusDiv.className = 'status info';
+              // 修正插入目标为卡片内容区
+              document.getElementById('tag-content').prepend(statusDiv);
+            }
+            statusDiv.textContent = msg;
+            statusDiv.style.display = 'block';
+            setTimeout(() => { statusDiv.style.display = 'none'; }, 3000);
+          }
+          // 元素被选中的处理函数
+          function handleElementSelected(info) {
+            // 切换到知识点展示tab
+            document.getElementById('tab-knowledge').click();
+            // 自动加载知识点内容（抓取的标签名转小写）
+            if (typeof loadDocumentForTag === 'function' && info.tagName) {
+              loadDocumentForTag(info.tagName.toLowerCase());
+            }
+            // 代码tab逻辑保留
+            document.getElementById('tab-code').click();
+            const codePre = document.getElementById('selectedElementCode');
+            codePre.textContent = info.outerHTML || '';
+            // 选取后自动切回“选取元素”按钮
+            startButton.style.display = 'inline-block';
+            stopButton.style.display = 'none';
+          }
+          // 发送到后端函数
+          function sendToBackend(info) {
+            fetch('http://localhost:8000/api/module/element_selector', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(info)
+            })
+              .then(response => response.json())
+              .then(data => {
+                console.log('后端响应:', data);
+                showStatus('info', '已发送到后端');
+              })
+              .catch(error => {
+                console.error('发送到后端失败:', error);
+                showStatus('warning', '无法连接后端');
+              });
+          }
+          // 显示元素信息
+          function displayElementInfo(info) {
+            // 格式化JSON显示
+            elementInfoContent.textContent = JSON.stringify(info, null, 2);
+          }
+          // 添加到历史记录
+          function addToHistory(info) {
+            // 限制历史记录数量
+            if (selectionHistory.length >= 5) {
+              selectionHistory.pop();
+            }
+            // 添加到开头
+            selectionHistory.unshift({
+              id: Date.now(),
+              info: info,
+              timestamp: new Date().toLocaleTimeString()
+            });
+            // 更新历史记录UI
+            updateHistoryUI();
+          }
+          // 更新历史记录UI
+          function updateHistoryUI() {
+            historyContainer.innerHTML = '';
+            if (selectionHistory.length === 0) {
+              const emptyMessage = document.createElement('div');
+              emptyMessage.textContent = '暂无选择历史';
+              emptyMessage.style.color = '#999';
+              emptyMessage.style.padding = '10px 0';
+              historyContainer.appendChild(emptyMessage);
+              return;
+            }
+            selectionHistory.forEach(item => {
+              const historyItem = document.createElement('div');
+              historyItem.className = 'history-item';
+              const tagName = document.createElement('span');
+              tagName.className = 'tag';
+              tagName.textContent = item.info.tagName;
+              const itemTitle = document.createElement('span');
+              itemTitle.textContent = item.info.id ? 
+                `#${item.info.id}` : 
+                (item.info.classList.length ? `.${item.info.classList.join('.')}` : item.info.selector.split('/').pop());
+              historyItem.appendChild(tagName);
+              historyItem.appendChild(itemTitle);
+              // 点击历史项目可以显示详情
+              historyItem.addEventListener('click', () => {
+                displayElementInfo(item.info);
+              });
+              historyContainer.appendChild(historyItem);
+            });
+          }
+          // 停止选择器
+          function stopSelector() {
+            if (bridge) {
+              bridge.stop();
+            }
+            startButton.style.display = 'inline-block';
+            stopButton.style.display = 'none';
+          }
+          // 错误处理
+          function handleError(error) {
+            console.error('选择器错误:', error);
+            showStatus('error', '发生错误: ' + error.message);
+            stopSelector();
+          }
+          // 显示状态信息
+          function showStatus(type, message) {
+            statusBadge.textContent = message;
+            statusBadge.className = `status-badge status-${type}`;
+            statusBadge.style.display = 'inline-block';
+          }
+          // 预览框架加载完成后隐藏加载指示器
+          // if (loadingIndicator && iframe) {
+          //   iframe.addEventListener('load', function() {
+          //     loadingIndicator.style.display = 'none';
+          //   });
+          // }
+      // “返回源代码”按钮逻辑
+      document.getElementById('showSourceBtn').addEventListener('click', function() {
+        try {
+          const doc = iframe.contentDocument || iframe.contentWindow.document;
+          const html = doc.documentElement.outerHTML;
+          document.getElementById('selectedElementCode').textContent = html;
+          document.getElementById('tab-code').click();
+        } catch (e) {
+          document.getElementById('selectedElementCode').textContent = '无法获取iframe页面源码（可能跨域或加载未完成）';
+        }
+      });
+        });
+      </script>
+</body>
+</html>
