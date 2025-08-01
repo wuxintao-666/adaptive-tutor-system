@@ -62,3 +62,7 @@ Thumbs.db
 # 敏感信息 (secrets)
 *.env
 secrets.ini
+
+# 模型文件
+models/
+download_model.log
