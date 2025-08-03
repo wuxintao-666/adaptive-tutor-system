@@ -1,13 +1,10 @@
-
+# build_embeddings.py
 import logging
 import sys
 import os
 
-# 添加项目根目录和模块目录到Python路径
-script_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.join(script_dir, '..')
-sys.path.append(project_root)
-sys.path.append(os.path.join(project_root, 'app', 'modules'))
+# 添加项目根目录到Python路径
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from RAG import build_vector_store
 import time
@@ -23,7 +20,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger("embedding_builder")
 
-
+# 修复进度显示函数 - 移除冗余的stage参数
 def print_progress(**kwargs):
     """打印进度信息"""
     stage = kwargs.get("stage", "process")
@@ -61,12 +58,13 @@ def print_progress(**kwargs):
     sys.stdout.flush()
     
     if status in ["completed", "error"]:
-        print()  
+        print()  # 完成时换行
 
 def main():
     logger.info("Starting manual embedding process...")
     start_time = time.time()
     
+    # 调用构建函数，传入进度回调
     success = build_vector_store(progress_callback=print_progress)
     
     elapsed = time.time() - start_time

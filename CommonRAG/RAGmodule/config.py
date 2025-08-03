@@ -1,8 +1,8 @@
 import os
 # 基础路径配置
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'data')
-DOCUMENTS_DIR = os.path.join(DATA_DIR, 'test_tasks')
+DOCUMENTS_DIR = os.path.join(DATA_DIR, 'documents')
 VECTOR_STORE_DIR = os.path.join(DATA_DIR, 'vector_store')
 
 # 服务配置（全局）
@@ -68,7 +68,7 @@ RAG_CONFIG = {
         "model_type": "modelscope",    # ollama 或 modelscope
         "ollama_model_name": "qwen:7b",   # Ollama重排序模型
         "modelscope_model_name": "Qwen/Qwen2.5-7B-Instruct",  # ModelScope模型名称
-        "top_n_for_rerank": 20,    # 参与重排序的文档数量
+        "top_n_for_rerank": 10,    # 参与重排序的文档数量
         "score_threshold": 0.3,    # 相关性阈值
         "prompt_template": (
                 "仅根据问题：'{query}'，对下列摘要按你认为与问题的相关性进行打分，认为不相关的不加入数组。\n"
