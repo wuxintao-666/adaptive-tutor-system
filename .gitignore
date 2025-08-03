@@ -62,6 +62,11 @@ Thumbs.db
 # 敏感信息 (secrets)
 *.env
 secrets.ini
+
+# 模型文件
+models/
+download_model.log
+
 download_model.log
 backend/models/sentiment_bert/config.json
 backend/models/sentiment_bert/model.safetensors
