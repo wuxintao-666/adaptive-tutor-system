@@ -6,7 +6,7 @@ Base = declarative_base()
 
 class UserProgress(Base):
     __tablename__ = "user_progress"
-    # TODO:  需要根据TDD-II-07中的事件类型定义，补充字段说明和验证规则
+    # TODO:  需要根据后续TDD-II-06完成测试后更新用户学习情况的事件类型，补充字段说明
     id = Column(Integer, primary_key=True, index=True)
     participant_id = Column(String, index=True, nullable=False)  # 用户唯一标识
     topic_id = Column(String, index=True, nullable=False)        # 知识点唯一标识
