@@ -118,7 +118,7 @@ sequenceDiagram
 
   ```python
   # backend/services/sandbox_service.py
-  from playwright.sync_api import sync_playwright, Page, expect, PlaywrightException
+  from playwright.sync_api import sync_playwright, Page, expect, Error
   from typing import Dict, Any, List
 
   class SandboxService:
@@ -147,7 +147,7 @@ sequenceDiagram
                           results.append(f"检查点 {i+1} 失败: {feedback}")
                 
                   browser.close()
-          except PlaywrightException as e:
+          except Error as e:
               return {"passed": False, "message": "评测服务发生内部错误。", "details": [str(e)]}
 
           message = "恭喜！所有测试点都通过了！" if passed_all else "很遗憾，部分测试点未通过。"
