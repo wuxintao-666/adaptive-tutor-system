@@ -23,13 +23,13 @@ function initMainApp() {
     // 初始化
     startButton.disabled = true;
     
-    // 获取允许的标签
-    window.DocsModule.ApiClient.get(`/users/user123/allowed-tags`).then(data => {
-        allowedTags = data.allowed_tags || [];
+    // 获取用户学习进度
+    window.DocsModule.ApiClient.get(`/progress/participants/user123/progress`).then(data => {
+        allowedTags = data.data.completed_topics || [];
         iframe.src = iframe.src;
         startButton.disabled = false;
     }).catch(error => {
-        console.error('获取允许标签失败:', error);
+        console.error('获取用户学习进度失败:', error);
         // 如果获取失败，使用默认标签
         allowedTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img', 'table', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'form', 'input', 'button', 'textarea', 'select', 'option'];
         startButton.disabled = false;
@@ -79,24 +79,6 @@ function initMainApp() {
     stopButton.addEventListener('click', function() {
         stopSelector();
     });
-    
-    // 查看已保存元素
-    const viewElementsBtn = document.getElementById('viewElements');
-    if (viewElementsBtn) {
-        viewElementsBtn.addEventListener('click', async function() {
-            try {
-                const response = await window.DocsModule.ApiClient.get('/elements');
-                if (response.status === 'success') {
-                    showElementsList(response.data);
-                } else {
-                    showStatus('error', '获取元素列表失败');
-                }
-            } catch (error) {
-                console.error('获取元素列表失败:', error);
-                showStatus('error', '获取元素列表失败: ' + error.message);
-            }
-        });
-    }
     
     // Tab切换
     const tabKnowledge = document.getElementById('tab-knowledge');
@@ -169,28 +151,6 @@ async function handleElementSelected(info) {
     // 切换按钮状态
     if (startButton) startButton.style.display = 'inline-block';
     if (stopButton) stopButton.style.display = 'none';
-    
-    // 保存元素信息到后端
-    try {
-        const elementData = {
-            user_id: 'user123', // 可以从用户系统获取
-            element_tag: info.tagName.toLowerCase(),
-            element_info: info,
-            timestamp: new Date().toISOString()
-        };
-        
-        const response = await window.DocsModule.ApiClient.post('/elements', elementData);
-        if (response.status === 'success') {
-            showStatus('success', `元素已保存，ID: ${response.element_id}`);
-        } else if (response.status === 'forbidden') {
-            showStatus('warning', response.message);
-        } else {
-            showStatus('error', response.message || '保存失败');
-        }
-    } catch (error) {
-        console.error('保存元素失败:', error);
-        showStatus('error', '保存元素失败: ' + error.message);
-    }
 }
 
 // 停止选择器
@@ -217,46 +177,6 @@ function showStatus(type, message) {
         statusBadge.className = `status-badge status-${type}`;
         statusBadge.style.display = 'inline-block';
     }
-}
-
-// 显示已保存的元素列表
-function showElementsList(elements) {
-    const chatMessages = document.getElementById('ai-chat-messages');
-    if (!chatMessages) return;
-    
-    let elementsHtml = `
-        <div class="ai-message">
-            <div class="ai-content">
-                <div class="markdown-content">
-                    <h3>已保存的元素列表</h3>
-                    <div style="max-height: 300px; overflow-y: auto;">
-    `;
-    
-    if (elements.length === 0) {
-        elementsHtml += '<p>暂无已保存的元素</p>';
-    } else {
-        elements.forEach(element => {
-            elementsHtml += `
-                <div style="border: 1px solid #e0e0e0; margin: 8px 0; padding: 12px; border-radius: 6px;">
-                    <strong>ID:</strong> ${element.id}<br>
-                    <strong>标签:</strong> ${element.element_tag}<br>
-                    <strong>保存时间:</strong> ${new Date(element.timestamp).toLocaleString()}<br>
-                    <strong>元素信息:</strong><br>
-                    <pre style="background: #f5f5f5; padding: 8px; margin: 8px 0; font-size: 12px; max-height: 100px; overflow-y: auto;">${JSON.stringify(element.element_info, null, 2)}</pre>
-                </div>
-            `;
-        });
-    }
-    
-    elementsHtml += `
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    chatMessages.insertAdjacentHTML('beforeend', elementsHtml);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
 // 导出主要函数

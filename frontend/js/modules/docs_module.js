@@ -48,10 +48,8 @@ const ApiClient = {
 // 加载文档内容
 async function loadDocumentForTag(tagName) {
     try {
-        // 使用后端API获取标签内容
-        const response = await ApiClient.post('/docs/tag-content', {
-            tag_name: tagName
-        });
+        // 使用后端API获取学习内容
+        const response = await ApiClient.get(`/learning-content/${tagName}`);
         
         if (response.status !== 'success') {
             throw new Error(response.message || '未找到内容');
@@ -59,7 +57,16 @@ async function loadDocumentForTag(tagName) {
         
         docsModuleState.currentTag = { id: tagName, title: `${tagName} 组件` };
         docsModuleState.currentLevelIndex = 0;
-        docsModuleState.contents = response.data.contents;
+        
+        // 将学习内容转换为原来的格式
+        const contentData = response.data;
+        docsModuleState.contents = {
+            basic: contentData.content || `${tagName} 标签是HTML中常用的元素。`,
+            intermediate: contentData.content || `${tagName} 标签的基本语法：<${tagName}>内容</${tagName}>`,
+            advanced: contentData.content || `${tagName} 标签可以包含其他HTML元素和文本内容。`,
+            expert: contentData.content || `${tagName} 标签支持各种属性，如class、id、style等。`
+        };
+        
         renderDocContent();
         startTimer();
     } catch (e) {
@@ -184,29 +191,18 @@ function formatTime(seconds) {
 }
 
 async function sendTimeToBackend() {
-    try {
-        const response = await ApiClient.post('/docs/record-time', {
-            action: 'record_time',
-            base_time: docsModuleState.basicTimer,
-            advanced_time: docsModuleState.advancedTimer
-        });
-        
-        docsModuleState.basicTimer = 0;
-        docsModuleState.advancedTimer = 0;
-        updateTimeDisplay();
-        
-        if (response.status !== 'success') {
-            showError(response.message || '时间记录失败');
-        } else {
-            console.log('学习时间已成功记录');
-        }
-    } catch (e) {
-        // 如果后端不可用，只重置本地计时器
-        console.warn('后端不可用，仅重置本地计时器:', e.message);
-        docsModuleState.basicTimer = 0;
-        docsModuleState.advancedTimer = 0;
-        updateTimeDisplay();
-    }
+    // 只在前端显示，不向后端传输数据
+    console.log('学习时间记录（仅前端显示）:', {
+        basic_time: docsModuleState.basicTimer,
+        advanced_time: docsModuleState.advancedTimer
+    });
+    
+    // 重置本地计时器
+    docsModuleState.basicTimer = 0;
+    docsModuleState.advancedTimer = 0;
+    updateTimeDisplay();
+    
+    console.log('学习时间已重置');
 }
 
 // 错误显示
@@ -230,13 +226,6 @@ function initKnowledgeContent() {
     if (!knowledgeContent) return;
     
     knowledgeContent.innerHTML = `
-        <div class="input-row">
-            <input type="text" id="tag-id" placeholder="知识点分组ID">
-            <button id="tag-btn">获取分组标签</button>
-            <input type="text" id="tag-input" placeholder="组件名称">
-            <button id="test-btn">查找组件</button>
-        </div>
-        <div id="tag-select-container" style="margin: 12px 0;"></div>
         <div class="card-container">
             <div id="card-content" class="card">
                 <h2 id="tag-title" class="card-title">请选择组件</h2>
@@ -248,60 +237,6 @@ function initKnowledgeContent() {
             <div class="timer-item"><span class="timer-label">进阶内容：</span><span id="advanced-time">00:00</span></div>
         </div>
     `;
-    
-    // 绑定事件
-    document.getElementById('tag-btn').onclick = async function() {
-        const tagId = document.getElementById('tag-id').value.trim();
-        if (!tagId) {
-            showError('请输入知识点分组ID');
-            return;
-        }
-        try {
-            // 使用后端API获取目录
-            const response = await ApiClient.get('/docs/catalog');
-            if (response.status !== 'active') {
-                throw new Error('获取目录失败');
-            }
-            
-            const catalog = response.data.catalog;
-            const tags = catalog[tagId];
-            if (!tags || tags.length === 0) {
-                throw new Error('未找到相关标签');
-            }
-            renderTagSelect(tags);
-        } catch (e) {
-            showError(e.message);
-        }
-    };
-    
-    document.getElementById('test-btn').onclick = function() {
-        const tagName = document.getElementById('tag-input').value.trim();
-        if (!tagName) {
-            showError('请输入组件名称');
-            return;
-        }
-        loadDocumentForTag(tagName);
-    };
-}
-
-// 渲染标签选择
-function renderTagSelect(tags) {
-    const container = document.getElementById('tag-select-container');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div style="margin-bottom: 12px;">
-            <label for="tag-select" style="font-weight:bold;">请选择标签：</label>
-            <select id="tag-select"><option value="">-- 请选择 --</option>${tags.map(tag => `<option value="${tag}">${tag}</option>`).join('')}</select>
-        </div>
-    `;
-    
-    const tagSelect = document.getElementById('tag-select');
-    if (tagSelect) {
-        tagSelect.onchange = function(e) {
-            if (e.target.value) loadDocumentForTag(e.target.value);
-        };
-    }
 }
 
 // 导出模块
@@ -314,7 +249,6 @@ window.DocsModule = {
     sendTimeToBackend,
     showError,
     initKnowledgeContent,
-    renderTagSelect,
     ApiClient,
     DIFFICULTY,
     docsModuleState
