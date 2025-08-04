@@ -17,7 +17,7 @@ if APP_DIR not in sys.path:
 sys.path.append(BASE_DIR)
 
 # 使用项目配置中的路径
-from core.config import DATA_DIR, DOCUMENTS_DIR, VECTOR_STORE_DIR
+from core.config import settings
 
 # 设置日志
 logging.basicConfig(level=logging.INFO)
@@ -62,6 +62,7 @@ def build_vector_store(progress_callback=None):
     @return bool: 构建成功返回True，否则返回False
     """
     logger.info("Building new vector store...")
+    start_time = time.time()
     
     from .document_loader import DocumentLoader
     from .text_splitter import TextSplitter
@@ -115,10 +116,10 @@ def build_vector_store(progress_callback=None):
     logger.info(f"Embeddings generated in {time.time()-start_time:.2f} seconds")
     
     # 构建向量存储
-    vector_store = VectorStore()
+    vector_store = VectorStore(rebuild_mode=True)
     
     # 传递进度回调函数
-    success = vector_store.build_index(embeddings, chunks)
+    success = vector_store.add_chunks(chunks, embeddings, progress_callback)
     
     if success:
         logger.info("Vector store built successfully")

@@ -4,11 +4,12 @@ import json
 import numpy as np
 import os
 from pathlib import Path
-from core.config import VECTOR_STORE_DIR, RAG_CONFIG
+from core.config import settings
 import logging
 from tqdm import tqdm
 
-
+VECTOR_STORE_DIR = settings.VECTOR_STORE_DIR
+RAG_CONFIG = settings.RAG_CONFIG
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

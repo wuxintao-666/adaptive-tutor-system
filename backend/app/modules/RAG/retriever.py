@@ -1,14 +1,22 @@
 from .embeddings import EmbeddingModel
 from .vector_store import VectorStore
-from core.config import RAG_CONFIG, SERVICE_CONFIG
-from pathlib import Path
 import logging
 import json
 import requests
-import re  
+import re
 import os
+from typing import Optional, List, Tuple, Dict, Any
+from pathlib import Path
 
-# 添加openai库导入
+# 标准库导入
+import logging
+import json
+import requests
+import re
+import os
+from pathlib import Path
+
+# 第三方库导入
 try:
     from openai import OpenAI
     OPENAI_AVAILABLE = True
@@ -16,6 +24,14 @@ except ImportError:
     OPENAI_AVAILABLE = False
     logging.warning("OpenAI library not available. Install with 'pip install openai' for ModelScope support.")
 
+# 项目内部导入
+from core.config import settings
+
+# 配置初始化
+RAG_CONFIG = settings.RAG_CONFIG
+SERVICE_CONFIG = settings.SERVICE_CONFIG
+
+# 日志配置
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -45,7 +61,7 @@ class Retriever:
         self.reranker_prompt_template = reranker_config.get("prompt_template", "")
         self.ollama_host = SERVICE_CONFIG["ollama_host"]
         self.rerank_timeout = SERVICE_CONFIG["rerank_timeout"]
-        self.modelscope_api_key = os.getenv("DASHSCOPE_API_KEY", "")
+        self.modelscope_api_key = os.getenv("MODELSCOPE_API_KEY", "")
         self.modelscope_base_url = SERVICE_CONFIG.get("modelscope_base_url", "https://api-inference.modelscope.cn/v1/")
     
     def retrieve(self, query: str, use_rerank: bool = None) -> str:
@@ -179,7 +195,7 @@ class Retriever:
                     
             elif self.reranker_model_type == "modelscope":
                 if not self.modelscope_api_key:
-                    raise ValueError("ModelScope API key is not set. Please set DASHSCOPE_API_KEY environment variable.")
+                    raise ValueError("ModelScope API key is not set. Please set MODELSCOPE_API_KEY environment variable.")
                 
                 if not OPENAI_AVAILABLE:
                     raise ImportError("OpenAI library is not installed. Please install with 'pip install openai'")

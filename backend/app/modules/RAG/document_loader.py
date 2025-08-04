@@ -3,11 +3,13 @@ import json
 import logging
 from pathlib import Path
 from typing import List, Dict
-from core.config import DOCUMENTS_DIR, RAG_CONFIG
+from core.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+DOCUMENTS_DIR = settings.DOCUMENTS_DIR
+RAG_CONFIG = settings.RAG_CONFIG
 class DocumentLoader:
     """
     @brief 文档加载器类，用于从指定目录加载文档
