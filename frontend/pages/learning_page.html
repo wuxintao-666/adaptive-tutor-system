@@ -21,8 +21,7 @@
           <div class="preview-panel">
               <iframe
                 id="element-selector-iframe"
-                src="./index01.html"
-                sandbox="allow-scripts allow-same-origin"
+                src="http://localhost:8000/backend/app/data/example_page/index01.html"
                 style="width:100%;height:100%;border:none;flex:1 1 auto;min-height:0;"
               ></iframe>
           </div>
@@ -41,7 +40,7 @@
                 <div class="ai-message">
                   <div class="ai-content">
                     <div class="markdown-content">
-                            当然可以！作为 HTML 初学者，学习“表格（Table）”是非常实用的一步。它能帮助你做网页中最常见的数据结构，比如成绩单、产品价格表等。<br><br><b>HTML 表格的基本结构</b><br>HTML 使用 <code>&lt;table&gt;</code> 标签来创建表格，基本结构如下：<br>
+                            当然可以！作为 HTML 初学者，学习"表格（Table）"是非常实用的一步。它能帮助你做网页中最常见的数据结构，比如成绩单、产品价格表等。<br><br><b>HTML 表格的基本结构</b><br>HTML 使用 <code>&lt;table&gt;</code> 标签来创建表格，基本结构如下：<br>
                             <pre style="background:#f9f9f9;padding:8px;border-radius:4px;">&lt;table&gt;
                                 &lt;tr&gt;
                                   &lt;th&gt;标题1&lt;/th&gt;
@@ -100,5 +99,48 @@
         </div>
     </div>
 
+    <!-- 引入选择模块 -->
+    <script src="../js/modules/select_modules.js"></script>
+    <!-- 引入文档模块 -->
+    <script src="../js/modules/docs_module.js"></script>
+    <!-- 引入learning_page.js -->
+    <script src="../js/pages/learning_page.js"></script>
+    
+    <!-- 页面初始化脚本 -->
+    <script>
+        // 等待所有模块和AIHTMLPlatform加载完成
+        function waitForModules() {
+            if (window.SelectModules && window.DocsModule && window.AIHTMLPlatform && window.AIHTMLPlatform.initMainApp) {
+                // 初始化主应用
+                window.AIHTMLPlatform.initMainApp();
+            } else {
+                // 如果还没加载完成，等待100ms后重试
+                setTimeout(waitForModules, 100);
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 开始等待模块加载
+            waitForModules();
+        });
+        
+        // 发送消息函数（用于onclick事件）
+        function directSendMessage() {
+            const messageInput = document.getElementById('user-message');
+            const message = messageInput.value.trim();
+            
+            if (!message) {
+                alert('请输入消息内容');
+                return;
+            }
+            
+            // 这里可以添加发送消息的逻辑
+            console.log('发送消息:', message);
+            
+            // 清空输入框
+            messageInput.value = '';
+        }
+    </script>
 </body>
 </html>
