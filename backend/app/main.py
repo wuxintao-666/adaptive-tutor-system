@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.api.api import api_router
 from app.core.config import settings
 
@@ -20,6 +21,9 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# 挂载静态文件
+app.mount("/static", StaticFiles(directory="app/data"), name="static")
 
 if __name__ == '__main__':
     uvicorn.run(

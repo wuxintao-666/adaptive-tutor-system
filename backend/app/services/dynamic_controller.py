@@ -22,21 +22,24 @@ class DynamicController:
         db: Session
     ) -> ChatResponse:
         """
-        生成自适应AI回复的核心流程
+        生成自适应AI回复的核心流程（简化版本，暂时不依赖数据库）
         
         Args:
             request: 聊天请求
-            db: 数据库会话
+            db: 数据库会话（暂时不使用）
             
         Returns:
             ChatResponse: AI回复
         """
         try:
-            # 步骤1: 获取或创建用户档案
-            profile = self.user_state_service.get_or_create_profile(
-                participant_id=request.participant_id,
-                db=db
-            )
+            # 步骤1: 创建临时用户档案（不依赖数据库）
+            profile = type('Profile', (), {
+                'participant_id': request.participant_id,
+                'emotion_state': {},
+                'behavior_counters': {},
+                'bkt_model': {},
+                'is_new_user': True
+            })()
             
             # 步骤2: 情感分析
             sentiment_result = sentiment_analysis_service.analyze_sentiment(
@@ -78,7 +81,7 @@ class DynamicController:
                 system_prompt=system_prompt
             )
             
-            # 步骤9: 异步记录交互日志（简化版本）
+            # 步骤9: 异步记录交互日志（简化版本，不依赖数据库）
             self._log_interaction(request, response, db)
             
             return response
@@ -133,12 +136,17 @@ class DynamicController:
             print(f"Error logging interaction: {e}")
     
     def get_user_state(self, participant_id: str, db: Session) -> Dict[str, Any]:
-        """获取用户状态"""
+        """获取用户状态（简化版本，不依赖数据库）"""
         try:
-            profile = self.user_state_service.get_or_create_profile(
-                participant_id=participant_id,
-                db=db
-            )
+            # 创建临时用户档案
+            profile = type('Profile', (), {
+                'participant_id': participant_id,
+                'emotion_state': {},
+                'behavior_counters': {},
+                'bkt_model': {},
+                'is_new_user': True
+            })()
+            
             return self._build_user_state_summary(
                 profile, 
                 SentimentAnalysisResult(label="NEUTRAL", confidence=1.0)

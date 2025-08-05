@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     
     # 魔搭配置
     MODELSCOPE_API_KEY: str = ""
-    MODELSCOPE_API_BASE: str = "https://dashscope.aliyuncs.com/api/v1"
+    MODELSCOPE_API_BASE: str = "https://api-inference.modelscope.cn/v1"
     MODELSCOPE_MODEL: str = "qwen-turbo"
     
     # 嵌入模型配置
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # Model configuration tells Pydantic where to find the .env file.
     model_config = SettingsConfigDict(
-        env_file=".env", 
+        env_file=os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), ".env"), 
         env_file_encoding='utf-8', 
         extra='ignore',
         case_sensitive=False # 改为不区分大小写，提高灵活性

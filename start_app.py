@@ -94,8 +94,8 @@ class AppLauncher:
         os.chdir(frontend_dir)
         
         # 检查前端文件是否存在
-        if not (frontend_dir / "index.html").exists():
-            print("⚠️  前端目录中没有index.html，跳过前端启动")
+        if not (frontend_dir / "pages" / "learning_page.html").exists():
+            print("⚠️  前端目录中没有learning_page.html，跳过前端启动")
             return False
         
         try:
@@ -151,12 +151,12 @@ class AppLauncher:
         print("🎉 应用启动完成！")
         print("="*60)
         print("📱 访问地址:")
-        print("  🌐 前端页面: http://localhost:3000")
+        print("  🌐 前端页面: http://localhost:3000/pages/learning_page.html")
         print("  🔧 后端API: http://localhost:8000")
         print("  📚 API文档: http://localhost:8000/docs")
         print("  🔍 服务状态: http://localhost:8000/api/v1/chat/ai/services/status")
         print("\n💡 使用说明:")
-        print("  • 在浏览器中打开 http://localhost:3000 访问前端页面")
+        print("  • 在浏览器中打开 http://localhost:3000/pages/learning_page.html 访问学习页面")
         print("  • 按 Ctrl+C 停止所有服务")
         print("  • 服务会自动重启（热重载模式）")
         print("="*60)
