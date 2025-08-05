@@ -3,13 +3,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.database import get_db
 from app.schemas.response import StandardResponse
 from app.schemas.user_progress import UserProgressResponse
 
 
-# from app.dependencies import get_db
-# TODO:暂时注释掉，因为get_db还未定义
-from app.crud.crud_progress import progress 
+from app.crud.crud_progress import progress
 
 router = APIRouter()
 
