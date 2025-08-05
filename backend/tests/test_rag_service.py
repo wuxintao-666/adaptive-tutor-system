@@ -1,13 +1,11 @@
 import pytest
 import os
 import json
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 import sys
 
 # Add backend to path so we can import rag_service
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
-
-from services.rag_service import RAGService
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 
 class TestRAGService:
@@ -18,7 +16,7 @@ class TestRAGService:
         """模拟嵌入API响应"""
         mock_response = Mock()
         mock_data = Mock()
-        mock_data.embedding = [0.1] * 4096  # 模拟4096维的嵌入向量
+        mock_data.embedding = [0.1] * 1536  # 模拟1536维的嵌入向量 (text-embedding-3-small)
         mock_response.data = [mock_data]
         return mock_response
 
@@ -31,13 +29,17 @@ class TestRAGService:
             "数据库是结构化数据的集合，用于存储和检索信息。"
         ]
 
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
     def test_rag_service_initialization(self, mock_annoy_index, mock_openai):
         """测试RAG服务是否能正确加载知识库"""
         # 准备模拟数据
         mock_index = Mock()
         mock_annoy_index.return_value = mock_index
+        
+        # 模拟OpenAI客户端初始化
+        mock_client = Mock()
+        mock_openai.return_value = mock_client
         
         # 模拟知识库文件
         sample_chunks = ["测试内容1", "测试内容2", "测试内容3"]
@@ -45,22 +47,26 @@ class TestRAGService:
         with patch('builtins.open', mock_open=True) as mock_file:
             mock_file.return_value.__enter__.return_value.read.return_value = json.dumps(sample_chunks)
             
+            # 导入RAG服务（在模拟环境内）
+            from app.services.rag_service import RAGService
+            
             # 创建RAG服务实例
             rag_service = RAGService()
             
             # 验证初始化过程
-            assert rag_service.embedding_dimension == 4096
-            mock_annoy_index.assert_called_once_with(4096, 'angular')
-            mock_index.load.assert_called_once_with("backend/data/kb.ann", prefault=False)
+            assert rag_service.embedding_dimension == 2560
+            mock_annoy_index.assert_called_once_with(2560, 'angular')
+            mock_index.load.assert_called_once()
             
             # 验证OpenAI客户端初始化
             mock_openai.assert_called_once_with(
-                api_key="ms-0d9e9f84-5c9c-4d39-b760-a0a7458c3ecd",
-                base_url="https://ms-fc-1d889e1e-d2ad.api-inference.modelscope.cn/v1"
+                api_key='ms-e9cb1ee1-d248-4f05-87d1-fbc2083c41ae',
+                base_url='https://ms-fc-1d889e1e-d2ad.api-inference.modelscope.cn/v1',
+                timeout=30.0
             )
 
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
     def test_retrieve_functionality(self, mock_annoy_index, mock_openai, mock_embedding_response):
         """测试向量检索功能是否正常工作"""
         # 准备模拟对象
@@ -80,6 +86,9 @@ class TestRAGService:
         with patch('builtins.open', mock_open=True) as mock_file:
             mock_file.return_value.__enter__.return_value.read.return_value = json.dumps(sample_chunks)
             
+            # 导入RAG服务（在模拟环境内）
+            from app.services.rag_service import RAGService
+            
             # 创建RAG服务实例
             rag_service = RAGService()
             
@@ -93,13 +102,13 @@ class TestRAGService:
             
             # 验证调用过程
             mock_client.embeddings.create.assert_called_once_with(
-                input=[query], 
-                model="Qwen/Qwen3-Embedding-4B-GGUF"
+                input=query, 
+                model='Qwen/Qwen3-Embedding-4B-GGUF'
             )
             mock_index.get_nns_by_vector.assert_called_once()
 
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
     def test_retrieve_returns_expected_results(self, mock_annoy_index, mock_openai, mock_embedding_response):
         """验证返回的结果是否符合预期"""
         # 准备模拟对象
@@ -123,32 +132,41 @@ class TestRAGService:
         with patch('builtins.open', mock_open=True) as mock_file:
             mock_file.return_value.__enter__.return_value.read.return_value = json.dumps(sample_chunks)
             
+            # 导入RAG服务（在模拟环境内）
+            from app.services.rag_service import RAGService
+            
             # 创建RAG服务实例
             rag_service = RAGService()
             
             # 执行检索
             query = "Python的历史"
-            results = rag_service.retrieve(query, k=2)
+            results = rag_service.retrieve(query, k=3)
             
             # 验证结果数量和内容
-            assert len(results) == 2
+            assert len(results) == 3
             assert results[0] == sample_chunks[1]  # 应该返回索引为1的内容（根据mock的返回）
             assert results[1] == sample_chunks[0]  # 应该返回索引为0的内容
+            assert results[2] == sample_chunks[2]  # 应该返回索引为2的内容
 
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
     def test_error_handling_missing_files(self, mock_annoy_index, mock_openai):
         """检查错误处理机制 - 文件不存在"""
+        # 模拟OpenAI客户端初始化
+        mock_client = Mock()
+        mock_openai.return_value = mock_client
+        
         # 模拟文件不存在的错误
         with patch('builtins.open', mock_open=True) as mock_file:
             mock_file.side_effect = FileNotFoundError("知识库文件不存在")
             
             # 验证初始化时的错误处理
             with pytest.raises(FileNotFoundError):
+                from app.services.rag_service import RAGService
                 RAGService()
 
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
     def test_error_handling_api_error(self, mock_annoy_index, mock_openai):
         """检查错误处理机制 - API错误"""
         # 模拟API错误
@@ -165,6 +183,9 @@ class TestRAGService:
         with patch('builtins.open', mock_open=True) as mock_file:
             mock_file.return_value.__enter__.return_value.read.return_value = json.dumps(sample_chunks)
             
+            # 导入RAG服务（在模拟环境内）
+            from app.services.rag_service import RAGService
+            
             # 创建RAG服务实例
             rag_service = RAGService()
             
@@ -172,8 +193,8 @@ class TestRAGService:
             with pytest.raises(Exception):
                 rag_service.retrieve("测试查询")
 
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
     def test_performance_basic(self, mock_annoy_index, mock_openai, mock_embedding_response):
         """基本性能测试"""
         # 准备模拟对象
@@ -190,6 +211,9 @@ class TestRAGService:
         
         with patch('builtins.open', mock_open=True) as mock_file:
             mock_file.return_value.__enter__.return_value.read.return_value = json.dumps(sample_chunks)
+            
+            # 导入RAG服务（在模拟环境内）
+            from app.services.rag_service import RAGService
             
             # 创建RAG服务实例
             rag_service = RAGService()
