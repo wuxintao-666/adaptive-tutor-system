@@ -66,8 +66,9 @@ class BKTModel:
         # 避免除零错误
         if p_obs == 0:
             p_obs = 1e-10
-            
+
         # 更新掌握概率
+        # P(掌握 | 答题结果) = P(答题结果 | 掌握) * P(掌握) / P(答题结果)
         if is_correct:
             # 如果答对，使用贝叶斯更新规则
             p_knowing_given_correct = self.mastery_prob * (1 - self.p_slip) / p_obs

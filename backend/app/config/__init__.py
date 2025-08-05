@@ -1,6 +1,6 @@
 # 依赖注入配置示例
 
-from backend.app.services.sandbox_service_improved import SandboxService, DefaultPlaywrightManager
+from app.services.sandbox_service_improved import SandboxService, DefaultPlaywrightManager
 import os
 
 
