@@ -1,5 +1,6 @@
 // frontend/js/api_client.js
 import { getParticipantId } from './modules/session.js';
+import { AppConfig } from './modules/config.js';
 
 async function post(endpoint, body) {
   const participantId = getParticipantId();
@@ -12,7 +13,7 @@ async function post(endpoint, body) {
   // 自动在请求体中注入participant_id
   const fullBody = { ...body, participant_id: participantId };
 
-  const response = await fetch(`/api/v1${endpoint}`, {
+  const response = await fetch(`${AppConfig.api_base_url}${endpoint}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(fullBody),
@@ -27,7 +28,7 @@ async function get(endpoint) {
         window.location.href = '/index.html';
         throw new Error("Session not found. Redirecting to login.");
   }
-  const response = await fetch(`/api/v1${endpoint}?participant_id=${participantId}`, {
+  const response = await fetch(`${AppConfig.api_base_url}${endpoint}?participant_id=${participantId}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
   });

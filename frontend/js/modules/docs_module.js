@@ -1,4 +1,6 @@
 // ==================== 文档模块 ====================
+import { AppConfig } from './config.js';
+
 const DIFFICULTY = [
     { key: 'basic', label: '基础介绍', category: 'basic' },
     { key: 'intermediate', label: '语法和基本用法', category: 'basic' },
@@ -20,7 +22,8 @@ let docsModuleState = {
 const ApiClient = {
     async get(endpoint) {
         try {
-            const response = await fetch(`http://localhost:8000/api/v1${endpoint}`);
+            // 使用配置中的API基础URL
+            const response = await fetch(`${AppConfig.api_base_url}${endpoint}`);
             if (!response.ok) throw new Error(`API错误: ${response.status}`);
             return await response.json();
         } catch (error) {
@@ -31,7 +34,8 @@ const ApiClient = {
     
     async post(endpoint, data) {
         try {
-            const response = await fetch(`http://localhost:8000/api/v1${endpoint}`, {
+            // 使用配置中的API基础URL
+            const response = await fetch(`${AppConfig.api_base_url}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
