@@ -1,6 +1,5 @@
 import uvicorn
 from fastapi import FastAPI
-from app.api.endpoints.config import router as config_router
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.api import api_router
 from app.core.config import settings
@@ -24,8 +23,8 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 if __name__ == '__main__':
     uvicorn.run(
-        'backend.main:app',
+        'app.main:app',
         host='0.0.0.0',
-        port=app.dependency_overrides.get('BACKEND_PORT', 8000),
+        port=settings.BACKEND_PORT,
         reload=True
     )
