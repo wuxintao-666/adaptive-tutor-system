@@ -45,4 +45,6 @@ class UserStateSummary(BaseModel):
     behavior_counters: Dict[str, Any]
     bkt_models: Dict[str, Any]
     is_new_user: bool
+    db_status: Optional[str] = None
+    db_error: Optional[str] = None
     last_updated: datetime = datetime.utcnow() 

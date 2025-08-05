@@ -8,13 +8,18 @@ from datetime import datetime, timedelta
 from ..models.bkt import BKTModel
 
 class StudentProfile:
-    def __init__(self, participant_id, is_new_user=True):
+    def __init__(self, participant_id, is_new_user=True, db_connected=True):
         self.participant_id = participant_id  # TODO: cxz 需要从会话或参数中获取participant_id
         self.is_new_user = is_new_user
+        self.db_connected = db_connected  # 数据库连接状态
         # 认知状态
         self.bkt_model = {}  # { 'topic_id': BKT_instance }  # TODO: cxz 需要实现BKT模型，用于追踪知识点掌握情况
         # 情感状态
-        self.emotion_state = {'current_sentiment': 'NEUTRAL', 'is_frustrated': False}  # TODO: cxz 需要实现情感状态追踪
+        self.emotion_state = {
+            'current_sentiment': 'NEUTRAL', 
+            'is_frustrated': False,
+            'db_status': 'connected' if db_connected else 'disconnected'
+        }  # TODO: cxz 需要实现情感状态追踪
         # 行为状态
         self.behavior_counters = {
             'submission_timestamps': [],
@@ -90,7 +95,16 @@ class UserStateService:
     def get_or_create_profile(self, participant_id: str, db: Session) -> StudentProfile:
         if participant_id not in self._state_cache:
             print(f"INFO: Cache miss for {participant_id}. Attempting recovery from history.")
-            self._recover_from_history_with_snapshot(participant_id, db)
+            try:
+                self._recover_from_history_with_snapshot(participant_id, db)
+            except Exception as e:
+                print(f"⚠️ 数据库连接失败，无法恢复用户档案: {e}")
+                # 数据库连接失败时，创建新的用户档案（标记为数据库未连接）
+                self._state_cache[participant_id] = StudentProfile(
+                    participant_id, 
+                    is_new_user=True, 
+                    db_connected=False
+                )
 
         # _recover_from_history_with_snapshot 应该已经处理了所有情况
         # 如果仍然没有（理论上不应该发生），则创建一个新用户

@@ -21,7 +21,7 @@
           <div class="preview-panel">
                              <iframe
                  id="element-selector-iframe"
-                 src="http://localhost:8000/static/example_page/index01.html"
+                 src="../../backend/app/data/example_page/index01.html"
                  style="width:100%;height:100%;border:none;flex:1 1 auto;min-height:0;"
                ></iframe>
           </div>
@@ -100,6 +100,7 @@
     </div>
 
     <!-- 引入配置模块 -->
+    <script src="../js/config.js"></script>
     <script type="module" src="../js/modules/config.js"></script>
     <!-- 引入选择模块 -->
     <script src="../js/modules/select_modules.js"></script>
@@ -164,8 +165,8 @@
                 // 添加用户消息到聊天界面
                 addMessageToChat('user', message);
                 
-                // 发送消息到后端API
-                const response = await fetch('http://localhost:8000/api/v1/chat/ai/chat', {
+                                        // 发送消息到后端API
+                        const response = await fetch(`${window.FrontendConfig.getApiBaseUrl()}/chat/ai/chat`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

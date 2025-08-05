@@ -22,29 +22,31 @@ class DynamicController:
         db: Session
     ) -> ChatResponse:
         """
-        生成自适应AI回复的核心流程（简化版本，暂时不依赖数据库）
+        生成自适应AI回复的核心流程
         
         Args:
             request: 聊天请求
-            db: 数据库会话（暂时不使用）
+            db: 数据库会话
             
         Returns:
             ChatResponse: AI回复
         """
         try:
-            # 步骤1: 创建临时用户档案（不依赖数据库）
-            profile = type('Profile', (), {
-                'participant_id': request.participant_id,
-                'emotion_state': {},
-                'behavior_counters': {},
-                'bkt_model': {},
-                'is_new_user': True
-            })()
+            # 步骤1: 获取或创建用户档案（使用临时档案，不依赖数据库）
+            profile = self._create_temporary_profile(request.participant_id)
             
             # 步骤2: 情感分析
-            sentiment_result = sentiment_analysis_service.analyze_sentiment(
-                request.user_message
-            )
+            try:
+                sentiment_result = sentiment_analysis_service.analyze_sentiment(
+                    request.user_message
+                )
+            except Exception as e:
+                print(f"⚠️ 情感分析失败，使用默认值: {e}")
+                sentiment_result = SentimentAnalysisResult(
+                    label="NEUTRAL", 
+                    confidence=1.0, 
+                    details={}
+                )
             
             # 步骤3: 更新用户状态（包含情感信息）
             self._update_user_state_with_sentiment(profile, sentiment_result)
@@ -113,12 +115,21 @@ class DynamicController:
         sentiment_result: SentimentAnalysisResult
     ) -> UserStateSummary:
         """构建用户状态摘要"""
+        # 获取数据库连接状态
+        db_status = getattr(profile, 'db_connected', None)
+        if db_status is None:
+            # 从emotion_state中获取db_status
+            emotion_state = profile.emotion_state if hasattr(profile, 'emotion_state') else {}
+            db_status = emotion_state.get('db_status', 'unknown')
+        
         return UserStateSummary(
             participant_id=profile.participant_id,
             emotion_state=profile.emotion_state if hasattr(profile, 'emotion_state') else {},
             behavior_counters=profile.behavior_counters if hasattr(profile, 'behavior_counters') else {},
             bkt_models=profile.bkt_model if hasattr(profile, 'bkt_model') else {},
-            is_new_user=profile.is_new_user if hasattr(profile, 'is_new_user') else True
+            is_new_user=profile.is_new_user if hasattr(profile, 'is_new_user') else True,
+            db_status=db_status,
+            db_error=getattr(profile, 'db_error', None)
         )
     
     def _log_interaction(
@@ -136,24 +147,42 @@ class DynamicController:
             print(f"Error logging interaction: {e}")
     
     def get_user_state(self, participant_id: str, db: Session) -> Dict[str, Any]:
-        """获取用户状态（简化版本，不依赖数据库）"""
-        try:
-            # 创建临时用户档案
-            profile = type('Profile', (), {
-                'participant_id': participant_id,
-                'emotion_state': {},
-                'behavior_counters': {},
-                'bkt_model': {},
-                'is_new_user': True
-            })()
-            
-            return self._build_user_state_summary(
-                profile, 
-                SentimentAnalysisResult(label="NEUTRAL", confidence=1.0)
-            ).dict()
-        except Exception as e:
-            print(f"Error getting user state: {e}")
-            return {}
+        """获取用户状态（使用临时档案，不依赖数据库）"""
+        # 创建临时用户档案
+        temp_profile = self._create_temporary_profile(participant_id)
+        
+        user_state = self._build_user_state_summary(
+            temp_profile, 
+            SentimentAnalysisResult(label="NEUTRAL", confidence=1.0, details={})
+        ).dict()
+        return user_state
+    
+    def _create_temporary_profile(self, participant_id: str) -> Any:
+        """创建临时用户档案（不依赖数据库）"""
+        class TemporaryProfile:
+            def __init__(self, participant_id: str):
+                self.participant_id = participant_id
+                self.emotion_state = {
+                    'current_sentiment': 'NEUTRAL',
+                    'sentiment_confidence': 1.0,
+                    'sentiment_details': None,
+                    'db_status': 'disconnected'
+                }
+                self.behavior_counters = {
+                    'total_interactions': 0,
+                    'questions_asked': 0,
+                    'code_requests': 0,
+                    'session_duration': 0
+                }
+                self.bkt_model = {
+                    'html_basics': 0.3,
+                    'css_basics': 0.2,
+                    'javascript_basics': 0.1
+                }
+                self.is_new_user = True
+                self.db_connected = 'disconnected'  # 改为字符串
+        
+        return TemporaryProfile(participant_id)
     
     def validate_services(self) -> Dict[str, bool]:
         """验证所有服务的状态"""

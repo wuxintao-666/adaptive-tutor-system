@@ -13,7 +13,7 @@ export const AppConfig = {
 
 export async function initializeConfig() {
   try {
-    const response = await fetch('http://localhost:8000/api/v1/config/config');
+            const response = await fetch(`${window.FrontendConfig.getApiBaseUrl()}/config/config`);
     const result = await response.json();
 
     if (result.code !== 200) {
