@@ -1,9 +1,10 @@
-from app.services import user_state_service
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
-from app.db.session import get_db
+from app.database import get_db
 from app.schemas.response import StandardResponse
 from app.schemas.session import SessionInitiateRequest, SessionInitiateResponse
+from app.config.dependency_injection import get_user_state_service
+from app.services.user_state_service import UserStateService
 
 router = APIRouter()
 
@@ -11,10 +12,11 @@ router = APIRouter()
 def initiate_session(
     response: Response,
     session_in: SessionInitiateRequest,
+    user_state_service: UserStateService = Depends(get_user_state_service),
     db: Session = Depends(get_db)
 ):
     # 获取或创建用户配置
-    profile = user_state_service.get_or_create_profile(session_in.username, db)
+    profile = user_state_service.get_or_create_profile(session_in.participant_id, db)
     
     if profile.is_new_user:
         response.status_code = status.HTTP_201_CREATED
@@ -22,7 +24,6 @@ def initiate_session(
     # 构建响应数据
     response_data = SessionInitiateResponse(
         participant_id=profile.participant_id,
-        username=profile.username,
         is_new_user=profile.is_new_user
     )
     

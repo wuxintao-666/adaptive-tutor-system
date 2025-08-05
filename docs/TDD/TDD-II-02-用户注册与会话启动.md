@@ -1,9 +1,11 @@
 ### **技术设计文档 (TDD-II-02): 用户注册与会话启动**
 
-**版本:** 1.2
+**版本:** 1.3
 **关联的顶层TDD:** V1.2 - 章节 3.1 (数据库设计), 3.2 (API接口规范)
 **作者:** 曹欣卓
 **日期:** 2025-7-28
+**修订人:** 
+**修订日期:** 2025-8-3
 
 #### **1. 功能概述 (Feature Overview)**
 
@@ -41,7 +43,7 @@ sequenceDiagram
     
     alt 用户已存在 (老用户)
         DB-->>UserState: 5a. 返回 participant 记录
-        UserState->>UserState: 6a. **核心: 触发内部状态恢复<br> (回放event_logs, 详情见TDD-II-12)**
+        UserState->>UserState: 6a. **核心: 触发内部状态恢复<br> (回放event_logs, 详情见TDD-II-12)
     else 用户不存在 (新用户)
         DB-->>UserState: 5b. 返回 null
         UserState->>DB: 6b. 创建新的 participant 记录
@@ -111,42 +113,119 @@ class SessionInitiateResponse(BaseModel):
 这部分代码是整个API设计的基石。
 
 ---
-###### 数据操作层
+###### 推荐实现方案
+**注意：根据系统架构设计，推荐使用UserStateService方案来处理会话启动，因为它能更好地处理用户状态恢复的复杂性。**
+
 **后端端点逻辑 (`backend/app/api/endpoints/session.py`):**
-  在处理请求时，我们不再直接与CRUD交互，而是通过`UserStateService`来获取或创建用户，这个过程隐式地包含了状态恢复。
-  ```python
-  # backend/app/api/endpoints/session.py
-  from app.services import user_state_service
-
-  @router.post("/initiate", ...)
-  def initiate_session(
-      response: Response,
-      session_in: SessionInitiateRequest,
-      db: Session = Depends(get_db)
-  ):
-      # **核心变更:** 调用 get_or_create_profile
-      # 这个方法会处理新用户创建和老用户状态恢复的所有复杂性
-      profile = user_state_service.get_or_create_profile(session_in.username, db)
-    
-      # 检查这是否是一个真正的新用户 (数据库中没有记录)
-      # (这个逻辑可能需要微调，比如 get_or_create_profile 返回一个包含 is_new 标志的元组)
-      # ...
-    
-      # 返回participant_id等信息
-      response_data = SessionInitiateResponse(
-          participant_id=profile.participant_id,
-          username=profile.username,
-          # ...
-      )
-      return StandardResponse(data=response_data)
-  ```
-
-
----
-###### API接口层
-**端点逻辑 (`backend/app/api/endpoints/session.py`):**
+在处理请求时，我们通过`UserStateService`来获取或创建用户，这个过程隐式地包含了状态恢复。
 ```python
 # backend/app/api/endpoints/session.py
+from fastapi import APIRouter, Depends, HTTPException, status, Response
+from sqlalchemy.orm import Session
+from app.db.session import get_db
+from app.services.user_state_service import user_state_service
+from app.schemas.session import SessionInitiateRequest, SessionInitiateResponse
+from app.schemas.response import StandardResponse
+
+router = APIRouter()
+
+@router.post("/initiate", response_model=StandardResponse[SessionInitiateResponse])
+def initiate_session(
+    response: Response,
+    session_in: SessionInitiateRequest,
+    db: Session = Depends(get_db)
+):
+    try:
+        # 调用 get_or_create_profile
+        # 这个方法会处理新用户创建和老用户状态恢复的所有复杂性
+        profile = user_state_service.get_or_create_profile(session_in.username, db)
+        
+        # 检查这是否是一个真正的新用户
+        # 注意：需要UserStateService返回is_new标志，或者通过其他方式判断
+        # 假设profile有一个is_new_user属性，或者通过其他方式获取
+        is_new_user = getattr(profile, 'is_new_user', False)
+        
+        # 构建响应数据
+        response_data = SessionInitiateResponse(
+            participant_id=profile.participant_id,
+            username=profile.username,
+            is_new_user=is_new_user
+        )
+        
+        # 设置HTTP状态码以符合RESTful风格
+        if is_new_user:
+            response.status_code = status.HTTP_201_CREATED
+        
+        # 返回标准成功响应
+        return StandardResponse(
+            data=response_data
+        )
+        
+    except Exception as e:
+        # 记录错误日志（在实际项目中应该使用logging模块）
+        print(f"Error initiating session: {str(e)}")
+        # 返回标准错误响应
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": 500, "message": "Failed to initiate session"}
+        )
+```
+
+**实现要点说明：**
+- **使用UserStateService**: 通过`user_state_service.get_or_create_profile`方法处理用户创建和状态恢复
+- **HTTP状态码**: 新用户返回201状态码，老用户返回200状态码
+- **错误处理**: 使用标准的HTTPException处理错误情况
+- **依赖注入**: 正确使用FastAPI的依赖注入系统获取数据库会话
+
+---
+###### UserStateService增强建议
+为了让`get_or_create_profile`方法能够返回`is_new_user`标志，建议对UserStateService进行如下增强：
+
+```python
+# backend/app/services/user_state_service.py 中的增强版本
+def get_or_create_profile(self, username: str, db: Session) -> (StudentProfile, bool):
+    """
+    获取或创建用户配置
+    
+    Returns:
+        tuple: (profile, is_new_user)
+    """
+    # 检查用户是否已存在
+    from ..crud.crud_participant import get_by_username, create
+    from ..schemas.session import SessionInitiateRequest
+    
+    participant = get_by_username(db, username=username)
+    is_new_user = False
+    
+    if not participant:
+        # 创建新用户
+        session_request = SessionInitiateRequest(username=username)
+        participant = create(db, obj_in=session_request)
+        is_new_user = True
+    
+    # 获取或创建内存Profile
+    if participant.id not in self._state_cache:
+        print(f"INFO: Cache miss for {participant.id}. Attempting recovery from history.")
+        self._recover_from_history_with_snapshot(participant.id, db)
+
+    # 如果恢复后仍然没有（说明是全新用户），则创建一个空的
+    if participant.id not in self._state_cache:
+        self._state_cache[participant.id] = StudentProfile(participant.id)
+        
+    # 为Profile添加is_new_user属性
+    profile = self._state_cache[participant.id]
+    profile.is_new_user = is_new_user
+    profile.username = participant.username
+    
+    return profile, is_new_user
+```
+
+---
+###### 替代实现方案（不推荐）
+为了完整性，下面提供直接使用CRUD的实现方案，但在本系统中**不推荐使用**：
+
+```python
+# backend/app/api/endpoints/session.py (替代方案，不推荐)
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from app.db.session import get_db
@@ -177,34 +256,10 @@ def initiate_session(
 	)
 	return StandardResponse(data=response_data)
 ```
-这个文件是**API接口层 (API Layer)**。它定义了前端可以直接访问的URL端点 (`/api/v1/session/initiate`)，并处理所有传入的HTTP请求和业务逻辑。
-- **`@router.post("/initiate", ...)`:**
-    - 这是一个 FastAPI 的装饰器，它告诉程序：
-        - 将下面的 `initiate_session` 函数注册为一个 **HTTP POST** 请求的处理程序。
-        - 这个端点的路径是 `/initiate` (完整路径是 `/api/v1/session/initiate`)。
-        - `response_model=...`: 指定了返回数据的格式应该遵循 `StandardResponse[SessionInitiateResponse]` 这个 Pydantic 模型，这有助于自动生成API文档和数据验证。
-- **`initiate_session(...)` 函数:**
-    - **作用:** 这是处理会话初始化请求的核心业务逻辑。
-    - **执行流程:**
-        1. **接收数据:** 函数通过 `session_in: SessionInitiateRequest` 参数接收前端POST请求中JSON格式的数据（即 `{ "username": "some_name" }`）。FastAPI会自动进行数据验证。
-        2. **查询用户:** 调用我们上面分析的 `crud_participant.get_by_username()` 函数，尝试用收到的 `username` 去数据库里查找该用户是否存在。
-        3. **逻辑判断 (核心):**
-            - **`if not participant:` (如果用户不存在):**
-                - 说明这是一个新用户注册。
-                - 调用 `crud_participant.create()` 函数来创建新用户记录。
-                - 设置 `is_new = True` 标志。
-                - `response.status_code = status.HTTP_201_CREATED`: 这是一个很好的实践。它将HTTP响应状态码设置为 `201 Created`，明确告诉客户端，一个新的资源（用户）已经被成功创建。
-            - **`else` (如果用户已存在):**
-                - 说明这是一个老用户返回。
-                - 直接使用从数据库中查询到的 `participant` 对象。
-                - `is_new` 保持 `False`，HTTP状态码将是默认的 `200 OK`。
-        4. **构建并返回响应:**
-            - 无论用户是新的还是旧的，此时 `participant` 变量里都保存着有效的用户数据。
-            - 代码创建一个 `SessionInitiateResponse` 对象，把用户的 `id` (即 `participant_id`)、`username` 和 `is_new_user` 标志打包进去。
-            - 最后，将这个数据包作为 `StandardResponse` 的 `data` 字段返回给前端。
+
+这个方案虽然简单直接，但无法处理复杂的状态恢复需求。
 
 ---
-
 ##### **2.3. 前端实现 (JavaScript)**
 
 *   **会话管理模块 (`frontend/js/modules/session.js`):**
@@ -242,10 +297,9 @@ export function checkAndRedirect() {
     - `clearParticipantId()`: 调用 `localStorage.removeItem` 方法，删除已保存的用户ID。这个函数在用户登出时会很有用。
     - `checkAndRedirect()`: 这是一个提升用户体验的核心函数。
         - 它首先检查 `localStorage` 中是否存在 `participant_id`。
-        - 如果**存在**，说明用户之前已经登录过，是个“返回用户”。为了避免让用户重复输入用户名，它会检查当前页面的URL。如果用户不在主功能页（如 `knowledge_graph.html`），代码会自动将他**重定向**过去，实现无缝的会话恢复。
+        - 如果**存在**，说明用户之前已经登录过，是个"返回用户"。为了避免让用户重复输入用户名，它会检查当前页面的URL。如果用户不在主功能页（如 `knowledge_graph.html`），代码会自动将他**重定向**过去，实现无缝的会话恢复。
 
 ---
-
 *   **注册页面逻辑 (`frontend/js/pages/registration.js`):**
 ```javascript
 // frontend/js/pages/registration.js
@@ -265,7 +319,7 @@ startButton.addEventListener('click', async () => {
 
   if (result.code === 200 || result.code === 201) {
 	saveParticipantId(result.data.participant_id);
-	// 注册成功后，跳转到“前测问卷”页面，这是科研流程的一部分
+	// 注册成功后，跳转到"前测问卷"页面，这是科研流程的一部分
 	window.location.href = `/survey.html?type=pre-test`;
   } else {
 	// ... (显示错误信息) ...
@@ -282,12 +336,10 @@ startButton.addEventListener('click', async () => {
         3. **成功逻辑:**
             - 检查返回结果的 `code` 是否为 `200` (成功找到老用户) 或 `201` (成功创建新用户)。
             - 如果成功，立即调用 `saveParticipantId()` 将后端返回的 `participant_id` 保存到 `localStorage` 中。
-            - **页面跳转:** `window.location.href = ...` 将页面重定向到实验流程的下一步（这里是“前测问卷”页），而不是直接到知识图谱页，这表明注册是一个完整流程的入口。
+            - **页面跳转:** `window.location.href = ...` 将页面重定向到实验流程的下一步（这里是"前测问卷"页），而不是直接到知识图谱页，这表明注册是一个完整流程的入口。
         4. **失败逻辑:** 如果API返回错误，则可以在 `else` 块中向用户显示错误提示。
 
 ---
-
-
 *   **API客户端封装 (`frontend/js/api_client.js`):** (推荐)
     为了避免在每个`fetch`调用中都重复获取`participant_id`，可以将其封装。
 ```javascript
@@ -323,6 +375,5 @@ async function post(endpoint, body) {
     4. **执行请求:** 最后，它像一个标准的 `fetch` 调用一样，构造并发送请求。
 
 ---
-
 **总结:**
 设计了一个健壮、符合RESTful风格的用户注册与会话启动流程。通过将`participant_id`的状态完全交由前端`localStorage`管理，我们实现了持久化会话，同时保持了后端的无状态性，使其更易于开发和扩展。自动将会话检查和ID注入封装到模块中，提高了代码的复用性和健壮性。这个机制是连接用户所有后续行为数据的关键纽带。
