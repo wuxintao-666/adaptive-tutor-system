@@ -66,7 +66,7 @@ class Settings(BaseSettings):
     @property
     def _documents_dir(self) -> str:
         """获取文档目录路径"""
-        return os.environ.get("DOCUMENTS_DIR", os.path.join(self._data_dir, 'test_tasks'))
+        return os.environ.get("DOCUMENTS_DIR", os.path.join(self._data_dir, 'documents'))
     
     @property
     def _vector_store_dir(self) -> str:
