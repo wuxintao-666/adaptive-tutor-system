@@ -10,13 +10,15 @@ class Settings(BaseSettings):
     # Server
     BACKEND_PORT: int = 8000
 
-    # OpenAI
+    # OpenAI (for chat completions)
     OPENAI_API_KEY: str
     OPENAI_MODEL: str = "gpt-4-turbo"
     OPENAI_API_BASE: str = "https://api.openai.com/v1"
 
-    # Embedding
-    EMBEDDING_MODEL: str = "text-embedding-3-small"
+    # Embedding API (can be different from OpenAI)
+    EMBEDDING_API_KEY: str
+    EMBEDDING_API_BASE: str = "https://ms-fc-1d889e1e-d2ad.api-inference.modelscope.cn/v1"
+    EMBEDDING_MODEL: str = "Qwen/Qwen3-Embedding-4B-GGUF"
 
     # Model configuration tells Pydantic where to find the .env file.
     # It will search from the current working directory upwards.
