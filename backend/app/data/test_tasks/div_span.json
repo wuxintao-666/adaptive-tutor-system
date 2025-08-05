@@ -1,0 +1,45 @@
+{
+    "topic_id": "div_span",
+    "description_md": "请实现一个简单的页面，包含一个div容器和一个span元素。div容器应该有红色边框，span元素应该有黄色背景。",
+    "start_code": {
+        "html": "<body>\\n  <!-- 在这里添加你的div和span元素 -->\\n</body>",
+        "css": "/* 在这里添加你的样式 */",
+        "js": "// 在这里添加你的JavaScript代码"
+    },
+    "checkpoints": [
+        {
+            "name": "div元素检查",
+            "type": "assert_text_content",
+            "selector": "div",
+            "assertion_type": "exists",
+            "value": "",
+            "feedback": "页面中应该包含一个div元素。"
+        },
+        {
+            "name": "span元素检查",
+            "type": "assert_text_content",
+            "selector": "span",
+            "assertion_type": "exists",
+            "value": "",
+            "feedback": "页面中应该包含一个span元素。"
+        },
+        {
+            "name": "div边框检查",
+            "type": "assert_style",
+            "selector": "div",
+            "css_property": "border",
+            "assertion_type": "contains",
+            "value": "red",
+            "feedback": "div元素应该有红色边框。"
+        },
+        {
+            "name": "span背景检查",
+            "type": "assert_style",
+            "selector": "span",
+            "css_property": "background-color",
+            "assertion_type": "contains",
+            "value": "yellow",
+            "feedback": "span元素应该有黄色背景。"
+        }
+    ]
+}
