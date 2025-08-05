@@ -10,13 +10,22 @@ class Settings(BaseSettings):
     # Server
     BACKEND_PORT: int = 8000
 
-    # OpenAI / ModelScope
+    # LLM配置 - 支持OpenAI和魔搭
     # 这些值将从 .env 文件中加载
-    OPENAI_API_KEY: str
-    OPENAI_MODEL: str
-    OPENAI_API_BASE: str
-    EMBEDDING_MODEL: str
-    MODELSCOPE_API_KEY: str = "" # 可选
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-3.5-turbo"
+    OPENAI_API_BASE: str = "https://api.openai.com/v1"
+    
+    # 魔搭配置
+    MODELSCOPE_API_KEY: str = ""
+    MODELSCOPE_API_BASE: str = "https://dashscope.aliyuncs.com/api/v1"
+    MODELSCOPE_MODEL: str = "qwen-turbo"
+    
+    # 嵌入模型配置
+    EMBEDDING_MODEL: str = "text-embedding-ada-002"
+    
+    # LLM服务选择 (openai 或 modelscope)
+    LLM_PROVIDER: str = "modelscope"
 
     # Model configuration tells Pydantic where to find the .env file.
     model_config = SettingsConfigDict(

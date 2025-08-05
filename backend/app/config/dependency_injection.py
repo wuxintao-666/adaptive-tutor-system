@@ -2,6 +2,11 @@
 
 from app.services.sandbox_service_improved import SandboxService, DefaultPlaywrightManager
 from app.services.user_state_service import UserStateService
+from app.services.sentiment_analysis_service import sentiment_analysis_service
+from app.services.llm_gateway import llm_gateway
+from app.services.prompt_generator import prompt_generator
+from app.services.dynamic_controller import dynamic_controller
+# from app.services.rag_service import rag_service  # 暂时注释，等待RAG模块修复
 
 
 class ProductionConfig:
@@ -71,3 +76,60 @@ def get_user_state_service() -> UserStateService:
     一个简单的依赖项，用于在整个应用中共享同一个UserStateService实例。
     """
     return user_state_service_instance
+
+
+# --- AI服务依赖注入 ---
+
+def get_sentiment_analysis_service():
+    """
+    获取情感分析服务实例
+    """
+    return sentiment_analysis_service
+
+
+def get_llm_gateway():
+    """
+    获取LLM网关服务实例
+    """
+    return llm_gateway
+
+
+def get_prompt_generator():
+    """
+    获取提示词生成器实例
+    """
+    return prompt_generator
+
+
+def get_dynamic_controller():
+    """
+    获取动态控制器实例
+    """
+    return dynamic_controller
+
+
+def get_rag_service():
+    """
+    获取RAG服务实例（暂时禁用）
+    """
+    return None  # 暂时返回None，等待RAG模块修复
+
+
+# --- 服务验证函数 ---
+
+def validate_all_services() -> dict:
+    """
+    验证所有服务的状态
+    
+    Returns:
+        dict: 服务状态字典
+    """
+    return {
+        'user_state_service': True,  # 本地服务，总是可用
+        'sentiment_analysis_service': True,  # 本地服务，总是可用
+        'llm_gateway': llm_gateway.validate_connection(),
+        'prompt_generator': True,  # 本地服务，总是可用
+        'dynamic_controller': True,  # 本地服务，总是可用
+        'rag_service': False,  # 暂时禁用，等待RAG模块修复
+        'sandbox_service': get_sandbox_service() is not None
+    }
