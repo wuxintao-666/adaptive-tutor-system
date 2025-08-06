@@ -1,0 +1,43 @@
+{
+  "topic_id": "chapter5",
+  "description_md": "综合练习：创建一个猫咪多媒体展示页面。\n\n- 添加图片展示猫咪头像；\n- 添加音频播放猫咪叫声；\n- 添加视频播放猫咪日常；\n\n确保所有媒体标签使用合理的属性，支持播放并可回退提示。",
+  "start_code": {
+    "html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>猫咪多媒体页</title>\n</head>\n<body>\n  <h1>欢迎来到猫咪多媒体展示</h1>\n\n  <section>\n    <h2>猫咪头像</h2>\n    <img src=\"cat.jpg\" alt=\"一只可爱的猫咪\" width=\"300\">\n  </section>\n\n  <section>\n    <h2>猫咪叫声</h2>\n    <audio controls>\n      <source src=\"meow.mp3\" type=\"audio/mpeg\">\n      浏览器不支持音频播放。\n    </audio>\n  </section>\n\n  <section>\n    <h2>猫咪日常视频</h2>\n    <video controls width=\"400\">\n      <source src=\"cat-video.mp4\" type=\"video/mp4\">\n      浏览器不支持视频播放。\n    </video>\n  </section>\n</body>\n</html>",
+    "css": "",
+    "js": ""
+  },
+  "checkpoints": [
+    {
+      "name": "图片检查",
+      "type": "assert_attribute",
+      "selector": "img",
+      "attribute": "alt",
+      "assertion_type": "exists",
+      "feedback": "请为图片设置有效的 alt 属性，提升可访问性。"
+    },
+    {
+      "name": "音频标签播放检查",
+      "type": "assert_attribute",
+      "selector": "audio",
+      "attribute": "controls",
+      "assertion_type": "exists",
+      "feedback": "请为音频标签添加 controls 属性以允许播放控制。"
+    },
+    {
+      "name": "视频标签播放检查",
+      "type": "assert_attribute",
+      "selector": "video",
+      "attribute": "controls",
+      "assertion_type": "exists",
+      "feedback": "请为视频标签添加 controls 属性以允许播放控制。"
+    },
+    {
+      "name": "资源路径与回退文本",
+      "type": "assert_text_content",
+      "selector": "audio",
+      "assertion_type": "contains",
+      "value": "浏览器不支持音频播放",
+      "feedback": "请为 audio 标签添加浏览器不支持提示文字。"
+    }
+  ]
+}
