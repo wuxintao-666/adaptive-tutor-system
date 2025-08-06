@@ -232,6 +232,53 @@ class TestRAGService:
             # 简单的性能验证（10次检索应该在合理时间内完成）
             assert execution_time < 5.0  # 假设10次检索应该在5秒内完成
 
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
+    def test_cross_language_retrieval(self, mock_annoy_index, mock_openai, mock_embedding_response):
+        """测试跨语言查询功能"""
+        # 准备模拟对象
+        mock_client = Mock()
+        mock_openai.return_value = mock_client
+        mock_client.embeddings.create.return_value = mock_embedding_response
+        
+        mock_index = Mock()
+        mock_annoy_index.return_value = mock_index
+        mock_index.get_nns_by_vector.return_value = [0, 1]
+        
+        # 模拟知识库内容
+        sample_chunks = ["Python is a high-level programming language.", "Machine learning is a branch of AI."]
+        
+        with patch('builtins.open', mock_open=True) as mock_file:
+            mock_file.return_value.__enter__.return_value.read.return_value = json.dumps(sample_chunks)
+            
+            # 导入RAG服务和翻译服务（在模拟环境内）
+            from app.services.rag_service import RAGService
+            from app.services.translation_service import TranslationService
+            
+            # 创建翻译服务实例和模拟翻译方法
+            translation_service = TranslationService()
+            translation_service.translate = Mock(return_value="What is Python?")
+            
+            # 创建RAG服务实例，注入翻译服务
+            rag_service = RAGService(translation_service=translation_service)
+            
+            # 执行中文查询
+            query = "Python是什么？"
+            results = rag_service.retrieve(query, k=2)
+            
+            # 验证结果
+            assert len(results) == 2
+            assert results == sample_chunks
+            
+            # 验证翻译服务被调用
+            translation_service.translate.assert_called_once_with("Python是什么？", "zh", "en")
+            
+            # 验证嵌入API使用翻译后的英文查询
+            mock_client.embeddings.create.assert_called_once_with(
+                input="What is Python?", 
+                model='Qwen/Qwen3-Embedding-4B-GGUF'
+            )
+
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

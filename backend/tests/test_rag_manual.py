@@ -170,5 +170,46 @@ def main():
         print("❌ 测试失败，请检查错误信息。")
     print("=" * 60)
 
+def test_cross_language_retrieval():
+    """测试跨语言查询功能"""
+    print("\n" + "=" * 60)
+    print("开始测试跨语言RAG查询功能...")
+    
+    try:
+        from app.services.rag_service import RAGService
+        from app.services.translation_service import TranslationService
+        
+        # 创建翻译服务
+        translation_service = TranslationService()
+        
+        # 创建RAG服务，注入翻译服务
+        rag_service = RAGService(translation_service=translation_service)
+        
+        # 测试中文查询
+        print("\n1. 测试中文查询:")
+        chinese_query = "Python是什么？"
+        print(f"查询: {chinese_query}")
+        
+        results = rag_service.retrieve(chinese_query, k=3)
+        print("检索结果:")
+        for i, result in enumerate(results, 1):
+            print(f"  {i}. {result[:100]}...")  # 只显示前100个字符
+            
+        print("\n2. 测试英文查询:")
+        english_query = "What is Python?"
+        print(f"查询: {english_query}")
+        results = rag_service.retrieve(english_query, k=3)
+        print("检索结果:")
+        for i, result in enumerate(results, 1):
+            print(f"  {i}. {result[:100]}...")
+            
+        print("\n🎉 跨语言查询功能测试完成")
+        
+    except Exception as e:
+        print(f"❌ 跨语言查询测试失败: {e}")
+        import traceback
+        traceback.print_exc()
+
 if __name__ == "__main__":
     main()
+    test_cross_language_retrieval()

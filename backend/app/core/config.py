@@ -10,28 +10,24 @@ class Settings(BaseSettings):
     # Server
     BACKEND_PORT: int = 8000
 
-    # OpenAI配置 (用于聊天完成)
-    OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = "gpt-4-turbo"
-    OPENAI_API_BASE: str = "https://api.openai.com/v1"
+    # OpenAI (for chat completions)
+    TUTOR_OPENAI_API_KEY: str
+    TUTOR_OPENAI_MODEL: str = "gpt-4-turbo"
+    TUTOR_OPENAI_API_BASE: str = "https://api.openai.com/v1"
+
+    # Embedding API (can be different from OpenAI)
+    TUTOR_EMBEDDING_API_KEY: str
+    TUTOR_EMBEDDING_API_BASE: str = "https://ms-fc-1d889e1e-d2ad.api-inference.modelscope.cn/v1"
+    TUTOR_EMBEDDING_MODEL: str = "Qwen/Qwen3-Embedding-4B-GGUF"
     
-    # 魔搭配置
-    MODELSCOPE_API_KEY: str = ""
-    MODELSCOPE_API_BASE: str = "https://api-inference.modelscope.cn/v1"
-    MODELSCOPE_MODEL: str = "qwen-turbo"
-    
-    # 嵌入模型配置 (可以与OpenAI不同)
-    EMBEDDING_API_KEY: str = ""
-    EMBEDDING_API_BASE: str = "https://ms-fc-1d889e1e-d2ad.api-inference.modelscope.cn/v1"
-    EMBEDDING_MODEL: str = "Qwen/Qwen3-Embedding-4B-GGUF"
-    
-    # LLM服务选择 (openai 或 modelscope)
-    LLM_PROVIDER: str = "modelscope"
+    # Translation API (can be different from OpenAI)
+    TUTOR_TRANSLATION_API_KEY: str
+    TUTOR_TRANSLATION_API_BASE: str = "https://api.openai.com/v1"
+    TUTOR_TRANSLATION_MODEL: str = "gpt-4-turbo"
 
     # Model configuration tells Pydantic where to find the .env file.
-    # It will search from the current working directory upwards.
     model_config = SettingsConfigDict(
-        env_file=[".env", "../.env", "../../.env"],  # 尝试多个路径
+        env_file=".env", 
         env_file_encoding='utf-8', 
         extra='ignore',
         case_sensitive=True
@@ -44,6 +40,13 @@ class Settings(BaseSettings):
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
     DATABASE_URL: str = "sqlite:///./database.db"
+    
+    # File paths
+    DATA_DIR: str = "./backend/data"
+    DOCUMENTS_DIR: str = "./backend/data/documents"
+    VECTOR_STORE_DIR: str = "./backend/data/vector_store"
+    KB_ANN_FILENAME: str = "kb.ann"
+    KB_CHUNKS_FILENAME: str = "kb_chunks.json"
 
 # Create a single, globally accessible instance of the settings.
 # This will raise a validation error on startup if required settings are missing.
