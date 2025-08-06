@@ -1,20 +1,35 @@
 # backend/app/services/dynamic_controller.py
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from ..schemas.chat import ChatRequest, ChatResponse, UserStateSummary, SentimentAnalysisResult
 from ..schemas.content import CodeContent
 from .user_state_service import UserStateService
-from .sentiment_analysis_service import sentiment_analysis_service
-# from .rag_service import rag_service  # 暂时注释，等待RAG模块修复
-from .prompt_generator import prompt_generator
-from .llm_gateway import llm_gateway
 
 
 class DynamicController:
     """动态控制器 - 编排各个服务的核心逻辑"""
     
-    def __init__(self):
-        self.user_state_service = UserStateService()
+    def __init__(self, 
+                 user_state_service: UserStateService,
+                 sentiment_service,
+                 rag_service: Optional[Any] = None,
+                 prompt_generator = None,
+                 llm_gateway = None):
+        """
+        初始化动态控制器
+        
+        Args:
+            user_state_service: 用户状态服务
+            sentiment_service: 情感分析服务
+            rag_service: RAG服务（可选）
+            prompt_generator: 提示词生成器
+            llm_gateway: LLM网关服务
+        """
+        self.user_state_service = user_state_service
+        self.sentiment_service = sentiment_service
+        self.rag_service = rag_service
+        self.prompt_generator = prompt_generator
+        self.llm_gateway = llm_gateway
     
     async def generate_adaptive_response(
         self, 
@@ -37,7 +52,7 @@ class DynamicController:
             
             # 步骤2: 情感分析
             try:
-                sentiment_result = sentiment_analysis_service.analyze_sentiment(
+                sentiment_result = self.sentiment_service.analyze_sentiment(
                     request.user_message
                 )
             except Exception as e:
@@ -54,12 +69,18 @@ class DynamicController:
             # 步骤4: 构建用户状态摘要
             user_state_summary = self._build_user_state_summary(profile, sentiment_result)
             
-            # 步骤5: RAG检索（暂时注释，等待RAG模块修复）
-            # retrieved_context = rag_service.retrieve(request.user_message)
-            retrieved_context = []  # 暂时返回空列表
+            # 步骤5: RAG检索
+            if self.rag_service:
+                try:
+                    retrieved_context = self.rag_service.retrieve(request.user_message)
+                except Exception as e:
+                    print(f"⚠️ RAG检索失败，使用空上下文: {e}")
+                    retrieved_context = []
+            else:
+                retrieved_context = []  # RAG服务未配置
             
             # 步骤6: 生成提示词
-            system_prompt, messages = prompt_generator.create_prompts(
+            system_prompt, messages = self.prompt_generator.create_prompts(
                 user_state=user_state_summary,
                 retrieved_context=retrieved_context,
                 conversation_history=request.conversation_history,
@@ -70,7 +91,7 @@ class DynamicController:
             )
             
             # 步骤7: 调用LLM
-            ai_response = await llm_gateway.get_completion(
+            ai_response = await self.llm_gateway.get_completion(
                 system_prompt=system_prompt,
                 messages=messages
             )
@@ -187,13 +208,13 @@ class DynamicController:
     def validate_services(self) -> Dict[str, bool]:
         """验证所有服务的状态"""
         return {
-            'llm_gateway': llm_gateway.validate_connection(),
-            'user_state_service': True,  # 本地服务，总是可用
-            'sentiment_analysis_service': True,  # 本地服务，总是可用
-            'rag_service': False,  # 暂时禁用
-            'prompt_generator': True  # 本地服务，总是可用
+            'llm_gateway': self.llm_gateway.validate_connection() if self.llm_gateway else False,
+            'user_state_service': self.user_state_service is not None,
+            'sentiment_analysis_service': self.sentiment_service is not None,
+            'rag_service': self.rag_service is not None,
+            'prompt_generator': self.prompt_generator is not None
         }
 
 
-# 创建单例实例
-dynamic_controller = DynamicController()
+# 注意：DynamicController实例现在通过依赖注入容器创建
+# 请使用 get_dynamic_controller() 函数获取实例

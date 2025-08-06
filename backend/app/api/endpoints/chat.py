@@ -6,7 +6,7 @@ from typing import Dict, Any
 from ...database import get_db
 from ...schemas.chat import ChatRequest, ChatResponse
 from ...schemas.response import StandardResponse
-from ...services.dynamic_controller import dynamic_controller
+from ...config.dependency_injection import get_dynamic_controller
 
 router = APIRouter()
 
@@ -34,8 +34,9 @@ async def chat_with_ai(
         if not request.user_message:
             raise HTTPException(status_code=400, detail="user_message is required")
         
-        # 调用动态控制器生成回复
-        response = await dynamic_controller.generate_adaptive_response(
+        # 获取动态控制器实例并调用生成回复
+        controller = get_dynamic_controller()
+        response = await controller.generate_adaptive_response(
             request=request,
             db=db
         )
@@ -72,7 +73,8 @@ async def get_user_state(
         StandardResponse[Dict[str, Any]]: 用户状态
     """
     try:
-        user_state = dynamic_controller.get_user_state(
+        controller = get_dynamic_controller()
+        user_state = controller.get_user_state(
             participant_id=participant_id,
             db=db
         )
@@ -100,7 +102,8 @@ async def get_services_status() -> StandardResponse[Dict[str, bool]]:
         StandardResponse[Dict[str, bool]]: 服务状态
     """
     try:
-        services_status = dynamic_controller.validate_services()
+        controller = get_dynamic_controller()
+        services_status = controller.validate_services()
         
         return StandardResponse(
             code=200,
