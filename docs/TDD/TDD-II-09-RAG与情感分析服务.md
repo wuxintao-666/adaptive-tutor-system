@@ -50,25 +50,25 @@ from annoy import AnnoyIndex
 from app.core.config import settings
 
 # 1. 加载并切分文档...
-text_chunks = [...] 
+text_chunks = [...]
 
 # 2. 向量化
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
-response = client.embeddings.create(input=text_chunks, model=settings.EMBEDDING_MODEL)
+response = client.embeddings.create(input=text_chunks, model=settings.TUTOR_EMBEDDING_MODEL)
 embeddings = [item.embedding for item in response.data]
 dimension = len(embeddings[0])
 
 # 3. 构建Annoy索引
-annoy_index = AnnoyIndex(dimension, 'angular') # 'angular' is recommended for cosine-based embeddings
+annoy_index = AnnoyIndex(dimension, 'angular')  # 'angular' is recommended for cosine-based embeddings
 for i, vector in enumerate(embeddings):
-	annoy_index.add_item(i, vector)
+    annoy_index.add_item(i, vector)
 
-annoy_index.build(10) # 10棵树，树越多精度越高，但索引越大
+annoy_index.build(10)  # 10棵树，树越多精度越高，但索引越大
 
 # 4. 保存索引和文本块
 annoy_index.save("backend/data/kb.ann")
 with open("backend/data/kb_chunks.json", "w", encoding="utf-8") as f:
-	json.dump(text_chunks, f)
+    json.dump(text_chunks, f)
 print("Annoy index and chunks saved.")
 ```
 
@@ -99,28 +99,30 @@ from openai import OpenAI
 from annoy import AnnoyIndex
 from app.core.config import settings
 
-class RAGService:
-	def __init__(self):
-		# 在应用启动时加载索引和数据
-		self.embedding_dimension = 1536 # for text-embedding-3-small
-		self.index = AnnoyIndex(self.embedding_dimension, 'angular')
-		# 使用内存映射加载索引，非常高效
-		self.index.load("backend/data/kb.ann", prefault=False) 
-	  
-		with open("backend/data/kb_chunks.json", "r", encoding="utf-8") as f:
-			self.chunks = json.load(f)
-	  
-		self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-		self.embedding_model = settings.EMBEDDING_MODEL
 
-	def retrieve(self, query_text: str, k: int = 3) -> list[str]:
-		response = self.client.embeddings.create(input=[query_text], model=self.embedding_model)
-		query_vector = response.data[0].embedding
-	  
-		# 在Annoy中搜索
-		indices = self.index.get_nns_by_vector(query_vector, k)
-	  
-		return [self.chunks[i] for i in indices]
+class RAGService:
+    def __init__(self):
+        # 在应用启动时加载索引和数据
+        self.embedding_dimension = 1536  # for text-embedding-3-small
+        self.index = AnnoyIndex(self.embedding_dimension, 'angular')
+        # 使用内存映射加载索引，非常高效
+        self.index.load("backend/data/kb.ann", prefault=False)
+
+        with open("backend/data/kb_chunks.json", "r", encoding="utf-8") as f:
+            self.chunks = json.load(f)
+
+        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.embedding_model = settings.TUTOR_EMBEDDING_MODEL
+
+    def retrieve(self, query_text: str, k: int = 3) -> list[str]:
+        response = self.client.embeddings.create(input=[query_text], model=self.embedding_model)
+        query_vector = response.data[0].embedding
+
+        # 在Annoy中搜索
+        indices = self.index.get_nns_by_vector(query_vector, k)
+
+        return [self.chunks[i] for i in indices]
+
 
 rag_service = RAGService()
 ```
