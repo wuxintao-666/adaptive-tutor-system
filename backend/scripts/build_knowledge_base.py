@@ -2,53 +2,49 @@
 import json
 import os
 import sys
-import requests
+from openai import OpenAI
 from annoy import AnnoyIndex
 
 # Add the backend directory to the Python path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
+# 确保能找到.env文件
+import os
+from pathlib import Path
+
+# 找到项目根目录并设置环境变量
+project_root = Path(__file__).parent.parent.parent
+os.chdir(project_root)
+
 from app.core.config import settings
 
-# Define absolute paths based on the script's location
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-BACKEND_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
-DATA_DIR = os.path.join(BACKEND_DIR, 'data')
-KB_ANN_PATH = os.path.join(DATA_DIR, 'kb.ann')
-KB_CHUNKS_JSON_PATH = os.path.join(DATA_DIR, 'kb_chunks.json')
+# 从配置中获取路径
+DATA_DIR = settings.DATA_DIR
+DOCUMENTS_DIR = settings.DOCUMENTS_DIR
+VECTOR_STORE_DIR = settings.VECTOR_STORE_DIR
+KB_ANN_PATH = os.path.join(VECTOR_STORE_DIR, settings.KB_ANN_FILENAME)
+KB_CHUNKS_JSON_PATH = os.path.join(VECTOR_STORE_DIR, settings.KB_CHUNKS_FILENAME)
 
 def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
-    """使用requests批量获取embeddings"""
+    """使用OpenAI客户端获取embeddings，ModelScope API期望字符串而非列表"""
+    client = OpenAI(
+        base_url=settings.TUTOR_EMBEDDING_API_BASE,
+        api_key=settings.TUTOR_EMBEDDING_API_KEY,
+    )
+    
     embeddings = []
     for text in texts:
-        url = f"{settings.EMBEDDING_API_BASE}/embeddings"
-        headers = {
-            "Authorization": f"Bearer {settings.EMBEDDING_API_KEY}",
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "model": settings.EMBEDDING_MODEL,
-            "input": text,  # 每次只发送一个文本
-            "encoding_format": "float"
-        }
-        
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=60)
-            response.raise_for_status()
+            response = client.embeddings.create(
+                model=settings.TUTOR_EMBEDDING_MODEL,
+                input=text,  # ModelScope期望单个字符串
+                encoding_format="float"
+            )
+            embeddings.append(response.data[0].embedding)
             
-            response_data = response.json()
-            
-            if not response_data or "data" not in response_data or not response_data["data"]:
-                raise ValueError("No embedding data in response")
-                
-            embeddings.append(response_data["data"][0]["embedding"])
-            
-        except requests.exceptions.RequestException as e:
-            print(f"Error calling embedding API for text: '{text[:30]}...': {e}")
-            embeddings.append([]) # 添加空列表作为占位符
-        except (KeyError, IndexError) as e:
-            print(f"Error parsing embedding response for text: '{text[:30]}...': {e}")
-            embeddings.append([])
+        except Exception as e:
+            print(f"API调用错误: '{text[:50]}...': {e}")
+            embeddings.append([0.0] * 2560)
     
     return embeddings
 
@@ -94,7 +90,7 @@ def build_knowledge_base(text_chunks):
 
     # 4. 保存索引和文本块
     # 确保目录存在
-    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
     
     annoy_index.save(KB_ANN_PATH)
     with open(KB_CHUNKS_JSON_PATH, "w", encoding="utf-8") as f:
@@ -105,10 +101,13 @@ def build_knowledge_base(text_chunks):
 if __name__ == "__main__":
     # 1. 加载并切分文档...
     # 从测试数据文件加载实际的知识库内容
-    source_chunks_path = os.path.join(BACKEND_DIR, 'tests', 'backend', 'data', 'kb_chunks.json')
+    source_chunks_path = os.path.join(DOCUMENTS_DIR, 'python_basics.json')
     print(f"Loading source chunks from {source_chunks_path}")
     with open(source_chunks_path, "r", encoding="utf-8") as f:
-        text_chunks = json.load(f)
+        doc_data = json.load(f)
+    
+    # 从文档中提取文本内容作为文本块
+    text_chunks = [doc_data["text"]]
     
     # 构建知识库
     build_knowledge_base(text_chunks)

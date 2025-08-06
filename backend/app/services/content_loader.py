@@ -4,8 +4,9 @@ from pathlib import Path
 from fastapi import HTTPException
 from functools import lru_cache
 
-# 获取data目录的绝对路径
-DATA_DIR = Path(__file__).parent.parent / "data"
+from app.core.config import settings
+# 从配置中获取data目录路径
+DATA_DIR = Path(settings.DATA_DIR)
 
 # 使用LRU缓存来避免重复读取文件，提升性能
 @lru_cache(maxsize=128)
