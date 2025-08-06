@@ -8,8 +8,9 @@ from datetime import datetime, timedelta
 from ..models.bkt import BKTModel
 
 class StudentProfile:
-    def __init__(self, participant_id):
+    def __init__(self, participant_id, is_new_user=True):
         self.participant_id = participant_id  # TODO: cxz 需要从会话或参数中获取participant_id
+        self.is_new_user = is_new_user
         # 认知状态
         self.bkt_model = {}  # { 'topic_id': BKT_instance }  # TODO: cxz 需要实现BKT模型，用于追踪知识点掌握情况
         # 情感状态
@@ -34,6 +35,7 @@ class StudentProfile:
         
         return {
             'participant_id': self.participant_id,
+            'is_new_user': self.is_new_user,
             'bkt_model': serialized_bkt_models,
             'emotion_state': self.emotion_state,
             'behavior_counters': self.behavior_counters
@@ -42,7 +44,8 @@ class StudentProfile:
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'StudentProfile':
         """从字典反序列化创建StudentProfile"""
-        profile = cls(data['participant_id'])
+        # 注意：从数据库恢复的用户不是新用户
+        profile = cls(data['participant_id'], is_new_user=data.get('is_new_user', False))
         
         # 反序列化BKT模型
         bkt_models = data.get('bkt_model', {})
@@ -89,9 +92,11 @@ class UserStateService:
             print(f"INFO: Cache miss for {participant_id}. Attempting recovery from history.")
             self._recover_from_history_with_snapshot(participant_id, db)
 
-        # 如果恢复后仍然没有（说明是全新用户），则创建一个空的
+        # _recover_from_history_with_snapshot 应该已经处理了所有情况
+        # 如果仍然没有（理论上不应该发生），则创建一个新用户
         if participant_id not in self._state_cache:
-            self._state_cache[participant_id] = StudentProfile(participant_id)
+            print(f"WARNING: No profile found or created for {participant_id}. Creating new profile.")
+            self._state_cache[participant_id] = StudentProfile(participant_id, is_new_user=True)
             
         return self._state_cache[participant_id]
 
@@ -116,13 +121,25 @@ class UserStateService:
             
             print(f"INFO: Found {len(events_after_snapshot)} events to replay after snapshot for {participant_id}.")
         else:
-            # 2b. 如果没有快照，从头开始
-            print(f"INFO: No snapshot found for {participant_id}. Replaying from beginning...")
-            temp_profile = StudentProfile(participant_id)
-            self._state_cache[participant_id] = temp_profile
+            # 2b. 如果没有快照，检查是否有历史事件
+            print(f"INFO: No snapshot found for {participant_id}. Checking for history...")
             
-            # 3b. 获取所有历史事件
-            events_after_snapshot = crud_event.get_by_participant(db, participant_id=participant_id)
+            # 获取所有历史事件来判断是否是新用户
+            all_history_events = crud_event.get_by_participant(db, participant_id=participant_id)
+            
+            if all_history_events:
+                # 如果有历史事件，说明不是新用户
+                print(f"INFO: Found {len(all_history_events)} historical events for {participant_id}. Not a new user.")
+                temp_profile = StudentProfile(participant_id, is_new_user=False)
+                self._state_cache[participant_id] = temp_profile
+            else:
+                # 如果没有历史事件，说明是新用户
+                print(f"INFO: No history found for {participant_id}. This is a new user.")
+                temp_profile = StudentProfile(participant_id, is_new_user=True)
+                self._state_cache[participant_id] = temp_profile
+            
+            # 3b. 获取所有历史事件用于回放
+            events_after_snapshot = all_history_events
             
         if not events_after_snapshot:
             print(f"INFO: No events to replay for {participant_id}.")

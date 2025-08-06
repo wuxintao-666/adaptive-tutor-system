@@ -56,7 +56,7 @@
   ```
 * **测试任务文件结构 (`test_tasks/{topic_id}.json`):**
 这是个示例
-  ```json
+```json
 {
   "topic_id": "js_simple_counter",
   "description_md": "请实现一个简单的计数器。点击'增加'按钮时，ID为`counter-display`的元素的文本内容应该增加1。",
@@ -112,7 +112,7 @@
   ]
 }
 
-  ```
+```
 1. **引入 `name` 字段:** 为每个检查点增加一个可读的名称，这在返回给用户的失败反馈中非常有用，可以告诉用户是哪一步检查失败了，例如：“_测试失败：在'第一次点击后检查'步骤中，计数器没有正确地显示 'Count: 1'。_”
 2. **完全采用新断言类型:**
     - `assert_text_content` 使用 `contains`，允许用户写 `Count: 0` 或 `Current Count: 0` 等，只要包含关键部分即可（当然也可以用`equals`或`matches_regex`来强制精确匹配）。

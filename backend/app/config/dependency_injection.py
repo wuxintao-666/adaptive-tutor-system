@@ -1,6 +1,7 @@
 # 依赖注入配置示例
 
-from backend.app.services.sandbox_service_improved import SandboxService, DefaultPlaywrightManager
+from app.services.sandbox_service_improved import SandboxService, DefaultPlaywrightManager
+from app.services.user_state_service import UserStateService
 
 
 class ProductionConfig:
@@ -57,3 +58,16 @@ if __name__ == "__main__":
     # 开发环境使用 (设置环境变量)
     # os.environ['APP_ENV'] = 'development'
     # sandbox_service = get_sandbox_service()
+
+# --- UserStateService 依赖注入 ---
+
+
+# 在应用启动时创建 UserStateService 的单例
+# 这确保了所有用户的状态都保存在同一个内存缓存中
+user_state_service_instance = UserStateService()
+
+def get_user_state_service() -> UserStateService:
+    """
+    一个简单的依赖项，用于在整个应用中共享同一个UserStateService实例。
+    """
+    return user_state_service_instance

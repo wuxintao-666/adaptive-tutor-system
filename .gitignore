@@ -55,6 +55,7 @@ htmlcov/
 *.sublime-project
 *.sublime-workspace
 
+.lingma/
 # 操作系统生成的文件
 .DS_Store
 Thumbs.db
@@ -62,3 +63,15 @@ Thumbs.db
 # 敏感信息 (secrets)
 *.env
 secrets.ini
+
+# 模型文件
+models/
+download_model.log
+
+download_model.log
+backend/models/sentiment_bert/config.json
+backend/models/sentiment_bert/model.safetensors
+backend/models/sentiment_bert/special_tokens_map.json
+backend/models/sentiment_bert/tokenizer_config.json
+backend/models/sentiment_bert/tokenizer.json
+backend/models/sentiment_bert/vocab.txt

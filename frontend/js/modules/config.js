@@ -2,6 +2,7 @@
 
 // A globally accessible object to hold configuration.
 export const AppConfig = {
+  api_base_url: "/api/v1"
   //  model_name_for_display:null
 };
 
