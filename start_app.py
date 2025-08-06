@@ -68,7 +68,7 @@ class AppLauncher:
                 "--host", "0.0.0.0", 
                 "--port", "8000",
                 "--reload"
-            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            ])
             
             # 等待服务启动
             print("⏳ 等待后端服务启动...")

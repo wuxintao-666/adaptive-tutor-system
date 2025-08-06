@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def check_internet_connection() -> bool:
     """检查网络连接是否正常"""
     try:
-        requests.get("https://huggingface.co/", timeout=5)
+        requests.get("https://huggingface.co/", timeout=10)
         return True
     except requests.RequestException:
         return False

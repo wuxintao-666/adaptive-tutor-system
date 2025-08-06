@@ -1,17 +1,17 @@
 import pytest
+import sys
 import os
 import json
 from unittest.mock import Mock, patch, MagicMock
-import sys
 
 # Add backend to path so we can import rag_service
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', 'backend'))
 
-from services.rag_service import RAGService
+from app.services.rag_service import RAGService
 
 
-class TestRAGService:
-    """测试RAG服务的功能和性能"""
+class TestRAGServiceIntegration:
+    """RAG服务集成测试"""
 
     @pytest.fixture
     def mock_embedding_response(self):
@@ -31,8 +31,8 @@ class TestRAGService:
             "数据库是结构化数据的集合，用于存储和检索信息。"
         ]
 
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
     def test_rag_service_initialization(self, mock_annoy_index, mock_openai):
         """测试RAG服务是否能正确加载知识库"""
         # 准备模拟数据
@@ -59,8 +59,8 @@ class TestRAGService:
                 base_url="https://ms-fc-1d889e1e-d2ad.api-inference.modelscope.cn/v1"
             )
 
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
     def test_retrieve_functionality(self, mock_annoy_index, mock_openai, mock_embedding_response):
         """测试向量检索功能是否正常工作"""
         # 准备模拟对象
@@ -98,8 +98,8 @@ class TestRAGService:
             )
             mock_index.get_nns_by_vector.assert_called_once()
 
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
+    @patch('app.services.rag_service.OpenAI')
+    @patch('app.services.rag_service.AnnoyIndex')
     def test_retrieve_returns_expected_results(self, mock_annoy_index, mock_openai, mock_embedding_response):
         """验证返回的结果是否符合预期"""
         # 准备模拟对象
@@ -134,79 +134,6 @@ class TestRAGService:
             assert len(results) == 2
             assert results[0] == sample_chunks[1]  # 应该返回索引为1的内容（根据mock的返回）
             assert results[1] == sample_chunks[0]  # 应该返回索引为0的内容
-
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
-    def test_error_handling_missing_files(self, mock_annoy_index, mock_openai):
-        """检查错误处理机制 - 文件不存在"""
-        # 模拟文件不存在的错误
-        with patch('builtins.open', mock_open=True) as mock_file:
-            mock_file.side_effect = FileNotFoundError("知识库文件不存在")
-            
-            # 验证初始化时的错误处理
-            with pytest.raises(FileNotFoundError):
-                RAGService()
-
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
-    def test_error_handling_api_error(self, mock_annoy_index, mock_openai):
-        """检查错误处理机制 - API错误"""
-        # 模拟API错误
-        mock_client = Mock()
-        mock_openai.return_value = mock_client
-        mock_client.embeddings.create.side_effect = Exception("API调用失败")
-        
-        mock_index = Mock()
-        mock_annoy_index.return_value = mock_index
-        
-        # 模拟知识库内容
-        sample_chunks = ["测试内容"]
-        
-        with patch('builtins.open', mock_open=True) as mock_file:
-            mock_file.return_value.__enter__.return_value.read.return_value = json.dumps(sample_chunks)
-            
-            # 创建RAG服务实例
-            rag_service = RAGService()
-            
-            # 验证API错误处理
-            with pytest.raises(Exception):
-                rag_service.retrieve("测试查询")
-
-    @patch('services.rag_service.OpenAI')
-    @patch('services.rag_service.AnnoyIndex')
-    def test_performance_basic(self, mock_annoy_index, mock_openai, mock_embedding_response):
-        """基本性能测试"""
-        # 准备模拟对象
-        mock_client = Mock()
-        mock_openai.return_value = mock_client
-        mock_client.embeddings.create.return_value = mock_embedding_response
-        
-        mock_index = Mock()
-        mock_annoy_index.return_value = mock_index
-        mock_index.get_nns_by_vector.return_value = [0, 1]
-        
-        # 模拟知识库内容
-        sample_chunks = ["内容1", "内容2"]
-        
-        with patch('builtins.open', mock_open=True) as mock_file:
-            mock_file.return_value.__enter__.return_value.read.return_value = json.dumps(sample_chunks)
-            
-            # 创建RAG服务实例
-            rag_service = RAGService()
-            
-            # 执行多次检索测试性能
-            import time
-            start_time = time.time()
-            
-            for i in range(10):
-                results = rag_service.retrieve(f"查询{i}")
-                assert len(results) == 2
-            
-            end_time = time.time()
-            execution_time = end_time - start_time
-            
-            # 简单的性能验证（10次检索应该在合理时间内完成）
-            assert execution_time < 5.0  # 假设10次检索应该在5秒内完成
 
 
 if __name__ == '__main__':

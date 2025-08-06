@@ -2,127 +2,113 @@
 import json
 import os
 import sys
-import time
-from openai import OpenAI, APITimeoutError
+import requests
 from annoy import AnnoyIndex
 
-# 将项目根目录添加到Python路径，以便导入app模块
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Add the backend directory to the Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 from app.core.config import settings
 
-def print_debug_settings():
-    """打印用于调试的配置信息"""
-    print("\n--- Debug: Current Settings ---")
-    print(f"OPENAI_API_KEY (last 4 chars): ...{settings.OPENAI_API_KEY[-4:] if settings.OPENAI_API_KEY else 'Not Set'}")
-    print(f"OPENAI_API_BASE: {settings.OPENAI_API_BASE}")
-    print(f"EMBEDDING_MODEL: {settings.EMBEDDING_MODEL}")
-    print("---------------------------------\n")
+# Define absolute paths based on the script's location
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BACKEND_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, '..'))
+DATA_DIR = os.path.join(BACKEND_DIR, 'data')
+KB_ANN_PATH = os.path.join(DATA_DIR, 'kb.ann')
+KB_CHUNKS_JSON_PATH = os.path.join(DATA_DIR, 'kb_chunks.json')
 
-def load_and_split_documents():
-    """加载并切分文档"""
-    # ... (代码不变)
-    text_chunks = []
-    docs_dir = settings.DOCUMENTS_DIR
-    
-    if not os.path.isdir(docs_dir):
-        print(f"Error: Documents directory not found at '{docs_dir}'")
-        return []
-
-    for filename in os.listdir(docs_dir):
-        filepath = os.path.join(docs_dir, filename)
-        if os.path.isfile(filepath):
-            try:
-                if filename.endswith('.txt'):
-                    with open(filepath, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        paragraphs = content.split('\n\n')
-                        for para in paragraphs:
-                            if para.strip():
-                                text_chunks.append(para.strip())
-                elif filename.endswith('.json'):
-                    with open(filepath, 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                        if isinstance(data, dict) and 'text' in data:
-                            text_chunks.append(data['text'])
-                        elif isinstance(data, list):
-                            for item in data:
-                                if isinstance(item, dict) and 'text' in item:
-                                    text_chunks.append(item['text'])
-            except Exception as e:
-                print(f"Error processing file {filename}: {e}")
-    
-    return text_chunks
-
-def main():
-    # 打印调试信息
-    print_debug_settings()
-
-    # 1. 加载并切分文档
-    text_chunks = load_and_split_documents()
-    if not text_chunks:
-        print("No text chunks found. Please add documents to the documents directory.")
-        return
-    
-    print(f"Loaded {len(text_chunks)} text chunks from documents.")
-
-    # 2. 向量化
-    print("Connecting to embedding service...")
-    client = OpenAI(
-        api_key=settings.OPENAI_API_KEY,
-        base_url=settings.OPENAI_API_BASE,
-        timeout=60.0,
-    )
-    
+def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
+    """使用requests批量获取embeddings"""
     embeddings = []
-    max_retries = 3
-    retry_delay = 5
-
-    for i in range(max_retries):
+    for text in texts:
+        url = f"{settings.EMBEDDING_API_BASE}/embeddings"
+        headers = {
+            "Authorization": f"Bearer {settings.EMBEDDING_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": settings.EMBEDDING_MODEL,
+            "input": text,  # 每次只发送一个文本
+            "encoding_format": "float"
+        }
+        
         try:
-            print(f"Attempt {i+1}/{max_retries}: Requesting embeddings with model: {settings.EMBEDDING_MODEL}")
-            response = client.embeddings.create(
-                input=text_chunks, 
-                model=settings.EMBEDDING_MODEL,
-                encoding_format="float"
-            )
-            embeddings = [item.embedding for item in response.data]
-            break
-        except APITimeoutError:
-            print(f"Request timed out. Retrying in {retry_delay} seconds...")
-            time.sleep(retry_delay)
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            break
+            response = requests.post(url, headers=headers, json=payload, timeout=60)
+            response.raise_for_status()
+            
+            response_data = response.json()
+            
+            if not response_data or "data" not in response_data or not response_data["data"]:
+                raise ValueError("No embedding data in response")
+                
+            embeddings.append(response_data["data"][0]["embedding"])
+            
+        except requests.exceptions.RequestException as e:
+            print(f"Error calling embedding API for text: '{text[:30]}...': {e}")
+            embeddings.append([]) # 添加空列表作为占位符
+        except (KeyError, IndexError) as e:
+            print(f"Error parsing embedding response for text: '{text[:30]}...': {e}")
+            embeddings.append([])
     
-    if not embeddings:
-        print("Failed to generate embeddings after several retries.")
-        return
+    return embeddings
 
+def build_knowledge_base(text_chunks):
+    # 2. 向量化
+    batch_size = 10
+    embeddings = []
+    
+    for i in range(0, len(text_chunks), batch_size):
+        batch_texts = text_chunks[i:i+batch_size]
+        batch_embeddings = get_embeddings_batch(batch_texts)
+        
+        # 检查是否有错误
+        for j, emb in enumerate(batch_embeddings):
+            if not emb:
+                print(f"Warning: Failed to get embedding for chunk {i+j}, using zero vector.")
+                batch_embeddings[j] = [0.0] * 2560
+                
+        embeddings.extend(batch_embeddings)
+        print(f"Processed batch {i//batch_size + 1}/{(len(text_chunks)-1)//batch_size + 1}")
+    
+    if not embeddings or not any(embeddings):
+        raise ValueError("Failed to get any embeddings from API")
+        
+    # 验证所有embedding维度一致
+    expected_dim = 2560  # Qwen3-Embedding-4B-GGUF的维度
+    for i, emb in enumerate(embeddings):
+        if len(emb) != expected_dim:
+            print(f"Warning: Embedding {i} has dimension {len(emb)}, padding/truncating to {expected_dim}")
+            if len(emb) < expected_dim:
+                emb.extend([0.0] * (expected_dim - len(emb)))
+            else:
+                embeddings[i] = emb[:expected_dim]
+        
     dimension = len(embeddings[0])
-    print(f"Generated embeddings for {len(embeddings)} chunks. Dimension: {dimension}")
 
     # 3. 构建Annoy索引
-    annoy_index = AnnoyIndex(dimension, 'angular')
+    annoy_index = AnnoyIndex(dimension, 'angular') # 'angular' is recommended for cosine-based embeddings
     for i, vector in enumerate(embeddings):
         annoy_index.add_item(i, vector)
 
-    annoy_index.build(10)
-    print("Built Annoy index with 10 trees.")
+    annoy_index.build(10) # 10棵树，树越多精度越高，但索引越大
 
     # 4. 保存索引和文本块
-    vector_store_dir = settings.VECTOR_STORE_DIR
-    os.makedirs(vector_store_dir, exist_ok=True)
+    # 确保目录存在
+    os.makedirs(DATA_DIR, exist_ok=True)
     
-    index_file = os.path.join(vector_store_dir, settings.RAG_CONFIG["vector_store"]["index_file"])
-    chunks_file = os.path.join(vector_store_dir, settings.RAG_CONFIG["vector_store"]["chunks_file"])
-    
-    annoy_index.save(index_file)
-    with open(chunks_file, "w", encoding="utf-8") as f:
-        json.dump(text_chunks, f, ensure_ascii=False, indent=4)
-        
-    print(f"Annoy index saved to {index_file}")
-    print(f"Text chunks saved to {chunks_file}")
-    print("Knowledge base built successfully.")
+    annoy_index.save(KB_ANN_PATH)
+    with open(KB_CHUNKS_JSON_PATH, "w", encoding="utf-8") as f:
+        json.dump(text_chunks, f)
+    print(f"Annoy index saved to {KB_ANN_PATH}")
+    print(f"Chunks saved to {KB_CHUNKS_JSON_PATH}")
 
 if __name__ == "__main__":
-    main()
+    # 1. 加载并切分文档...
+    # 从测试数据文件加载实际的知识库内容
+    source_chunks_path = os.path.join(BACKEND_DIR, 'tests', 'backend', 'data', 'kb_chunks.json')
+    print(f"Loading source chunks from {source_chunks_path}")
+    with open(source_chunks_path, "r", encoding="utf-8") as f:
+        text_chunks = json.load(f)
+    
+    # 构建知识库
+    build_knowledge_base(text_chunks)

@@ -1,112 +1,116 @@
-# backend/app/services/sentiment_analysis_service.py
-import re
+import os
+import warnings
 from typing import Dict, Any
 from ..schemas.chat import SentimentAnalysisResult
 
-
 class SentimentAnalysisService:
-    """情感分析服务"""
-    
     def __init__(self):
-        # 定义情感关键词映射
-        self.emotion_keywords = {
-            'FRUSTRATED': [
-                'frustrated', 'frustrating', 'annoying', 'confusing', 'difficult',
-                'hard', 'trouble', 'problem', 'error', 'bug', 'broken', 'not working',
-                'doesn\'t work', 'can\'t', 'cannot', 'failed', 'failure', 'stuck',
-                '困惑', '困难', '问题', '错误', '不行', '不会', '失败', '卡住'
-            ],
-            'CONFUSED': [
-                'confused', 'confusing', 'unclear', 'not sure', 'don\'t understand',
-                'what does', 'how to', 'why', 'what is', 'explain', 'help',
-                '不明白', '不清楚', '不懂', '不知道', '怎么', '为什么', '解释', '帮助'
-            ],
-            'EXCITED': [
-                'excited', 'great', 'awesome', 'amazing', 'wonderful', 'perfect',
-                'working', 'success', 'solved', 'figured out', 'got it',
-                '兴奋', '太好了', '棒', '完美', '成功', '解决了', '明白了'
-            ],
-            'NEUTRAL': [
-                'ok', 'fine', 'alright', 'good', 'yes', 'no', 'maybe',
-                '好的', '可以', '行', '是的', '不是', '也许'
-            ]
-        }
-    
+        self.model_available = False
+        self.model = None
+        self.tokenizer = None
+        self.device = None
+        
+        # 检查模型文件是否存在
+        model_dir = 'backend/models/sentiment_bert'
+        if os.path.exists(model_dir):
+            try:
+                # 只在模型文件存在时才导入相关库
+                import torch
+                from transformers import BertTokenizer, BertForSequenceClassification
+                from transformers.utils import logging
+                from safetensors.torch import load_file
+                
+                # 设置日志级别和警告
+                os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+                os.environ["PYTHONWARNINGS"] = "ignore"
+                warnings.filterwarnings("ignore")
+                logging.set_verbosity_error()
+                
+                # 加载模型和tokenizer
+                self.tokenizer = BertTokenizer.from_pretrained(model_dir)
+                
+                # 加载模型
+                self.model = BertForSequenceClassification.from_pretrained(
+                    model_dir,
+                    local_files_only=True
+                )
+                
+                # 设置设备
+                self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                self.model = self.model.to(self.device)
+                self.model.eval()
+                
+                self.model_available = True
+                print("✅ BERT情感分析模型加载成功")
+                
+            except Exception as e:
+                print(f"⚠️  BERT模型加载失败: {e}")
+                print("📝 将使用简化的情感分析功能")
+                self.model_available = False
+        else:
+            print("⚠️  未找到BERT模型文件，跳过模型加载")
+            print("📝 情感分析功能将返回中性结果")
+            self.model_available = False
+        
+        # 标签映射
+        self.label_map = {0: 'NEGATIVE', 1: 'NEUTRAL', 2: 'POSITIVE'}
+      
     def analyze_sentiment(self, text: str) -> SentimentAnalysisResult:
         """
-        分析文本情感
-        
-        Args:
-            text: 要分析的文本
-            
-        Returns:
-            SentimentAnalysisResult: 情感分析结果
+        Analyzes the sentiment of a given text.
+        Returns a SentimentAnalysisResult object
         """
-        if not text or not isinstance(text, str):
+        if not text.strip():
             return SentimentAnalysisResult(
                 label="NEUTRAL",
                 confidence=1.0
             )
         
-        # 转换为小写进行分析
-        text_lower = text.lower()
-        
-        # 计算每种情感的匹配分数
-        emotion_scores = {}
-        for emotion, keywords in self.emotion_keywords.items():
-            score = 0
-            for keyword in keywords:
-                # 使用正则表达式进行精确匹配
-                pattern = r'\b' + re.escape(keyword.lower()) + r'\b'
-                matches = len(re.findall(pattern, text_lower))
-                score += matches
-            
-            if score > 0:
-                emotion_scores[emotion] = score
-        
-        # 如果没有匹配到任何情感，返回NEUTRAL
-        if not emotion_scores:
+        # 如果模型不可用，返回中性结果
+        if not self.model_available:
             return SentimentAnalysisResult(
                 label="NEUTRAL",
                 confidence=1.0
             )
         
-        # 选择得分最高的情感
-        dominant_emotion = max(emotion_scores.items(), key=lambda x: x[1])
+        # 只在模型可用时才导入torch
+        import torch
         
-        # 计算置信度（基于匹配数量和文本长度）
-        total_matches = sum(emotion_scores.values())
-        confidence = min(1.0, total_matches / max(1, len(text.split())))
-        
-        return SentimentAnalysisResult(
-            label=dominant_emotion[0],
-            confidence=confidence,
-            details={
-                'emotion_scores': emotion_scores,
-                'text_length': len(text),
-                'word_count': len(text.split())
-            }
+        # 对输入文本进行编码
+        encoding = self.tokenizer.encode_plus(
+            text,
+            add_special_tokens=True,
+            max_length=128,
+            truncation=True,
+            padding='max_length',
+            return_attention_mask=True,
+            return_tensors='pt'
         )
-    
-    def get_emotion_strategy(self, emotion_label: str) -> str:
-        """
-        根据情感标签获取教学策略
         
-        Args:
-            emotion_label: 情感标签
+        # 将输入数据移动到指定设备
+        input_ids = encoding['input_ids'].to(self.device)
+        attention_mask = encoding['attention_mask'].to(self.device)
+        
+        # 模型推理
+        with torch.no_grad():
+            outputs = self.model(input_ids, attention_mask=attention_mask)
+            logits = outputs.logits
+            probs = torch.nn.functional.softmax(logits, dim=1)
+            score, pred = torch.max(probs, dim=1)
             
-        Returns:
-            str: 教学策略描述
-        """
-        strategies = {
-            'FRUSTRATED': "The student seems frustrated. Your top priority is to be encouraging and empathetic. Acknowledge the difficulty before offering help. Use phrases like 'Don't worry, this is a tricky part' or 'Let's try a different approach'.",
-            'CONFUSED': "The student seems confused. Break down concepts into smaller, simpler steps. Use analogies. Provide the simplest possible examples. Avoid jargon.",
-            'EXCITED': "The student seems excited and engaged. You can introduce more advanced concepts and challenge them with deeper explanations.",
-            'NEUTRAL': "The student seems neutral. Provide clear, structured explanations and check for understanding."
-        }
-        
-        return strategies.get(emotion_label.upper(), strategies['NEUTRAL'])
-
+        # 返回结果
+        return SentimentAnalysisResult(
+            label=self.label_map.get(pred.item(), 'NEUTRAL'),
+            confidence=score.item()
+        )
 
 # 创建单例实例
 sentiment_analysis_service = SentimentAnalysisService()
+
+if __name__ == "__main__":
+    sentiment_analysis_service = SentimentAnalysisService()
+    while True:
+        input_text = input("Enter your text: ")
+        if input_text.lower() == "exit":
+            break
+        print(sentiment_analysis_service.analyze_sentiment(input_text))
