@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     TUTOR_EMBEDDING_API_KEY: str
     TUTOR_EMBEDDING_API_BASE: str = "https://ms-fc-1d889e1e-d2ad.api-inference.modelscope.cn/v1"
     TUTOR_EMBEDDING_MODEL: str = "Qwen/Qwen3-Embedding-4B-GGUF"
+    
+    # Translation API (can be different from OpenAI)
+    TUTOR_TRANSLATION_API_KEY: str
+    TUTOR_TRANSLATION_API_BASE: str = "https://api.openai.com/v1"
+    TUTOR_TRANSLATION_MODEL: str = "gpt-4-turbo"
 
     # Model configuration tells Pydantic where to find the .env file.
     model_config = SettingsConfigDict(

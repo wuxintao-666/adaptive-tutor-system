@@ -5,9 +5,11 @@ import time
 from openai import OpenAI
 from annoy import AnnoyIndex
 from app.core.config import settings
+# 导入翻译服务类（不是实例）
+from app.services.translation_service import TranslationService
 
 class RAGService:
-	def __init__(self):
+	def __init__(self, translation_service: TranslationService = None):
 		# 在应用启动时加载索引和数据
 		self.embedding_dimension = 2560 # for Qwen/Qwen3-Embedding-4B-GGUF
 		self.index = AnnoyIndex(self.embedding_dimension, 'angular')
@@ -29,6 +31,16 @@ class RAGService:
 			timeout=30.0  # 设置30秒超时
 		)
 		self.embedding_model = settings.TUTOR_EMBEDDING_MODEL
+		
+		# 使用DI方式注入翻译服务
+		self.translation_service = translation_service
+
+	def _is_chinese(self, text: str) -> bool:
+		"""检测文本是否包含中文字符"""
+		for ch in text:
+			if '\u4e00' <= ch <= '\u9fff':
+				return True
+		return False
 
 	def _get_embedding(self, text: str) -> list[float]:
 		"""使用OpenAI客户端获取单个文本的embedding"""
@@ -63,6 +75,12 @@ class RAGService:
 
 	def retrieve(self, query_text: str, k: int = 3) -> list[str]:
 		try:
+			# 如果翻译服务可用且查询包含中文，则先翻译成英文
+			if self.translation_service and self._is_chinese(query_text):
+				translated_query = self.translation_service.translate(query_text, "zh", "en")
+				print(f"Translated query: {query_text} -> {translated_query}")
+				query_text = translated_query
+			
 			query_vector = self._get_embedding(query_text)
 			
 			if not query_vector:

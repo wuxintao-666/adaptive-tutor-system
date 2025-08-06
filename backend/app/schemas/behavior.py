@@ -13,5 +13,4 @@ class BehaviorEvent(BaseModel):
     event_data: Dict[str, Any]
     timestamp: Optional[datetime] = None
     
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
