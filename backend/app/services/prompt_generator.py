@@ -30,7 +30,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         user_message: str,
         code_content: CodeContent = None,
         task_context: str = None,
-        topic_id: str = None
+        topic_id: str = None  # TODO: 改成title
     ) -> Tuple[str, List[Dict[str, str]]]:
         """
         创建完整的提示词和消息列表
@@ -76,7 +76,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
 
         # 添加情感策略
         emotion = user_state.emotion_state.get('current_sentiment', 'NEUTRAL')
-        emotion_strategy = self._get_emotion_strategy(emotion)
+        emotion_strategy = PromptGenerator._get_emotion_strategy(emotion)
         prompt_parts.append(f"STRATEGY: {emotion_strategy}")
 
         # 添加用户状态信息
@@ -145,13 +145,14 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         
         return "\n\n".join(prompt_parts)
     
-    def _get_emotion_strategy(self, emotion: str) -> str:
+    @staticmethod
+    def _get_emotion_strategy(emotion: str) -> str:
         """根据情感获取教学策略"""
         strategies = {
-            'FRUSTRATED': "The student seems frustrated. Your top priority is to be encouraging and empathetic. Acknowledge the difficulty before offering help. Use phrases like 'Don't worry, this is a tricky part' or 'Let's try a different approach'.",
-            'CONFUSED': "The student seems confused. Break down concepts into smaller, simpler steps. Use analogies. Provide the simplest possible examples. Avoid jargon.",
-            'EXCITED': "The student seems excited and engaged. You can introduce more advanced concepts and challenge them with deeper explanations.",
-            'NEUTRAL': "The student seems neutral. Provide clear, structured explanations and check for understanding."
+            'FRUSTRATED': "The student seems frustrated. Your top priority is to validate their feelings and be encouraging. Acknowledge the difficulty before offering help. Use phrases like 'I can see why this is frustrating, it's a tough concept' or 'Let's take a step back and try a different angle'. Avoid saying 'it's easy' or dismissing their struggle.",
+            'CONFUSED': "The student seems confused. Your first step is to ask questions to pinpoint the source of confusion (e.g., 'Where did I lose you?' or 'What part of that example felt unclear?'). Then, break down concepts into smaller, simpler steps. Use analogies and the simplest possible examples. Avoid jargon.",
+            'EXCITED': "The student seems excited and engaged. Praise their curiosity and capitalize on their momentum. Challenge them with deeper explanations or a more complex problem. Connect the concept to a real-world application or a related advanced topic to broaden their perspective.",
+            'NEUTRAL': "The student seems neutral. Maintain a clear, structured teaching approach, but proactively try to spark interest by relating the topic to a surprising fact or a practical application. Frequently check for understanding with specific questions like 'Can you explain that back to me in your own words?' or 'How would you apply this to...?'"
         }
         
         return strategies.get(emotion.upper(), strategies['NEUTRAL'])
