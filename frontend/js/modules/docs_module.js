@@ -23,7 +23,7 @@ const ApiClient = {
     async get(endpoint) {
         try {
             // 使用配置中的API基础URL
-            const response = await fetch(`${AppConfig.api_base_url}${endpoint}`);
+            const response = await fetch(`${window.FrontendConfig.getApiBaseUrl()}${endpoint}`);
             if (!response.ok) throw new Error(`API错误: ${response.status}`);
             return await response.json();
         } catch (error) {
@@ -35,7 +35,7 @@ const ApiClient = {
     async post(endpoint, data) {
         try {
             // 使用配置中的API基础URL
-            const response = await fetch(`${AppConfig.api_base_url}${endpoint}`, {
+            const response = await fetch(`${window.FrontendConfig.getApiBaseUrl()}${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

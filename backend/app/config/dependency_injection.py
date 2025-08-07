@@ -2,6 +2,11 @@
 
 from app.services.sandbox_service_improved import SandboxService, DefaultPlaywrightManager
 from app.services.user_state_service import UserStateService
+from app.services.sentiment_analysis_service import sentiment_analysis_service
+from app.services.llm_gateway import llm_gateway
+from app.services.prompt_generator import prompt_generator
+# dynamic_controller 现在通过 create_dynamic_controller() 函数创建
+from app.services.rag_service import RAGService  # 暂时注释，等待RAG模块修复
 
 
 class ProductionConfig:
@@ -71,3 +76,84 @@ def get_user_state_service() -> UserStateService:
     一个简单的依赖项，用于在整个应用中共享同一个UserStateService实例。
     """
     return user_state_service_instance
+
+
+# --- AI服务依赖注入 ---
+
+def get_sentiment_analysis_service():
+    """
+    获取情感分析服务实例
+    """
+    from app.core.config import settings
+    if not settings.ENABLE_SENTIMENT_ANALYSIS:
+        return None
+    return sentiment_analysis_service
+
+
+def get_llm_gateway():
+    """
+    获取LLM网关服务实例
+    """
+    return llm_gateway
+
+
+def get_prompt_generator():
+    """
+    获取提示词生成器实例
+    """
+    return prompt_generator
+
+
+def get_rag_service():
+    """
+    获取RAG服务实例
+    """
+    from app.core.config import settings
+    if not settings.ENABLE_RAG_SERVICE:
+        return None
+    
+    try:
+        from app.services.rag_service import RAGService
+        # 根据配置决定是否提供翻译服务
+        translation_service = None
+        if settings.ENABLE_TRANSLATION_SERVICE:
+            try:
+                from app.services.translation_service import TranslationService
+                translation_service = TranslationService()
+            except Exception as e:
+                print(f"Warning: Translation service initialization failed: {e}")
+        
+        return RAGService(translation_service)
+    except Exception as e:
+        print(f"Warning: RAG service initialization failed: {e}")
+        return None
+
+
+def create_dynamic_controller():
+    """
+    创建动态控制器实例，注入所有依赖
+    """
+    from app.services.dynamic_controller import DynamicController
+    
+    return DynamicController(
+        user_state_service=get_user_state_service(),
+        sentiment_service=get_sentiment_analysis_service(),
+        rag_service=get_rag_service(),
+        prompt_generator=get_prompt_generator(),
+        llm_gateway=get_llm_gateway()
+    )
+
+
+# 创建单例实例
+_dynamic_controller_instance = None
+
+def get_dynamic_controller():
+    """
+    获取动态控制器实例（单例模式）
+    """
+    global _dynamic_controller_instance
+    if _dynamic_controller_instance is None:
+        _dynamic_controller_instance = create_dynamic_controller()
+    return _dynamic_controller_instance
+
+

@@ -48,6 +48,15 @@ class Settings(BaseSettings):
     KB_ANN_FILENAME: str = "kb.ann"
     KB_CHUNKS_FILENAME: str = "kb_chunks.json"
 
+    # LLM Settings
+    LLM_MAX_TOKENS: int = 65536
+    LLM_TEMPERATURE: float = 0.7
+    
+    # Module enable/disable flags
+    ENABLE_RAG_SERVICE: bool = True
+    ENABLE_SENTIMENT_ANALYSIS: bool = True
+    ENABLE_TRANSLATION_SERVICE: bool = True
+
 # Create a single, globally accessible instance of the settings.
 # This will raise a validation error on startup if required settings are missing.
 settings = Settings()

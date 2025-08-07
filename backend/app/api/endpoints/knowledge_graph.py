@@ -3,22 +3,26 @@
 from fastapi import APIRouter, HTTPException
 import json
 import os
+from app.schemas.knowledge_graph import KnowledgeGraphResponse, KnowledgeGraph
+from app.core.config import settings
 
 router = APIRouter()
 
-GRAPH_FILE_PATH = os.path.join("backend", "data", "knowledge_graph.json")
+# 使用配置中的DATA_DIR确保路径正确
+GRAPH_FILE_PATH = os.path.join(settings.DATA_DIR, "knowledge_graph.json")
 
 _knowledge_graph_cache = None
 
 
-@router.get("/knowledge-graph")
+@router.get("", response_model=KnowledgeGraphResponse)  # 空路径，因为路由前缀会在api.py中定义
 def get_knowledge_graph():
     global _knowledge_graph_cache
 
     if _knowledge_graph_cache is None:
         try:
             with open(GRAPH_FILE_PATH, "r", encoding="utf-8") as f:
-                _knowledge_graph_cache = json.load(f)
+                graph_data = json.load(f)
+                _knowledge_graph_cache = graph_data
         except FileNotFoundError:
             raise HTTPException(status_code=500, detail="知识图谱数据文件未找到")
         except Exception as e:
@@ -27,5 +31,5 @@ def get_knowledge_graph():
     return {
         "code": 0,
         "message": "success",
-        "data": _knowledge_graph_cache  # 保持原样返回前端期望结构
+        "data": _knowledge_graph_cache
     }

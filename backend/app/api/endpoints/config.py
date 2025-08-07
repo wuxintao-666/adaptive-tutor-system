@@ -7,11 +7,11 @@ router = APIRouter()
 
 @router.get("/", response_model=StandardResponse[FrontendConfig])
 def get_frontend_config():
-        """
-        为前端应用程序提供安全、非敏感的配置变量集合。
-        """
-        config_data = FrontendConfig(
-                api_base_url=settings.API_V1_STR
-                # 用于显示的模型名称=settings.OPENAI_MODEL
-        )
-        return StandardResponse(data=config_data)
+    """
+    为前端应用程序提供安全、非敏感的配置变量集合。
+    """
+    config_data = FrontendConfig(
+        api_base_url=settings.API_V1_STR
+        # 用于显示的模型名称=settings.OPENAI_MODEL
+    )
+    return StandardResponse(data=config_data)

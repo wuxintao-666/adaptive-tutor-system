@@ -14,7 +14,11 @@ class StudentProfile:
         # 认知状态
         self.bkt_model = {}  # { 'topic_id': BKT_instance }  # TODO: cxz 需要实现BKT模型，用于追踪知识点掌握情况
         # 情感状态
-        self.emotion_state = {'current_sentiment': 'NEUTRAL', 'is_frustrated': False}  # TODO: cxz 需要实现情感状态追踪
+        self.emotion_state = {
+            'current_sentiment': 'NEUTRAL',
+            # TODO: cxz 改成浮点
+            'is_frustrated': False,
+        }  # TODO: cxz 需要实现情感状态追踪
         # 行为状态
         self.behavior_counters = {
             'submission_timestamps': [],
@@ -78,24 +82,29 @@ class UserStateService:
         from . import behavior_interpreter_service  # 这个文件是恩琪做的-TDD-07
         self.interpreter = behavior_interpreter_service
     
-    def handle_event(self, event: BehaviorEvent, db: Session):
+    def handle_event(self, event: BehaviorEvent, db: Session, background_tasks=None):
         """处理事件，并可能创建快照"""
         # 调用解释器处理事件
         self.interpreter.interpret_event(event)
         
         # 事件处理后，检查是否需要创建快照
-        self._maybe_create_snapshot(event.participant_id, db)
+        self._maybe_create_snapshot(event.participant_id, db, background_tasks)
 
 
     def get_or_create_profile(self, participant_id: str, db: Session) -> StudentProfile:
+        """
+        获取或创建用户档案。
+        重要：此方法遵循Fail-Fast原则。如果数据库操作失败，将抛出异常。
+        """
         if participant_id not in self._state_cache:
             print(f"INFO: Cache miss for {participant_id}. Attempting recovery from history.")
+            # 强制从数据库恢复，如果失败则会抛出异常
             self._recover_from_history_with_snapshot(participant_id, db)
 
-        # _recover_from_history_with_snapshot 应该已经处理了所有情况
-        # 如果仍然没有（理论上不应该发生），则创建一个新用户
+        # 如果 _recover_from_history_with_snapshot 后 profile 仍不在缓存中
+        # (这只应发生在用户是全新的，没有任何历史事件的情况下)，则在此创建。
         if participant_id not in self._state_cache:
-            print(f"WARNING: No profile found or created for {participant_id}. Creating new profile.")
+            print(f"INFO: No history found for new participant {participant_id}. Creating fresh profile.")
             self._state_cache[participant_id] = StudentProfile(participant_id, is_new_user=True)
             
         return self._state_cache[participant_id]
@@ -154,7 +163,7 @@ class UserStateService:
         
         print(f"INFO: Recovery complete for {participant_id}.")
 
-    def _maybe_create_snapshot(self, participant_id: str, db: Session):
+    def _maybe_create_snapshot(self, participant_id: str, db: Session, background_tasks=None):
         """根据策略判断是否需要创建快照"""
         profile = self._state_cache.get(participant_id)
         if not profile:
@@ -192,14 +201,18 @@ class UserStateService:
             )
             
             # 异步保存快照
-            # 注意：这里需要一个后台任务执行器，例如FastAPI的BackgroundTasks
-            # from fastapi import BackgroundTasks
-            # background_tasks = BackgroundTasks()
-            # background_tasks.add_task(crud_event.create_from_behavior, db=db, obj_in=snapshot_event)
-            # 同步保存，简化示例
-            crud_event.create_from_behavior(db, obj_in=snapshot_event)
-            
-            print(f"INFO: Snapshot created for {participant_id}.")
+            if background_tasks:
+                from fastapi import BackgroundTasks
+                if isinstance(background_tasks, BackgroundTasks):
+                    background_tasks.add_task(crud_event.create_from_behavior, db=db, obj_in=snapshot_event)
+                else:
+                    # 兼容其他后台任务机制
+                    background_tasks.add_task(crud_event.create_from_behavior, db, snapshot_event)
+                print(f"INFO: Snapshot scheduled for async save: {participant_id}")
+            else:
+                # 同步保存（备用方案）
+                crud_event.create_from_behavior(db, obj_in=snapshot_event)
+                print(f"INFO: Snapshot created for {participant_id}")
             
             # 清理旧快照
             self._cleanup_old_snapshots(participant_id, db)

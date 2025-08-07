@@ -1,21 +1,20 @@
-
 {
   "nodes": [
-    { "data": { "id": "chapter1", "label": "模块一：页面结构基础" } },
+    { "data": { "id": "chapter1", "label": "模块一:文本与页面结构基础" } },
+    { "data": { "id": "text_paragraph", "label": "使用h元素和p元素体验标题与段落" } },
+    { "data": { "id": "text_format", "label": "应用文本格式(加粗、斜体)" } },
     { "data": { "id": "structure_header", "label": "构建页面头部结构" } },
-    { "data": { "id": "structure_main", "label": "组织页面主体内容" } },
-    { "data": { "id": "structure_footer", "label": "添加页面底部信息" } },
 
-    { "data": { "id": "chapter2", "label": "模块二：文本与列表展示" } },
-    { "data": { "id": "text_paragraph", "label": "使用段落与标题" } },
-    { "data": { "id": "text_list", "label": "创建有序与无序列表" } },
-    { "data": { "id": "text_format", "label": "应用文本格式（加粗、斜体）" } },
+    { "data": { "id": "chapter2", "label": "模块二:盒子与列表使用" } },
+    { "data": { "id": "structure_div", "label": "使用盒子元素进行内容划分" } },
+    { "data": { "id": "text_list_ol", "label": "创建有序列表" } },
+    { "data": { "id": "text_list_ul", "label": "创建无序列表" } },
 
-    { "data": { "id": "chapter3", "label": "模块三：表单与交互控件" } },
+    { "data": { "id": "chapter3", "label": "模块三:表单与交互控件" } },
     { "data": { "id": "form_input", "label": "文本框与按钮的使用" } },
     { "data": { "id": "form_checkbox", "label": "复选框与单选框" } },
     { "data": { "id": "form_submit", "label": "表单提交机制" } },
-
+    
     { "data": { "id": "chapter4", "label": "模块四：样式与布局" } },
     { "data": { "id": "style_basic", "label": "设置颜色与字体" } },
     { "data": { "id": "style_box", "label": "理解盒模型" } },
@@ -32,13 +31,20 @@
     { "data": { "id": "js_dom", "label": "修改页面元素（DOM 操作）" } }
   ],
   "edges": [
-    { "data": { "source": "chapter1", "target": "structure_header" } },
-    { "data": { "source": "chapter1", "target": "structure_main" } },
-    { "data": { "source": "chapter1", "target": "structure_footer" } },
 
-    { "data": { "source": "chapter2", "target": "text_paragraph" } },
-    { "data": { "source": "chapter2", "target": "text_list" } },
-    { "data": { "source": "chapter2", "target": "text_format" } },
+    { "data": { "source": "chapter1", "target": "chapter2" } },
+    { "data": { "source": "chapter2", "target": "chapter3" } },
+    { "data": { "source": "chapter3", "target": "chapter4" } },
+    { "data": { "source": "chapter4", "target": "chapter5" } },
+    { "data": { "source": "chapter5", "target": "chapter6" } },
+
+    { "data": { "source": "chapter1", "target": "text_paragraph" } },
+    { "data": { "source": "chapter1", "target": "text_format" } },
+    { "data": { "source": "chapter1", "target": "structure_header" } },
+
+    { "data": { "source": "chapter2", "target": "structure_div" } },
+    { "data": { "source": "chapter2", "target": "text_list_ol" } },
+    { "data": { "source": "chapter2", "target": "text_list_ul" } },
 
     { "data": { "source": "chapter3", "target": "form_input" } },
     { "data": { "source": "chapter3", "target": "form_checkbox" } },
@@ -55,6 +61,38 @@
     { "data": { "source": "chapter6", "target": "js_click" } },
     { "data": { "source": "chapter6", "target": "js_input" } },
     { "data": { "source": "chapter6", "target": "js_dom" } }
+  ],
+  "dependent_edges": [
+
+    { "data": { "source": "chapter1", "target": "chapter2" } },
+    { "data": { "source": "chapter2", "target": "chapter3" } },
+    { "data": { "source": "chapter3", "target": "chapter4" } },
+    { "data": { "source": "chapter4", "target": "chapter5" } },
+    { "data": { "source": "chapter5", "target": "chapter6" } },
+
+    { "data": { "source": "chapter1", "target": "text_paragraph" } },
+    { "data": { "source": "text_paragraph", "target": "text_format" } },
+    { "data": { "source": "text_format", "target": "structure_header" } },
+
+    { "data": { "source": "chapter2", "target": "structure_div" } },
+    { "data": { "source": "structure_div", "target": "text_list_ol" } },
+    { "data": { "source": "text_list_ol", "target": "text_list_ul" } },
+
+    { "data": { "source": "chapter3", "target": "form_input" } },
+    { "data": { "source": "form_input", "target": "form_checkbox" } },
+    { "data": { "source": "form_checkbox", "target": "form_submit" } },
+
+    { "data": { "source": "chapter4", "target": "style_basic" } },
+    { "data": { "source": "style_basic", "target": "style_box" } },
+    { "data": { "source": "style_box", "target": "style_flex" } },
+
+    { "data": { "source": "chapter5", "target": "media_image" } },
+    { "data": { "source": "media_image", "target": "media_audio" } },
+    { "data": { "source": "media_audio", "target": "media_video" } },
+
+    { "data": { "source": "chapter6", "target": "js_click" } },
+    { "data": { "source": "js_click", "target": "js_input" } },
+    { "data": { "source": "js_input", "target": "js_dom" } }
   ]
 }
 

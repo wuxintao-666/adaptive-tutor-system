@@ -1,0 +1,11 @@
+{
+    "topic_id": "div_span",
+    "title": "div和span标签详解",
+    "levels": [
+        {"level": 0, "description": "等级1的讲解"},
+        {"level": 1, "description": "等级2的讲解"},
+        {"level": 2, "description": "等级3的讲解"},
+        {"level": 3, "description": "等级4的讲解"}
+    ],
+    "select_element": ["<!DOCTYPE>", "html", "head", "body","footer"]
+}
