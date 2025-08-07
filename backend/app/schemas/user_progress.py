@@ -18,5 +18,3 @@ class UserProgressUpdate(BaseModel):
 # 用于返回用户已完成的知识点ID列表
 class UserProgressResponse(BaseModel):
     completed_topics: list[str]
-    db_status: Optional[str] = None
-    db_error: Optional[str] = None

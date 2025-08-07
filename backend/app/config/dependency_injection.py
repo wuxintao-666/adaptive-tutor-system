@@ -6,7 +6,7 @@ from app.services.sentiment_analysis_service import sentiment_analysis_service
 from app.services.llm_gateway import llm_gateway
 from app.services.prompt_generator import prompt_generator
 # dynamic_controller 现在通过 create_dynamic_controller() 函数创建
-# from app.services.rag_service import rag_service  # 暂时注释，等待RAG模块修复
+from app.services.rag_service import RAGService  # 暂时注释，等待RAG模块修复
 
 
 class ProductionConfig:
@@ -84,6 +84,9 @@ def get_sentiment_analysis_service():
     """
     获取情感分析服务实例
     """
+    from app.core.config import settings
+    if not settings.ENABLE_SENTIMENT_ANALYSIS:
+        return None
     return sentiment_analysis_service
 
 
@@ -103,9 +106,27 @@ def get_prompt_generator():
 
 def get_rag_service():
     """
-    获取RAG服务实例（暂时禁用）
+    获取RAG服务实例
     """
-    return None  # 暂时返回None，等待RAG模块修复
+    from app.core.config import settings
+    if not settings.ENABLE_RAG_SERVICE:
+        return None
+    
+    try:
+        from app.services.rag_service import RAGService
+        # 根据配置决定是否提供翻译服务
+        translation_service = None
+        if settings.ENABLE_TRANSLATION_SERVICE:
+            try:
+                from app.services.translation_service import TranslationService
+                translation_service = TranslationService()
+            except Exception as e:
+                print(f"Warning: Translation service initialization failed: {e}")
+        
+        return RAGService(translation_service)
+    except Exception as e:
+        print(f"Warning: RAG service initialization failed: {e}")
+        return None
 
 
 def create_dynamic_controller():
@@ -136,21 +157,3 @@ def get_dynamic_controller():
     return _dynamic_controller_instance
 
 
-# --- 服务验证函数 ---
-
-def validate_all_services() -> dict:
-    """
-    验证所有服务的状态
-    
-    Returns:
-        dict: 服务状态字典
-    """
-    return {
-        'user_state_service': True,  # 本地服务，总是可用
-        'sentiment_analysis_service': True,  # 本地服务，总是可用
-        'llm_gateway': llm_gateway.validate_connection(),
-        'prompt_generator': True,  # 本地服务，总是可用
-        'dynamic_controller': True,  # 本地服务，总是可用
-        'rag_service': False,  # 暂时禁用，等待RAG模块修复
-        'sandbox_service': get_sandbox_service() is not None
-    }

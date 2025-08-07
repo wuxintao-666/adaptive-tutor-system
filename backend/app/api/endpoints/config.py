@@ -1,35 +1,17 @@
 from fastapi import APIRouter
-from typing import Dict, Any
-from ...schemas.response import StandardResponse
+from app.core.config import settings
+from app.schemas.config import FrontendConfig
+from app.schemas.response import StandardResponse # 使用标准响应格式
 
 router = APIRouter()
 
-
-@router.get("/config")
-async def get_config() -> StandardResponse[Dict[str, Any]]:
+@router.get("/", response_model=StandardResponse[FrontendConfig])
+def get_frontend_config():
     """
-    获取前端配置信息
-
-    Returns:
-        StandardResponse[Dict[str, Any]]: 前端配置
+    为前端应用程序提供安全、非敏感的配置变量集合。
     """
-    config = {
-        "api_base_url": "/api/v1",
-        "model_name_for_display": "Qwen-Turbo (魔搭)",
-        "features": {
-            "ai_chat": True,
-            "knowledge_graph": True,
-            "code_testing": True,
-            "sentiment_analysis": True
-        },
-        "ui": {
-            "theme": "light",
-            "language": "zh-CN"
-        }
-    }
-    
-    return StandardResponse(
-        code=200,
-        message="Configuration retrieved successfully",
-        data=config
+    config_data = FrontendConfig(
+        api_base_url=settings.API_V1_STR
+        # 用于显示的模型名称=settings.OPENAI_MODEL
     )
+    return StandardResponse(data=config_data)

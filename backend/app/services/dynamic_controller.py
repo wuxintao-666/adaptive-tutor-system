@@ -1,27 +1,29 @@
 # backend/app/services/dynamic_controller.py
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 from sqlalchemy.orm import Session
-from ..schemas.chat import ChatRequest, ChatResponse, UserStateSummary, SentimentAnalysisResult
-from ..schemas.content import CodeContent
-from .user_state_service import UserStateService
-
+from app.schemas.chat import ChatRequest, ChatResponse, UserStateSummary, SentimentAnalysisResult
+from app.services.sentiment_analysis_service import SentimentAnalysisService
+from app.services.user_state_service import UserStateService, StudentProfile
+from app.services.rag_service import RAGService
+from app.services.prompt_generator import PromptGenerator
+from app.services.llm_gateway import LLMGateway
 
 class DynamicController:
     """动态控制器 - 编排各个服务的核心逻辑"""
     
     def __init__(self, 
                  user_state_service: UserStateService,
-                 sentiment_service,
-                 rag_service: Optional[Any] = None,
-                 prompt_generator = None,
-                 llm_gateway = None):
+                 sentiment_service: SentimentAnalysisService,
+                 rag_service: RAGService,
+                 prompt_generator: PromptGenerator,
+                 llm_gateway: LLMGateway,):
         """
         初始化动态控制器
         
         Args:
             user_state_service: 用户状态服务
             sentiment_service: 情感分析服务
-            rag_service: RAG服务（可选）
+            rag_service: RAG服务
             prompt_generator: 提示词生成器
             llm_gateway: LLM网关服务
         """
@@ -34,7 +36,8 @@ class DynamicController:
     async def generate_adaptive_response(
         self, 
         request: ChatRequest, 
-        db: Session
+        db: Session,
+        background_tasks = None
     ) -> ChatResponse:
         """
         生成自适应AI回复的核心流程
@@ -47,45 +50,57 @@ class DynamicController:
             ChatResponse: AI回复
         """
         try:
-            # 步骤1: 获取或创建用户档案（使用临时档案，不依赖数据库）
-            profile = self._create_temporary_profile(request.participant_id)
+            # 步骤1: 获取或创建用户档案（使用UserStateService）
+            profile = self.user_state_service.get_or_create_profile(request.participant_id, db)
             
             # 步骤2: 情感分析
-            try:
+            if self.sentiment_service:
                 sentiment_result = self.sentiment_service.analyze_sentiment(
                     request.user_message
                 )
-            except Exception as e:
-                print(f"⚠️ 情感分析失败，使用默认值: {e}")
+            else:
+                # 如果情感分析服务未启用，创建一个默认的情感分析结果
+                from app.schemas.chat import SentimentAnalysisResult
                 sentiment_result = SentimentAnalysisResult(
-                    label="NEUTRAL", 
-                    confidence=1.0, 
+                    label="neutral",
+                    confidence=0.0,
                     details={}
                 )
-            
-            # 步骤3: 更新用户状态（包含情感信息）
-            self._update_user_state_with_sentiment(profile, sentiment_result)
-            
-            # 步骤4: 构建用户状态摘要
+
+            # 更新用户状态（包含情感信息）
+            if self.sentiment_service:
+                self._update_user_state_with_sentiment(profile, sentiment_result)
+
+            # 构建用户状态摘要
+            # TODO: cxz 改用pulic
             user_state_summary = self._build_user_state_summary(profile, sentiment_result)
             
             # 步骤5: RAG检索
             if self.rag_service:
                 try:
-                    retrieved_context = self.rag_service.retrieve(request.user_message)
+                    retrieved_knowledge = self.rag_service.retrieve(request.user_message)
                 except Exception as e:
-                    print(f"⚠️ RAG检索失败，使用空上下文: {e}")
-                    retrieved_context = []
+                    print(f"⚠️ RAG检索失败，使用空知识内容: {e}")
+                    retrieved_knowledge = []
             else:
-                retrieved_context = []  # RAG服务未配置
+                retrieved_knowledge = []  # RAG服务未配置
             
             # 步骤6: 生成提示词
+            # 将ConversationMessage转换为字典格式
+            conversation_history_dicts = []
+            if request.conversation_history:
+                for msg in request.conversation_history:
+                    conversation_history_dicts.append({
+                        'role': msg.role,
+                        'content': msg.content
+                    })
+            
             system_prompt, messages = self.prompt_generator.create_prompts(
                 user_state=user_state_summary,
-                retrieved_context=retrieved_context,
-                conversation_history=request.conversation_history,
+                retrieved_context=retrieved_knowledge,
+                conversation_history=conversation_history_dicts,
                 user_message=request.user_message,
-                code_context=request.code_context,
+                code_content=request.code_context,
                 task_context=request.task_context,
                 topic_id=request.topic_id
             )
@@ -100,20 +115,24 @@ class DynamicController:
             response = ChatResponse(
                 ai_response=ai_response,
                 user_state_summary=user_state_summary.dict(),
-                retrieved_context=retrieved_context,
+                retrieved_context=retrieved_knowledge,
                 system_prompt=system_prompt
             )
-            
-            # 步骤9: 异步记录交互日志（简化版本，不依赖数据库）
-            self._log_interaction(request, response, db)
+
+
+            # 步骤9: 记录AI交互
+            self._log_ai_interaction(request, response, db, background_tasks)
             
             return response
             
         except Exception as e:
-            print(f"Error in generate_adaptive_response: {e}")
-            # 返回错误响应
+            print(f"❌ CRITICAL ERROR in generate_adaptive_response: {e}")
+            import traceback
+            traceback.print_exc()
+            # 返回一个标准的、用户友好的错误响应
+            # 不包含任何可能泄露内部实现的细节
             return ChatResponse(
-                ai_response=f"I apologize, but I encountered an error: {str(e)}",
+                ai_response="I'm sorry, but a critical error occurred on our end. Please notify the research staff.",
                 user_state_summary={},
                 retrieved_context=[],
                 system_prompt=""
@@ -121,14 +140,16 @@ class DynamicController:
     
     def _update_user_state_with_sentiment(
         self, 
-        profile: Any, 
+        profile: StudentProfile,
         sentiment_result: SentimentAnalysisResult
     ):
         """更新用户状态中的情感信息"""
+        # 使用StudentProfile的属性，确保兼容性
         if hasattr(profile, 'emotion_state'):
             profile.emotion_state['current_sentiment'] = sentiment_result.label
-            profile.emotion_state['sentiment_confidence'] = sentiment_result.confidence
-            profile.emotion_state['sentiment_details'] = sentiment_result.details
+            profile.emotion_state['confidence'] = sentiment_result.confidence
+            if sentiment_result.details:
+                profile.emotion_state['details'] = sentiment_result.details
     
     def _build_user_state_summary(
         self, 
@@ -136,84 +157,82 @@ class DynamicController:
         sentiment_result: SentimentAnalysisResult
     ) -> UserStateSummary:
         """构建用户状态摘要"""
-        # 获取数据库连接状态
-        db_status = getattr(profile, 'db_connected', None)
-        if db_status is None:
-            # 从emotion_state中获取db_status
-            emotion_state = profile.emotion_state if hasattr(profile, 'emotion_state') else {}
-            db_status = emotion_state.get('db_status', 'unknown')
+        # StudentProfile 已经包含了所有需要的状态
+        # 使用传入的sentiment_result来更新emotion_state
+        emotion_state = profile.emotion_state if profile.emotion_state else {}
+        
+        # 使用情感分析结果更新emotion_state
+        emotion_state["current_sentiment"] = sentiment_result.label
+        emotion_state["confidence"] = sentiment_result.confidence
+        if sentiment_result.details:
+            emotion_state["details"] = sentiment_result.details
         
         return UserStateSummary(
             participant_id=profile.participant_id,
-            emotion_state=profile.emotion_state if hasattr(profile, 'emotion_state') else {},
-            behavior_counters=profile.behavior_counters if hasattr(profile, 'behavior_counters') else {},
-            bkt_models=profile.bkt_model if hasattr(profile, 'bkt_model') else {},
-            is_new_user=profile.is_new_user if hasattr(profile, 'is_new_user') else True,
-            db_status=db_status,
-            db_error=getattr(profile, 'db_error', None)
+            emotion_state=emotion_state,
+            behavior_counters=profile.behavior_counters,
+            bkt_models=profile.bkt_model,
+            is_new_user=profile.is_new_user,
         )
     
-    def _log_interaction(
+    def _log_ai_interaction(
         self, 
         request: ChatRequest, 
         response: ChatResponse, 
-        db: Session
+        db: Session,
+        background_tasks: Optional[Any] = None
     ):
-        """记录交互日志"""
+        """
+        根据TDD-I规范，异步记录AI交互。
+        1. 在 event_logs 中记录一个 "ai_chat" 事件。
+        2. 在 chat_history 中记录用户和AI的完整消息。
+        """
         try:
-            # 这里可以添加详细的日志记录逻辑
-            # 例如记录到数据库或日志文件
-            print(f"Interaction logged: {request.participant_id} -> {len(response.ai_response)} chars")
+            from app.crud.crud_event import event as crud_event
+            from app.crud.crud_chat_history import chat_history as crud_chat_history
+            from app.schemas.behavior import BehaviorEvent
+            from app.schemas.chat import ChatHistoryCreate
+
+            # 准备事件数据
+            event = BehaviorEvent(
+                participant_id=request.participant_id,
+                event_type="ai_chat",
+                event_data={"user_message_length": len(request.user_message)}
+            )
+            
+            # 准备用户聊天记录
+            user_chat = ChatHistoryCreate(
+                participant_id=request.participant_id,
+                role="user",
+                message=request.user_message
+            )
+
+            # 准备AI聊天记录
+            ai_chat = ChatHistoryCreate(
+                participant_id=request.participant_id,
+                role="ai",
+                message=response.ai_response,
+                raw_prompt_to_llm=response.system_prompt
+            )
+
+            if background_tasks:
+                # 异步执行
+                background_tasks.add_task(crud_event.create, db=db, obj_in=event)
+                background_tasks.add_task(crud_chat_history.create, db=db, obj_in=user_chat)
+                background_tasks.add_task(crud_chat_history.create, db=db, obj_in=ai_chat)
+                print(f"INFO: AI interaction for {request.participant_id} logged asynchronously.")
+            else:
+                # 同步执行 (备用)
+                crud_event.create(db=db, obj_in=event)
+                crud_chat_history.create(db=db, obj_in=user_chat)
+                crud_chat_history.create(db=db, obj_in=ai_chat)
+                print(f"WARNING: AI interaction for {request.participant_id} logged synchronously.")
+
         except Exception as e:
-            print(f"Error logging interaction: {e}")
+            # 数据保存失败必须报错，科研数据完整性优先
+            raise RuntimeError(f"Failed to log AI interaction for {request.participant_id}: {e}")
+
     
-    def get_user_state(self, participant_id: str, db: Session) -> Dict[str, Any]:
-        """获取用户状态（使用临时档案，不依赖数据库）"""
-        # 创建临时用户档案
-        temp_profile = self._create_temporary_profile(participant_id)
-        
-        user_state = self._build_user_state_summary(
-            temp_profile, 
-            SentimentAnalysisResult(label="NEUTRAL", confidence=1.0, details={})
-        ).dict()
-        return user_state
-    
-    def _create_temporary_profile(self, participant_id: str) -> Any:
-        """创建临时用户档案（不依赖数据库）"""
-        class TemporaryProfile:
-            def __init__(self, participant_id: str):
-                self.participant_id = participant_id
-                self.emotion_state = {
-                    'current_sentiment': 'NEUTRAL',
-                    'sentiment_confidence': 1.0,
-                    'sentiment_details': None,
-                    'db_status': 'disconnected'
-                }
-                self.behavior_counters = {
-                    'total_interactions': 0,
-                    'questions_asked': 0,
-                    'code_requests': 0,
-                    'session_duration': 0
-                }
-                self.bkt_model = {
-                    'html_basics': 0.3,
-                    'css_basics': 0.2,
-                    'javascript_basics': 0.1
-                }
-                self.is_new_user = True
-                self.db_connected = 'disconnected'  # 改为字符串
-        
-        return TemporaryProfile(participant_id)
-    
-    def validate_services(self) -> Dict[str, bool]:
-        """验证所有服务的状态"""
-        return {
-            'llm_gateway': self.llm_gateway.validate_connection() if self.llm_gateway else False,
-            'user_state_service': self.user_state_service is not None,
-            'sentiment_analysis_service': self.sentiment_service is not None,
-            'rag_service': self.rag_service is not None,
-            'prompt_generator': self.prompt_generator is not None
-        }
 
 
 # 注意：DynamicController实例现在通过依赖注入容器创建

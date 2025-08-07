@@ -75,19 +75,31 @@ def test_llm_connection():
     
     try:
         from backend.app.services.llm_gateway import llm_gateway
+        from openai import OpenAI
         
         # 检查配置
         if not llm_gateway.api_key:
             print("❌ LLM API密钥未配置")
             return False
         
-        # 测试连接
-        is_valid = llm_gateway.validate_connection()
-        if is_valid:
+        # 测试连接 - 尝试简单的API调用
+        try:
+            client = OpenAI(
+                api_key=llm_gateway.api_key,
+                base_url=llm_gateway.api_base
+            )
+            
+            response = client.chat.completions.create(
+                model=llm_gateway.model,
+                messages=[{"role": "user", "content": "Hello"}],
+                max_tokens=5
+            )
+            
             print("✅ LLM连接测试成功")
             return True
-        else:
-            print("❌ LLM连接测试失败")
+            
+        except Exception as e:
+            print(f"❌ LLM连接测试失败: {e}")
             return False
             
     except Exception as e:

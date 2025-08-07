@@ -1,8 +1,8 @@
 # backend/app/schemas/chat.py
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
-from datetime import datetime
-from .content import CodeContent
+from datetime import datetime, timezone
+from app.schemas.content import CodeContent, TestTask
 
 
 class ConversationMessage(BaseModel):
@@ -18,7 +18,7 @@ class ChatRequest(BaseModel):
     user_message: str
     conversation_history: Optional[List[ConversationMessage]] = []
     code_context: Optional[CodeContent] = None
-    task_context: Optional[str] = None
+    task_context: Optional[TestTask] = None
     topic_id: Optional[str] = None
 
 
@@ -28,7 +28,7 @@ class ChatResponse(BaseModel):
     user_state_summary: Optional[Dict[str, Any]] = None
     retrieved_context: Optional[List[str]] = None
     system_prompt: Optional[str] = None
-    timestamp: datetime = datetime.utcnow()
+    timestamp: datetime = datetime.now(timezone.utc)
 
 
 class SentimentAnalysisResult(BaseModel):
@@ -45,6 +45,4 @@ class UserStateSummary(BaseModel):
     behavior_counters: Dict[str, Any]
     bkt_models: Dict[str, Any]
     is_new_user: bool
-    db_status: Optional[str] = None
-    db_error: Optional[str] = None
-    last_updated: datetime = datetime.utcnow() 
+    last_updated: datetime = datetime.now(timezone.utc)

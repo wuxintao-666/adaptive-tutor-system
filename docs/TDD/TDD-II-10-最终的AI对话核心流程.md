@@ -80,6 +80,7 @@ sequenceDiagram
 from app.schemas.chat import ChatRequest, ChatResponse
 from . import user_state_service, rag_service, prompt_generator, llm_gateway, persistence_service
 
+
 class DynamicController:
     async def generate_adaptive_response(self, request: ChatRequest, db) -> str:
         # 步骤 2-6: 获取全面的、最新的用户状态摘要
@@ -99,13 +100,13 @@ class DynamicController:
             retrieved_context=retrieved_context,
             conversation_history=request.conversation_history,
             user_message=request.user_message,
-            code_context=request.code_context,
+            code_content=request.code_context,
             task_context=request.task_context
         )
 
         # 步骤 11-12: 调用LLM
         ai_response_content = await llm_gateway.get_completion(system_prompt, messages)
-      
+
         # 步骤 13: 异步记录日志
         persistence_service.log_chat_interaction(
             db=db,
@@ -116,6 +117,7 @@ class DynamicController:
 
         # 步骤 14: 返回结果
         return ai_response_content
+
 
 dynamic_controller = DynamicController()
 ```
