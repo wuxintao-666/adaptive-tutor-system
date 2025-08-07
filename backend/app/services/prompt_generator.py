@@ -8,23 +8,27 @@ class PromptGenerator:
     """提示词生成器"""
     
     def __init__(self):
-        self.base_system_prompt = """You are 'Alex', a world-class AI programming tutor. Your goal is to help a student master a specific topic by providing personalized, empathetic, and insightful guidance. You must respond in Markdown format.
+        self.base_system_prompt = """
+"You are 'Alex', a world-class AI programming tutor. Your goal is to help a student master a specific topic by providing personalized, empathetic, and insightful guidance. You must respond in Markdown format.
 
-Key principles:
-1. Be encouraging and supportive
-2. Provide clear, step-by-step explanations
-3. Use examples and analogies when helpful
-4. Adapt your teaching style based on the student's emotional state
-5. Focus on the current learning topic
-6. Respond in a conversational, friendly tone"""
-    
+## STRICT RULES
+Be an approachable-yet-dynamic teacher, who helps the user learn by guiding them through their studies.
+1.  Get to know the user. If you don't know their goals or grade level, ask the user before diving in. (Keep this lightweight!) If they don't answer, aim for explanations that would make sense to a 10th grade student.
+2.  Build on existing knowledge. Connect new ideas to what the user already knows.
+3.  Guide users, don't just give answers. Use questions, hints, and small steps so the user discovers the answer for themselves.
+4.  Check and reinforce. After hard parts, confirm the user can restate or use the idea. Offer quick summaries, mnemonics, or mini-reviews to help the ideas stick.
+5.  Vary the rhythm. Mix explanations, questions, and activities (like role playing, practice rounds, or asking the user to teach you) so it feels like a conversation, not a lecture.
+
+Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions - help the user find the answer, by working with them collaboratively and building from what they already know.
+"""
+
     def create_prompts(
         self,
         user_state: UserStateSummary,
         retrieved_context: List[str],
         conversation_history: List[Dict[str, str]],
         user_message: str,
-        code_context: CodeContent = None,
+        code_content: CodeContent = None,
         task_context: str = None,
         topic_id: str = None
     ) -> Tuple[str, List[Dict[str, str]]]:
@@ -36,7 +40,7 @@ Key principles:
             retrieved_context: RAG检索的上下文
             conversation_history: 对话历史
             user_message: 用户当前消息
-            code_context: 代码上下文
+            code_content: 代码上下文
             task_context: 任务上下文
             topic_id: 主题ID
             
@@ -50,16 +54,16 @@ Key principles:
             task_context=task_context,
             topic_id=topic_id
         )
-        
+
         # 构建消息列表
         messages = self._build_message_history(
             conversation_history=conversation_history,
-            code_context=code_context,
+            code_context=code_content,
             user_message=user_message
         )
-        
+
         return system_prompt, messages
-    
+
     def _build_system_prompt(
         self,
         user_state: UserStateSummary,
@@ -69,23 +73,67 @@ Key principles:
     ) -> str:
         """构建系统提示词"""
         prompt_parts = [self.base_system_prompt]
-        
+
         # 添加情感策略
         emotion = user_state.emotion_state.get('current_sentiment', 'NEUTRAL')
         emotion_strategy = self._get_emotion_strategy(emotion)
         prompt_parts.append(f"STRATEGY: {emotion_strategy}")
-        
+
         # 添加用户状态信息
         if user_state.is_new_user:
             prompt_parts.append("STUDENT INFO: This is a new student. Start with basic concepts and be extra patient.")
         else:
-            # 可以添加更多用户状态信息，如学习进度等
-            prompt_parts.append("STUDENT INFO: This is an existing student. Build upon previous knowledge.")
+            # 添加更多用户状态信息
+            student_info_parts = ["STUDENT INFO: This is an existing student. Build upon previous knowledge."]
+            
+            # 添加学习进度信息
+            if hasattr(user_state, 'bkt_models') and user_state.bkt_models:
+                mastery_info = []
+                for topic_id, bkt_model in user_state.bkt_models.items():
+                    if isinstance(bkt_model, dict) and 'mastery_prob' in bkt_model:
+                        mastery_prob = bkt_model['mastery_prob']
+                    elif hasattr(bkt_model, 'mastery_prob'):
+                        mastery_prob = bkt_model.mastery_prob
+                    else:
+                        continue
+                    
+                    mastery_level = "beginner"
+                    if mastery_prob > 0.8:
+                        mastery_level = "advanced"
+                    elif mastery_prob > 0.5:
+                        mastery_level = "intermediate"
+                    
+                    mastery_info.append(f"{topic_id}: {mastery_level} (mastery: {mastery_prob:.2f})")
+                
+                if mastery_info:
+                    student_info_parts.append(f"LEARNING PROGRESS: Student's mastery levels - {', '.join(mastery_info)}")
+            
+            # 添加行为计数器信息
+            if hasattr(user_state, 'behavior_counters') and user_state.behavior_counters:
+                behavior_info = []
+                counters = user_state.behavior_counters
+                
+                # 错误计数
+                if 'error_count' in counters:
+                    behavior_info.append(f"errors: {counters['error_count']}")
+                
+                # 提交时间戳
+                if 'submission_timestamps' in counters and counters['submission_timestamps']:
+                    submission_count = len(counters['submission_timestamps'])
+                    behavior_info.append(f"submissions: {submission_count}")
+                
+                if behavior_info:
+                    student_info_parts.append(f"BEHAVIOR: Student has {', '.join(behavior_info)}")
+            
+            prompt_parts.append("\n".join(student_info_parts))
         
-        # 添加RAG上下文（暂时注释，等待RAG模块修复）
-        # if retrieved_context:
-        #     formatted_context = "\n\n---\n\n".join(retrieved_context)
-        #     prompt_parts.append(f"REFERENCE KNOWLEDGE: Use the following information from the knowledge base to answer the user's question accurately.\n\n{formatted_context}")
+        # 添加RAG上下文 (在用户状态信息之后，任务上下文之前)
+        if retrieved_context:
+            formatted_context = "\n\n---\n\n".join(retrieved_context)
+            prompt_parts.append(f"REFERENCE KNOWLEDGE: Use the following information from the knowledge base to answer the user's question accurately.\n\n{formatted_context}")
+        else:
+            prompt_parts.append("REFERENCE KNOWLEDGE: No relevant knowledge was retrieved from the knowledge base. Answer based on your general knowledge.")
+
         
         # 添加任务上下文
         if task_context:
