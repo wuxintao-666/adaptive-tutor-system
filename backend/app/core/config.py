@@ -1,11 +1,13 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import os
 from typing import List
 
 class Settings(BaseSettings):
     """
-    Loads all application settings from environment variables or a .env file.
-    The validation is handled by Pydantic.
+    应用程序配置设置类，从环境变量或.env文件加载所有配置项。
+    使用Pydantic进行数据验证和类型检查。
+    
+    包含服务器配置、API密钥、模型设置、数据库连接、文件路径等配置项。
+    在应用启动时会自动验证必需的配置项是否存在。
     """
     # Server
     BACKEND_PORT: int = 8000
