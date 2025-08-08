@@ -98,15 +98,8 @@ class UserStateService:
         """
         if participant_id not in self._state_cache:
             print(f"INFO: Cache miss for {participant_id}. Attempting recovery from history.")
-            # 强制从数据库恢复，如果失败则会抛出异常
+            # 强制从数据库恢复状态。此方法会处理老用户的状态恢复，也会为新用户创建Profile。
             self._recover_from_history_with_snapshot(participant_id, db)
-
-        # 如果 _recover_from_history_with_snapshot 后 profile 仍不在缓存中
-        # (这只应发生在用户是全新的，没有任何历史事件的情况下)，则在此创建。
-        if participant_id not in self._state_cache:
-            print(f"INFO: No history found for new participant {participant_id}. Creating fresh profile.")
-            self._state_cache[participant_id] = StudentProfile(participant_id, is_new_user=True)
-            
         return self._state_cache[participant_id]
 
     def _recover_from_history_with_snapshot(self, participant_id: str, db: Session):
@@ -256,3 +249,14 @@ class UserStateService:
               f"Correct: {is_correct}, New mastery probability: {mastery_prob:.3f}")
         
         return mastery_prob
+
+    def maybe_create_snapshot(self, participant_id: str, db: Session, background_tasks=None):
+        """
+        公共方法，用于根据策略判断是否需要创建快照
+        
+        Args:
+            participant_id: 参与者ID
+            db: 数据库会话
+            background_tasks: 后台任务（可选）
+        """
+        self._maybe_create_snapshot(participant_id, db, background_tasks)

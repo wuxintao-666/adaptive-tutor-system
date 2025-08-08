@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import Any
-
 from app.schemas.submission import TestSubmissionRequest, TestSubmissionResponse
-from app.services.sandbox_service import SandboxService, sandbox_service
+from app.services.sandbox_service import sandbox_service
 from app.services.user_state_service import UserStateService
 from app.services.content_loader import load_json_content
 from app.config.dependency_injection import get_user_state_service
@@ -53,7 +52,7 @@ def submit_test(
     
     # 4. 触发一次快照检查（可选但推荐）
     # 这确保了BKT模型更新后，状态能及时被保存
-    user_state_service._maybe_create_snapshot(submission_in.participant_id, db)
+    user_state_service.maybe_create_snapshot(submission_in.participant_id, db)
 
     # 5. 如果测试通过，异步更新用户进度记录
     if evaluation_result["passed"]:

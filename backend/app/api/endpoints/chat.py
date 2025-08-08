@@ -1,12 +1,11 @@
-# backend/app/api/endpoints/chat.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import Dict, Any
 
-from ...database import get_db
-from ...schemas.chat import ChatRequest, ChatResponse
-from ...schemas.response import StandardResponse
-from ...config.dependency_injection import get_dynamic_controller
+from app.database import get_db
+from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.response import StandardResponse
+from app.config.dependency_injection import get_dynamic_controller
+from app.services.dynamic_controller import DynamicController
 
 router = APIRouter()
 
@@ -14,7 +13,8 @@ router = APIRouter()
 @router.post("/ai/chat", response_model=StandardResponse[ChatResponse])
 async def chat_with_ai(
     request: ChatRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    controller: DynamicController = Depends(get_dynamic_controller)
 ) -> StandardResponse[ChatResponse]:
     """
     与AI进行对话
@@ -22,6 +22,7 @@ async def chat_with_ai(
     Args:
         request: 聊天请求
         db: 数据库会话
+        controller: 动态控制器
         
     Returns:
         StandardResponse[ChatResponse]: AI回复
@@ -34,8 +35,7 @@ async def chat_with_ai(
         if not request.user_message:
             raise HTTPException(status_code=400, detail="user_message is required")
         
-        # 获取动态控制器实例并调用生成回复
-        controller = get_dynamic_controller()
+        # 调用生成回复
         response = await controller.generate_adaptive_response(
             request=request,
             db=db
