@@ -12,6 +12,5 @@ def get_frontend_config():
     """
     config_data = FrontendConfig(
         api_base_url=settings.API_V1_STR
-        # 用于显示的模型名称=settings.OPENAI_MODEL
     )
     return StandardResponse(data=config_data)

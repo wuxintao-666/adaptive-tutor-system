@@ -51,7 +51,7 @@ class DynamicController:
         """
         try:
             # 步骤1: 获取或创建用户档案（使用UserStateService）
-            profile = self.user_state_service.get_or_create_profile(request.participant_id, db)
+            profile, _ = self.user_state_service.get_or_create_profile(request.participant_id, db)
             
             # 步骤2: 情感分析
             if self.sentiment_service:
