@@ -4,7 +4,9 @@
       "Bash(ls:*)",
       "Bash(grep:*)",
       "Bash(cat:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "WebFetch(domain:docs.sqlalchemy.org)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

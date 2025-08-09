@@ -1,4 +1,3 @@
-# backend/app/schemas/chat.py
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
@@ -94,3 +93,20 @@ class UserStateSummary(BaseModel):
     bkt_models: Dict[str, Any]
     is_new_user: bool
     last_updated: datetime = datetime.now(timezone.utc)
+
+
+class ChatHistoryCreate(BaseModel):
+    """聊天历史创建模型
+    
+    用于创建新的聊天历史记录的数据结构，对应数据库模型 ChatHistory。
+    
+    Attributes:
+        participant_id: 参与者ID，用于标识特定用户
+        role: 消息角色，'user'表示用户消息，'ai'表示AI助手消息
+        message: 消息内容，文本格式的对话内容
+        raw_prompt_to_llm: 发送给LLM的完整Prompt，仅对AI消息有效
+    """
+    participant_id: str
+    role: str  # "user" 或 "ai"
+    message: str
+    raw_prompt_to_llm: Optional[str] = None

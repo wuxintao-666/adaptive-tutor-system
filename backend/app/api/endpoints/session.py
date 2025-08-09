@@ -29,15 +29,15 @@ def initiate_session(
         StandardResponse[SessionInitiateResponse]: 会话初始化响应
     """
     # 获取或创建用户配置
-    profile = user_state_service.get_or_create_profile(session_in.participant_id, db)
+    profile, is_new_user = user_state_service.get_or_create_profile(session_in.participant_id, db, session_in.group)
 
-    if profile.is_new_user:
+    if is_new_user:
         response.status_code = status.HTTP_201_CREATED
 
     # 构建响应数据
     response_data = SessionInitiateResponse(
         participant_id=profile.participant_id,
-        is_new_user=profile.is_new_user
+        is_new_user=is_new_user
     )
 
     # 返回标准成功响应

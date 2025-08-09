@@ -9,7 +9,7 @@
 
 #### **1. 功能概述 (Feature Overview)**
 
-**目标:** 为新参与者提供一个简单、直观的会话启动入口，并为返回的参与者提供无缝的会话恢复机制。用户通过提供一个系统生成的`participant_id`来创建或恢复他们的实验会话。系统将使用此ID进行后续所有的数据追踪和状态管理。
+**目标:** 为新参与者提供一个简单、直观的会话启动入口，并为返回的参与者提供无缝的会话恢复机制。用户通过提供一个他们自己生成或系统分配的`participant_id`来创建或恢复他们的实验会话。系统将使用此ID进行后续所有的数据追踪和状态管理。
 
 **核心原则:**
 *   **无状态后端 (Stateless Backend):** 后端不通过Cookie或服务器端Session来维护用户状态。用户的身份完全由前端在每次请求中提供的`participant_id`决定。
@@ -33,13 +33,13 @@ sequenceDiagram
     participant UserState as UserStateService
     participant DB as SQLite DB
     
-    User->>Page0: 1. 输入username并点击"开始"
-    Page0->>BE: 2. 发起API请求 {username: "..."}
+    User->>Page0: 1. 输入participant_id并点击"开始"
+    Page0->>BE: 2. 发起API请求 {participant_id: "..."}
     
-    BE->>UserState: 3. get_or_create_profile(username)
+    BE->>UserState: 3. get_or_create_profile(participant_id)
     activate UserState
     
-    UserState->>DB: 4. 查询 participants 表 where username = "..."
+    UserState->>DB: 4. 查询 participants 表 where id = "..."
     
     alt 用户已存在 (老用户)
         DB-->>UserState: 5a. 返回 participant 记录
@@ -147,9 +147,12 @@ def initiate_session(
     db: Session = Depends(get_db)
 ):
     try:
-        # 调用 get_or_create_profile
         # 这个方法会处理新用户创建和老用户状态恢复的所有复杂性
-        profile = user_state_service.get_or_create_profile(session_in.username, db)
+        profile, is_new_user = user_state_service.get_or_create_profile(
+            participant_id=session_in.participant_id, 
+            db=db, 
+            group=session_in.group
+        )
         
         # 检查这是否是一个真正的新用户
         # 注意：需要UserStateService返回is_new标志，或者通过其他方式判断
@@ -159,7 +162,6 @@ def initiate_session(
         # 构建响应数据
         response_data = SessionInitiateResponse(
             participant_id=profile.participant_id,
-            username=profile.username,
             is_new_user=is_new_user
         )
         
@@ -194,24 +196,23 @@ def initiate_session(
 
 ```python
 # backend/app/services/user_state_service.py 中的增强版本
-def get_or_create_profile(self, username: str, db: Session) -> (StudentProfile, bool):
+def get_or_create_profile(self, participant_id: str, db: Session, group: str) -> (StudentProfile, bool):
     """
     获取或创建用户配置
     
     Returns:
         tuple: (profile, is_new_user)
     """
-    # 检查用户是否已存在
-    from ..crud.crud_participant import get_by_username, create
+    from ..crud import crud_participant
     from ..schemas.session import SessionInitiateRequest
     
-    participant = get_by_username(db, username=username)
+    participant = crud_participant.get(db, id=participant_id)
     is_new_user = False
     
     if not participant:
         # 创建新用户
-        session_request = SessionInitiateRequest(username=username)
-        participant = create(db, obj_in=session_request)
+        create_schema = SessionInitiateRequest(participant_id=participant_id, group=group)
+        participant = crud_participant.create(db, obj_in=create_schema)
         is_new_user = True
     
     # 获取或创建内存Profile
@@ -226,7 +227,6 @@ def get_or_create_profile(self, username: str, db: Session) -> (StudentProfile, 
     # 为Profile添加is_new_user属性
     profile = self._state_cache[participant.id]
     profile.is_new_user = is_new_user
-    profile.username = participant.username
     
     return profile, is_new_user
 ```
@@ -252,7 +252,7 @@ def initiate_session(
 	session_in: SessionInitiateRequest,
 	db: Session = Depends(get_db)
 ):
-	participant = crud_participant.get_by_username(db, username=session_in.username)
+	participant = crud_participant.get(db, id=session_in.participant_id)
 	is_new = False
   
 	if not participant:
@@ -262,7 +262,6 @@ def initiate_session(
   
 	response_data = SessionInitiateResponse(
 		participant_id=participant.id,
-		username=participant.username,
 		is_new_user=is_new
 	)
 	return StandardResponse(data=response_data)
@@ -320,7 +319,7 @@ import { saveParticipantId, checkAndRedirect } from '../modules/session.js';
 checkAndRedirect();
 
 const startButton = document.getElementById('start-button');
-const usernameInput = document.getElementById('username-input');
+const participantIdInput = document.getElementById('participant-id-input');
 
 startButton.addEventListener('click', async () => {
   // ... (按钮禁用、输入校验等UI逻辑) ...

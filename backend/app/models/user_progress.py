@@ -1,8 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
-
-Base = declarative_base()
+from app.db.base_class import Base
 
 class UserProgress(Base):
     """用户进度模型

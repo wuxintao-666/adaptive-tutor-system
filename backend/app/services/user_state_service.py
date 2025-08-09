@@ -91,16 +91,53 @@ class UserStateService:
         self._maybe_create_snapshot(event.participant_id, db, background_tasks)
 
 
-    def get_or_create_profile(self, participant_id: str, db: Session) -> StudentProfile:
+    def get_or_create_profile(self, participant_id: str, db: Session = None, group: str = "experimental") -> tuple[StudentProfile, bool]:
         """
-        获取或创建用户档案。
-        重要：此方法遵循Fail-Fast原则。如果数据库操作失败，将抛出异常。
+        获取或创建用户配置
+        
+        Args:
+            participant_id: 参与者ID
+            db: 数据库会话（可选）
+            group: 实验分组，默认为'experimental'
+            
+        Returns:
+            tuple: (profile, is_new_user)
         """
+        is_new_user = False
+        
+        # 只有在提供了数据库会话时才检查和创建数据库记录
+        if db is not None:
+            from ..crud import crud_participant
+            from ..schemas.participant import ParticipantCreate
+            
+            # 检查数据库中是否存在参与者记录
+            participant = crud_participant.get(db, obj_id=participant_id)
+            
+            if not participant:
+                # 创建新用户记录
+                create_schema = ParticipantCreate(id=participant_id, group=group)
+                participant = crud_participant.create(db, obj_in=create_schema)
+                is_new_user = True
+        
+        # 获取或创建内存Profile
         if participant_id not in self._state_cache:
             print(f"INFO: Cache miss for {participant_id}. Attempting recovery from history.")
-            # 强制从数据库恢复状态。此方法会处理老用户的状态恢复，也会为新用户创建Profile。
-            self._recover_from_history_with_snapshot(participant_id, db)
-        return self._state_cache[participant_id]
+            # 只有在提供了数据库会话时才从数据库恢复状态
+            if db is not None:
+                # 强制从数据库恢复状态。此方法会处理老用户的状态恢复，也会为新用户创建Profile。
+                self._recover_from_history_with_snapshot(participant_id, db)
+            else:
+                # 如果没有数据库会话，创建一个默认的新用户profile
+                self._state_cache[participant_id] = StudentProfile(participant_id, is_new_user=True)
+        
+        # 返回profile和is_new_user标志
+        profile = self._state_cache[participant_id]
+        # 确保profile的is_new_user属性与数据库判断一致
+        # 如果没有数据库会话，我们假设用户不是新的（因为我们无法检查）
+        if db is not None:
+            profile.is_new_user = is_new_user
+        
+        return profile, is_new_user
 
     def _recover_from_history_with_snapshot(self, participant_id: str, db: Session):
         # 1. 查找最新的快照
@@ -150,7 +187,7 @@ class UserStateService:
         # 4. 回放事件
         for event in events_after_snapshot:
             # 将数据库模型转换为Pydantic模型
-            event_schema = BehaviorEvent.from_orm(event)
+            event_schema = BehaviorEvent.model_validate(event)
             # 调用解释器，但在回放模式下
             self.interpreter.interpret_event(event_schema, is_replay=True)
         
