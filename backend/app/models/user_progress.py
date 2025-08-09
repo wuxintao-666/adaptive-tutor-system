@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime
-from datetime import datetime
+from datetime import datetime, UTC
 from app.db.base_class import Base
 
 class UserProgress(Base):
@@ -18,4 +18,4 @@ class UserProgress(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     participant_id = Column(String, index=True, nullable=False)
     topic_id = Column(String, index=True, nullable=False)
-    completed_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, default=datetime.now(UTC))

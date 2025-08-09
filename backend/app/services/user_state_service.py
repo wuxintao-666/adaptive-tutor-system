@@ -2,7 +2,7 @@ from typing import Dict, Any
 from sqlalchemy.orm import Session
 from ..crud.crud_event import event as crud_event
 from ..schemas.behavior import BehaviorEvent
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 # 导入BKT模型
 from ..models.bkt import BKTModel
@@ -215,7 +215,7 @@ class UserStateService:
             event_count_since_snapshot = crud_event.get_count_by_participant(db, participant_id=participant_id)
             
         # 检查是否满足快照创建条件
-        time_since_last_snapshot = datetime.utcnow() - (latest_snapshot.timestamp if latest_snapshot else datetime.min)
+        time_since_last_snapshot = datetime.now(UTC) - (latest_snapshot.timestamp if latest_snapshot else datetime.min)
         
         if (event_count_since_snapshot >= self.SNAPSHOT_EVENT_INTERVAL or 
             time_since_last_snapshot >= self.SNAPSHOT_TIME_INTERVAL):
@@ -227,7 +227,7 @@ class UserStateService:
                 participant_id=participant_id,
                 event_type="state_snapshot",
                 event_data=profile.to_dict(),
-                timestamp=datetime.utcnow()
+                timestamp=datetime.now(UTC)
             )
             
             # 异步保存快照
