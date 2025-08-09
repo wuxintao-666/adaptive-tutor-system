@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.config.dependency_injection import get_db
 from app.schemas.response import StandardResponse
 from app.schemas.user_progress import UserProgressResponse
 from app.crud.crud_progress import progress

@@ -15,7 +15,7 @@ startButton.addEventListener('click', async () => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ username }),
+    body: JSON.stringify({ participant_id: username }),
   });
   const result = await response.json();
 

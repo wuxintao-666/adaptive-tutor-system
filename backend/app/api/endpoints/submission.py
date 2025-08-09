@@ -5,8 +5,7 @@ from app.schemas.submission import TestSubmissionRequest, TestSubmissionResponse
 from app.services.sandbox_service import sandbox_service
 from app.services.user_state_service import UserStateService
 from app.services.content_loader import load_json_content
-from app.config.dependency_injection import get_user_state_service
-from app.database import get_db
+from app.config.dependency_injection import get_user_state_service, get_db
 from app.crud.crud_progress import progress as crud_progress
 from app.schemas.user_progress import UserProgressCreate
 from app.schemas.response import StandardResponse

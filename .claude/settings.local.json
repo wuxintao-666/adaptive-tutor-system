@@ -6,7 +6,8 @@
       "Bash(cat:*)",
       "Bash(echo:*)",
       "WebFetch(domain:docs.sqlalchemy.org)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(sqlite3:*)"
     ],
     "deny": []
   }

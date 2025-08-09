@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.database import get_db
+from app.config.dependency_injection import get_db, get_dynamic_controller
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.response import StandardResponse
-from app.config.dependency_injection import get_dynamic_controller
 from app.services.dynamic_controller import DynamicController
 
 router = APIRouter()

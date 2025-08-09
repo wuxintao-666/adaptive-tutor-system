@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     # TODO: 到时候可能需要约束，不能放所有都进来
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
-    DATABASE_URL: str = "sqlite:///./database.db"
+    DATABASE_URL: str = "sqlite:///./backend/app/db/database.db"
     
     # File paths
     DATA_DIR: str = "./backend/data"

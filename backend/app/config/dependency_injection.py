@@ -3,6 +3,7 @@ from app.services.user_state_service import UserStateService
 from app.services.sentiment_analysis_service import sentiment_analysis_service
 from app.services.llm_gateway import llm_gateway
 from app.services.prompt_generator import prompt_generator
+from app.db.database import get_db
 
 
 class ProductionConfig:

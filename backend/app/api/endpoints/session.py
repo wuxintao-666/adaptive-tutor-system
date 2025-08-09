@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, status, Response
 from sqlalchemy.orm import Session
-from app.database import get_db
 from app.schemas.response import StandardResponse
 from app.schemas.session import SessionInitiateRequest, SessionInitiateResponse
-from app.config.dependency_injection import get_user_state_service
+from app.config.dependency_injection import get_user_state_service, get_db
 from app.services.user_state_service import UserStateService
 
 router = APIRouter()
