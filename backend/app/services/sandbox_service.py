@@ -85,7 +85,7 @@ class SandboxService:
                         results.append(f"检查点 {i + 1} 失败: {feedback}")
 
         except Error as e:
-            return {"passed": False, "message": "评测服务发生内部错误。", "details": [str(e)]}
+            error_result = {"passed": False, "message": "评测服务发生内部错误。", "details": [str(e)]}
         finally:
             # 确保资源被正确释放
             if browser:
@@ -95,8 +95,12 @@ class SandboxService:
                     # 浏览器可能已经关闭，忽略错误
                     pass
 
-            message = "恭喜！所有测试点都通过了！" if passed_all else "很遗憾，部分测试点未通过。"
-            return {"passed": passed_all, "message": message, "details": results}
+        # 如果有异常，返回错误结果，否则返回正常结果
+        if 'error_result' in locals():
+            return error_result
+        
+        message = "恭喜！所有测试点都通过了！" if passed_all else "很遗憾，部分测试点未通过。"
+        return {"passed": passed_all, "message": message, "details": results}
 
     def _evaluate_checkpoint(self, page: Page, checkpoint: Dict[str, Any]) -> Tuple[bool, str]:
         """
