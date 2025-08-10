@@ -9,7 +9,7 @@ class SessionInitiateRequest(BaseModel):
         participant_id: 参与者唯一标识符（UUID格式）
         group: 实验分组，默认为'experimental'实验组
     """
-    participant_id: str = Field(..., description="System-generated unique ID (UUID) for the participant")
+    participant_id: str = Field(..., description="User-provided or system-generated unique ID (UUID) for the participant")
     group: str = Field("experimental", description="Assigned experiment group")
 
 class SessionInitiateResponse(BaseModel):
@@ -22,4 +22,4 @@ class SessionInitiateResponse(BaseModel):
         is_new_user: 是否为新用户，用于判断是否需要显示引导内容
     """
     participant_id: str = Field(..., description="System-generated unique ID (UUID) for the participant")
-    is_new_user: bool
+    is_new_user: bool = Field(..., description="Whether the participant is a new user, used to determine if onboarding content should be displayed")

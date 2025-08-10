@@ -111,17 +111,11 @@ class DynamicController:
                 messages=messages
             )
             
-            # 步骤8: 构建响应
-            response = ChatResponse(
-                ai_response=ai_response,
-                user_state_summary=user_state_summary.dict(),
-                retrieved_context=retrieved_knowledge,
-                system_prompt=system_prompt
-            )
-
+            # 步骤8: 构建响应（只包含AI回复内容，符合TDD-II-10设计）
+            response = ChatResponse(ai_response=ai_response)
 
             # 步骤9: 记录AI交互
-            self._log_ai_interaction(request, response, db, background_tasks)
+            self._log_ai_interaction(request, response, db, background_tasks, system_prompt, retrieved_knowledge)
             
             return response
             
@@ -132,10 +126,7 @@ class DynamicController:
             # 返回一个标准的、用户友好的错误响应
             # 不包含任何可能泄露内部实现的细节
             return ChatResponse(
-                ai_response="I'm sorry, but a critical error occurred on our end. Please notify the research staff.",
-                user_state_summary={},
-                retrieved_context=[],
-                system_prompt=""
+                ai_response="I'm sorry, but a critical error occurred on our end. Please notify the research staff."
             )
     
     def _update_user_state_with_sentiment(
@@ -180,7 +171,9 @@ class DynamicController:
         request: ChatRequest, 
         response: ChatResponse, 
         db: Session,
-        background_tasks: Optional[Any] = None
+        background_tasks: Optional[Any] = None,
+        system_prompt: Optional[str] = None,
+        retrieved_knowledge: Optional[List[str]] = None
     ):
         """
         根据TDD-I规范，异步记录AI交互。
@@ -212,7 +205,7 @@ class DynamicController:
                 participant_id=request.participant_id,
                 role="ai",
                 message=response.ai_response,
-                raw_prompt_to_llm=response.system_prompt
+                raw_prompt_to_llm=system_prompt
             )
 
             if background_tasks:

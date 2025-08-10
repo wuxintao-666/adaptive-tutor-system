@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Dict, Any, List
+from typing import List
 
 class CodePayload(BaseModel):
     """代码载荷模型

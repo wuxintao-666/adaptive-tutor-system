@@ -1,6 +1,43 @@
-# backend/app/schemas/content.py
-from pydantic import BaseModel
-from typing import Optional, Dict, List, Any, Union
+from pydantic import BaseModel, Field
+from typing import Optional, Dict, List, Any, Union, TYPE_CHECKING
+from enum import Enum
+
+if TYPE_CHECKING:
+    pass
+
+
+class AssertionType(str, Enum):
+    """断言类型枚举"""
+    EXISTS = "exists"
+    EQUALS = "equals"
+    CONTAINS = "contains"
+    NOT_EQUALS = "not_equals"
+    NOT_CONTAINS = "not_contains"
+    STARTS_WITH = "starts_with"
+    ENDS_WITH = "ends_with"
+    GREATER_THAN = "greater_than"
+    LESS_THAN = "less_than"
+    REGEX = "regex"
+
+
+class ActionType(str, Enum):
+    """动作类型枚举"""
+    CLICK = "click"
+    TYPE_TEXT = "type_text"
+    HOVER = "hover"
+    FOCUS = "focus"
+    BLUR = "blur"
+    SCROLL = "scroll"
+    WAIT = "wait"
+
+
+class CheckpointType(str, Enum):
+    """检查点类型枚举"""
+    ASSERT_ATTRIBUTE = "assert_attribute"
+    ASSERT_STYLE = "assert_style"
+    ASSERT_TEXT_CONTENT = "assert_text_content"
+    CUSTOM_SCRIPT = "custom_script"
+    INTERACTION_AND_ASSERT = "interaction_and_assert"
 
 
 class CodeContent(BaseModel):
@@ -27,8 +64,8 @@ class LevelInfo(BaseModel):
         level: 等级编号
         description: 等级描述
     """
-    level: int
-    description: str
+    level: int = Field(..., ge=1, description="等级编号")
+    description: str = Field(..., min_length=1, description="等级描述")
 
 
 class SelectElementInfo(BaseModel):
@@ -40,8 +77,8 @@ class SelectElementInfo(BaseModel):
         topic_id: 主题ID
         select_element: 选择元素列表
     """
-    topic_id: str
-    select_element: List[str]
+    topic_id: str = Field(..., min_length=1, description="主题ID")
+    select_element: List[str] = Field(..., min_items=1, description="选择元素列表")
 
 
 class LearningContent(BaseModel):
@@ -55,10 +92,10 @@ class LearningContent(BaseModel):
         levels: 等级信息列表
         sc_all: 选择元素信息列表
     """
-    topic_id: str
-    title: str
-    levels: List[LevelInfo]
-    sc_all: List[SelectElementInfo]
+    topic_id: str = Field(..., min_length=1, description="知识点ID")
+    title: str = Field(..., min_length=1, description="学习内容标题")
+    levels: List[LevelInfo] = Field(..., min_items=1, description="等级信息列表")
+    sc_all: List[SelectElementInfo] = Field(..., description="选择元素信息列表")
 
 
 class BaseCheckpoint(BaseModel):
@@ -71,9 +108,9 @@ class BaseCheckpoint(BaseModel):
         type: 检查点类型
         feedback: 反馈信息，当检查点失败时显示给用户
     """
-    name: str
-    type: str
-    feedback: str
+    name: str = Field(..., min_length=1, description="检查点名称")
+    type: CheckpointType = Field(..., description="检查点类型")
+    feedback: str = Field(..., min_length=1, description="反馈信息")
 
 
 class AssertAttributeCheckpoint(BaseCheckpoint):
@@ -87,10 +124,10 @@ class AssertAttributeCheckpoint(BaseCheckpoint):
         assertion_type: 断言方式，如 'exists' 等
         value: 期望值（用于属性值比较）
     """
-    selector: str
-    attribute: str = ""
-    assertion_type: str
-    value: str = ""
+    selector: str = Field(..., min_length=1, description="CSS选择器")
+    attribute: str = Field("", description="属性名称")
+    assertion_type: AssertionType = Field(..., description="断言类型")
+    value: str = Field("", description="期望值")
 
 
 class AssertStyleCheckpoint(BaseCheckpoint):
@@ -104,10 +141,10 @@ class AssertStyleCheckpoint(BaseCheckpoint):
         assertion_type: 断言方式，如 'equals', 'contains' 等
         value: 期望值，用于与实际值进行比较
     """
-    selector: str
-    css_property: str
-    assertion_type: str
-    value: str
+    selector: str = Field(..., min_length=1, description="CSS选择器")
+    css_property: str = Field(..., min_length=1, description="CSS属性")
+    assertion_type: AssertionType = Field(..., description="断言类型")
+    value: str = Field(..., description="期望值")
 
 
 class AssertTextContentCheckpoint(BaseCheckpoint):
@@ -120,9 +157,9 @@ class AssertTextContentCheckpoint(BaseCheckpoint):
         assertion_type: 断言方式，如 'equals', 'contains' 等
         value: 期望值，用于与实际值进行比较
     """
-    selector: str
-    assertion_type: str
-    value: str
+    selector: str = Field(..., min_length=1, description="CSS选择器")
+    assertion_type: AssertionType = Field(..., description="断言类型")
+    value: str = Field(..., description="期望值")
 
 
 class CustomScriptCheckpoint(BaseCheckpoint):
@@ -133,7 +170,7 @@ class CustomScriptCheckpoint(BaseCheckpoint):
     Attributes:
         script: 要执行的JavaScript脚本
     """
-    script: str
+    script: str = Field(..., min_length=1, description="JavaScript脚本")
 
 
 class InteractionAndAssertCheckpoint(BaseCheckpoint):
@@ -147,16 +184,16 @@ class InteractionAndAssertCheckpoint(BaseCheckpoint):
         action_value: 动作值（用于输入文本等）
         assertion: 断言对象，可以是任何类型的检查点
     """
-    action_selector: str
-    action_type: str
-    action_value: Optional[str] = None
+    action_selector: str = Field(..., min_length=1, description="动作选择器")
+    action_type: ActionType = Field(..., description="动作类型")
+    action_value: Optional[str] = Field(None, description="动作值")
     assertion: Optional[Union[
         AssertAttributeCheckpoint,
         AssertStyleCheckpoint,
         AssertTextContentCheckpoint,
         CustomScriptCheckpoint,
         'InteractionAndAssertCheckpoint'
-    ]] = None
+    ]] = Field(None, description="断言对象")
 
 
 # 更新InteractionAndAssertCheckpoint的前向引用
@@ -184,7 +221,7 @@ class TestTask(BaseModel):
         start_code: 初始代码，用户开始测试时的基础代码
         checkpoints: 检查点列表，包含所有需要验证的检查点
     """
-    topic_id: str
-    description_md: str
-    start_code: CodeContent
-    checkpoints: List[Checkpoint]
+    topic_id: str = Field(..., min_length=1, description="知识点ID")
+    description_md: str = Field(..., min_length=1, description="任务描述")
+    start_code: CodeContent = Field(..., description="初始代码")
+    checkpoints: List[Checkpoint] = Field(..., min_items=1, description="检查点列表")
