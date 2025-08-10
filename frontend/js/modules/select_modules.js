@@ -1,7 +1,3 @@
-/**
- * 选择模块 - 元素选择器相关功能
- * 参考 hello-HTML 项目的实现
- */
 
 // ==================== 工具函数 ====================
 function getElementAtPoint(x, y) {
@@ -180,6 +176,27 @@ class ElementSelector {
     shouldIgnoreElement(element) {
         if (!element) return true;
         
+        // 检查是否在允许的元素列表中（只匹配标签名）
+        if (this.options.allowedElements && this.options.allowedElements.length > 0) {
+            const tag = element.tagName.toLowerCase();
+            const isAllowed = this.options.allowedElements.some(allowed => {
+                // 如果allowed是字符串，直接比较标签名
+                if (typeof allowed === 'string') {
+                    return tag === allowed.toLowerCase();
+                }
+                // 如果allowed是对象，检查tagName属性
+                if (allowed.tagName) {
+                    return tag === allowed.tagName.toLowerCase();
+                }
+                return false;
+            });
+            
+            if (!isAllowed) {
+                return true;
+            }
+        }
+        
+        // 检查允许的标签
         if (this.options.allowedTags && this.options.allowedTags.length > 0) {
             const tag = element.tagName.toLowerCase();
             if (!this.options.allowedTags.includes(tag)) {
@@ -187,6 +204,7 @@ class ElementSelector {
             }
         }
         
+        // 检查忽略的选择器
         const ignoreSelectors = this.options.ignoreSelectors || [];
         return ignoreSelectors.some(selector => {
             if (selector.startsWith('.')) {
@@ -284,6 +302,90 @@ class ElementSelector {
     }
 }
 
+// ==================== API工具函数 ====================
+async function loadAllowedElementsFromAPI(topicId, baseURL = '/api') {
+    try {
+        const response = await fetch(`${baseURL}/content/learning-content/${topicId}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            const data = result.data;
+            return getAllowedElementsFromData(data, topicId);
+        }
+        
+        // 如果没有找到任何数据，返回空对象
+        return {
+            cumulative: [],
+            current: []
+        };
+    } catch (error) {
+        console.error('Failed to load allowed elements:', error);
+        return {
+            cumulative: [],
+            current: []
+        };
+    }
+}
+
+function getCumulativeAllowedElements(scAll, targetTopicId) {
+    const allowedElements = new Set();
+    
+    // 遍历所有章节
+    for (const chapter of scAll) {
+        const chapterTopicId = chapter.topic_id;
+        const selectElements = chapter.select_element || [];
+        
+        // 将当前章节的可选元素添加到集合中
+        selectElements.forEach(element => allowedElements.add(element));
+        
+        // 如果找到目标章节，停止累加
+        if (chapterTopicId === targetTopicId) {
+            break;
+        }
+    }
+    
+    return Array.from(allowedElements);
+}
+
+function getCurrentChapterElements(scAll, targetTopicId) {
+    // 找到当前章节
+    const currentChapter = scAll.find(chapter => chapter.topic_id === targetTopicId);
+    
+    if (currentChapter && currentChapter.select_element) {
+        return currentChapter.select_element;
+    }
+    
+    return [];
+}
+
+function getAllowedElementsFromData(data, topicId) {
+    if (data.sc_all && Array.isArray(data.sc_all)) {
+        const cumulativeElements = getCumulativeAllowedElements(data.sc_all, topicId);
+        const currentElements = getCurrentChapterElements(data.sc_all, topicId);
+        
+        return {
+            cumulative: cumulativeElements,
+            current: currentElements
+        };
+    }
+    
+    // 如果直接包含 allowedElements
+    if (data.allowedElements) {
+        return {
+            cumulative: data.allowedElements,
+            current: data.allowedElements
+        };
+    }
+    
+    return {
+        cumulative: [],
+        current: []
+    };
+}
+
 // ==================== iframe桥接 ====================
 const MESSAGE_TYPES = {
     START: 'SW_SELECT_START',
@@ -313,6 +415,7 @@ function initIframeSelector(options = {}) {
                 selector = new ElementSelector({
                     ignoreSelectors: startMessage.ignore,
                     allowedTags: startMessage.allowedTags || allowedTags,
+                    allowedElements: startMessage.allowedElements || [],
                     onElementSelected: (element, info) => {
                         window.parent.postMessage({
                             type: MESSAGE_TYPES.CHOSEN,
@@ -361,12 +464,13 @@ function createSelectorBridge(options) {
     window.addEventListener('message', handleMessage);
     
     return {
-        start(allowedTags = []) {
+        start(allowedTags = [], allowedElements = []) {
             try {
                 iframeWindow.postMessage({
                     type: MESSAGE_TYPES.START,
                     ignore: ignoreSelectors,
-                    allowedTags
+                    allowedTags,
+                    allowedElements
                 }, targetOrigin);
             } catch (error) {
                 if (onError) {
@@ -393,6 +497,8 @@ function createSelectorBridge(options) {
     };
 }
 
+
+
 // 导出模块
 window.SelectModules = {
     getElementAtPoint,
@@ -402,5 +508,9 @@ window.SelectModules = {
     ElementSelector,
     initIframeSelector,
     createSelectorBridge,
+    loadAllowedElementsFromAPI,
+    getCumulativeAllowedElements,
+    getCurrentChapterElements,
+    getAllowedElementsFromData,
     MESSAGE_TYPES
 };

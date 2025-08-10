@@ -3,6 +3,11 @@
 // ==================== 主应用逻辑 ====================
 let allowedTags = [];
 let bridge = null;
+let allowedElements = {
+    cumulative: [],
+    current: []
+};
+let currentTopicId = '1_1'; // 默认主题ID
 
 function initMainApp() {
     const startButton = document.getElementById('startSelector');
@@ -23,23 +28,26 @@ function initMainApp() {
     // 初始化
     startButton.disabled = true;
     
-    // 获取用户学习进度
-    if (window.DocsModule && window.DocsModule.ApiClient) {
-        window.DocsModule.ApiClient.get(`/progress/participants/user123/progress`).then(data => {
-            allowedTags = data.data.completed_topics || [];
-            iframe.src = iframe.src;
-            startButton.disabled = false;
-        }).catch(error => {
-            console.error('获取用户学习进度失败:', error);
-            // 如果获取失败，使用默认标签
-            allowedTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img', 'table', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'form', 'input', 'button', 'textarea', 'select', 'option'];
-            startButton.disabled = false;
-        });
-    } else {
-        // 如果DocsModule未加载，使用默认标签
-        allowedTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img', 'table', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'form', 'input', 'button', 'textarea', 'select', 'option'];
+    // 获取用户学习进度和可选元素数据
+    Promise.all([
+        window.DocsModule.ApiClient.get(`/progress/participants/user123/progress`),
+        SelectModules.loadAllowedElementsFromAPI(currentTopicId)
+    ]).then(([progressData, elementsData]) => {
+        allowedTags = progressData.data.completed_topics || [];
+        allowedElements = elementsData;
+        iframe.src = iframe.src;
         startButton.disabled = false;
-    }
+        console.log('可选元素数据已加载:', allowedElements);
+    }).catch(error => {
+        console.error('获取数据失败:', error);
+        // 如果获取失败，使用默认标签
+        allowedTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img', 'table', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'form', 'input', 'button', 'textarea', 'select', 'option'];
+        allowedElements = {
+            cumulative: ['div', 'span', 'p', 'h1', 'h2', 'h3'],
+            current: ['div', 'span', 'p']
+        };
+        startButton.disabled = false;
+    });
     
     // iframe加载事件
     iframe.addEventListener('load', function() {
@@ -75,16 +83,45 @@ function initMainApp() {
             showStatus('error', '桥接未初始化，请刷新页面重试');
             return;
         }
+        
+        // 获取开关状态
+        const cumulativeToggle = document.getElementById('cumulativeToggle');
+        const useCumulative = cumulativeToggle ? cumulativeToggle.checked : false;
+        
+        // 根据开关状态选择元素列表
+        const elementsToUse = useCumulative ? allowedElements.cumulative : allowedElements.current;
+        
         startButton.style.display = 'none';
         stopButton.style.display = 'inline-block';
-        showStatus('info', '请在预览区域中选择一个元素');
-        bridge.start(allowedTags);
+        
+        const statusMessage = useCumulative 
+            ? `可选择当前及之前章节的元素 (${elementsToUse.length}个)`
+            : `仅可选择当前章节的元素 (${elementsToUse.length}个)`;
+        
+        showStatus('info', statusMessage);
+        bridge.start(allowedTags, elementsToUse);
     });
     
     // 停止选择器
     stopButton.addEventListener('click', function() {
         stopSelector();
     });
+    
+    // 初始化开关事件监听器
+    const cumulativeToggle = document.getElementById('cumulativeToggle');
+    if (cumulativeToggle) {
+        cumulativeToggle.addEventListener('change', function() {
+            const isChecked = this.checked;
+            const currentCount = allowedElements.current.length;
+            const cumulativeCount = allowedElements.cumulative.length;
+            
+            const statusMessage = isChecked 
+                ? `已开启：可选择当前及之前章节的元素 (${cumulativeCount}个)`
+                : `已关闭：仅可选择当前章节的元素 (${currentCount}个)`;
+            
+            showStatus('info', statusMessage);
+        });
+    }
     
     // Tab切换
     const tabKnowledge = document.getElementById('tab-knowledge');
@@ -182,6 +219,35 @@ function showStatus(type, message) {
         statusBadge.textContent = message;
         statusBadge.className = `status-badge status-${type}`;
         statusBadge.style.display = 'inline-block';
+        
+        setTimeout(() => {
+            statusBadge.style.display = 'none';
+        }, 3000);
+    }
+}
+
+// 更新主题ID并重新加载元素数据
+async function updateTopicId(newTopicId) {
+    currentTopicId = newTopicId;
+    
+    try {
+        const elementsData = await SelectModules.loadAllowedElementsFromAPI(currentTopicId);
+        allowedElements = elementsData;
+        console.log('主题切换，可选元素数据已更新:', allowedElements);
+        
+        // 更新开关描述
+        const toggleDescription = document.querySelector('.toggle-description');
+        if (toggleDescription) {
+            const currentCount = allowedElements.current.length;
+            const cumulativeCount = allowedElements.cumulative.length;
+            toggleDescription.textContent = 
+                `开启后可选择当前及之前所有章节的元素 (${cumulativeCount}个)，关闭时仅可选择当前章节元素 (${currentCount}个)`;
+        }
+        
+        showStatus('success', `已切换到主题 ${newTopicId}`);
+    } catch (error) {
+        console.error('更新主题数据失败:', error);
+        showStatus('error', '主题数据加载失败');
     }
 }
 
@@ -190,7 +256,8 @@ window.AIHTMLPlatform = {
     initMainApp,
     handleElementSelected,
     stopSelector,
-    showStatus
+    showStatus,
+    updateTopicId
 };
 
 // 自动初始化
