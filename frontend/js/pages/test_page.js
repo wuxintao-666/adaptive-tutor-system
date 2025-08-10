@@ -1,9 +1,13 @@
-import {createLivePreview} from '../modules/live_preview.js'; // 假设该模块已存在
-import {getParticipantId} from '../modules/session.js'; // 导入会话管理模块
+import { createLivePreview } from '../modules/live_preview.js'; // 假设该模块已存在
+import { getParticipantId } from '../modules/session.js'; // 导入会话管理模块
+
+//TODO：ceq需要 Monaco 编辑器实例并初始化tracker才能实现记录！
+// 导入并初始化 tracker
+//import tracker from '../js/modules/behavior_tracker.js';
 
 // ... 在获取到数据并设置好编辑器后 ...
 // TODO: cxz 需要获取HTML中的DOM
-const editors = {html: htmlEditor, css: cssEditor, js: jsEditor};
+const editors = { html: htmlEditor, css: cssEditor, js: jsEditor };
 const iframe = document.getElementById('preview-iframe');
 const livePreviewManager = createLivePreview(editors, iframe);
 

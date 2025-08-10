@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from typing import Dict, Any,Literal, Optional
 from datetime import datetime
 
 
@@ -15,6 +15,15 @@ class BehaviorEvent(BaseModel):
         event_data: 事件数据，包含事件相关的详细信息，字典格式
         timestamp: 事件发生的时间戳，可选字段，默认为当前时间
     """
+    # 与 TDD-II-07 对齐的事件类型枚举（若将来扩展只需在此添加）TODO：ceq可能添加热力图事件（heatmap_snapshot）
+    EventType = Literal[
+    "code_edit",
+    "ai_help_request",
+    "test_submission",
+    "dom_element_select",
+    "user_idle",
+    "page_focus_change"
+]
     # TODO: cxz 需要根据TDD-II-07中的事件类型定义，补充字段说明和验证规则
     participant_id: str
     event_type: str
