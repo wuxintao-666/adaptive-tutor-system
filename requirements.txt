@@ -1,3 +1,4 @@
+playwright
 annotated-types==0.7.0
 annoy==1.17.3
 anyio==4.10.0

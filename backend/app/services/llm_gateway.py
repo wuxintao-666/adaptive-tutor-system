@@ -1,5 +1,6 @@
 # backend/app/services/llm_gateway.py
 import os
+import asyncio
 from typing import List, Dict, Any, Optional
 from openai import OpenAI
 from ..core.config import settings
@@ -23,7 +24,7 @@ class LLMGateway:
             base_url=self.api_base
         )
     
-    def get_completion(
+    async def get_completion(
         self, 
         system_prompt: str, 
         messages: List[Dict[str, str]],
@@ -51,7 +52,9 @@ class LLMGateway:
             temperature = temperature or self.temperature
             
             # 调用LLM API - OpenAI客户端是同步的
-            response = self.client.chat.completions.create(
+            # 使用 asyncio.to_thread 来在异步环境中运行同步代码
+            response = await asyncio.to_thread(
+                self.client.chat.completions.create,
                 model=self.model,
                 messages=full_messages,
                 max_tokens=max_tokens,

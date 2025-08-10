@@ -5,6 +5,10 @@ class BehaviorInterpreterService:
     def __init__(self):
         pass
     
-    def interpret(self, data):
+    def interpret(self, data, is_replay=False):
+        # 临时实现，返回空结果
+        return {}
+    
+    def interpret_event(self, event, is_replay=False):
         # 临时实现，返回空结果
         return {}
