@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (testResult.passed) {
                         alert("测试完成！即将跳转回到知识图谱界面");
                         setTimeout(() => {
-                            window.location.href = '/knowledge_graph.html';
+                            window.location.href = '/pages/knowledge_graph.html';
                         }, 3000);
                     }
                 } else {

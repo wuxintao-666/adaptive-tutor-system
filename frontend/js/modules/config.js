@@ -14,8 +14,10 @@ export const AppConfig = {
 export async function initializeConfig() {
   try {
     // We construct the URL manually here for the initial config fetch
+    // 明确指定后端端口，而不是依赖可能未定义的AppConfig.backend_port
+    const backendPort = 8000;
     const configUrl = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? `http://localhost:${AppConfig.backend_port}/api/v1/config`
+      ? `http://localhost:${backendPort}/api/v1/config`
       : '/api/v1/config';
       
     const response = await fetch(configUrl);
@@ -30,6 +32,10 @@ export async function initializeConfig() {
   } catch (error) {
     console.error("Could not initialize frontend configuration:", error);
     // Fallback to default port if config load fails in development
+    // 确保即使配置加载失败，也有默认值
+    if (!AppConfig.backend_port) {
+      AppConfig.backend_port = 8000;
+    }
   }
 }
 
@@ -43,8 +49,9 @@ export function buildBackendUrl(endpoint = '') {
   
   // 对于相对路径，构建完整的URL
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    // 开发环境，使用配置的端口
-    return `http://localhost:${AppConfig.backend_port}${path}`;
+    // 开发环境，使用配置的端口，确保有默认值
+    const backendPort = AppConfig.backend_port || 8000;
+    return `http://localhost:${backendPort}${path}`;
   } else {
     // 生产环境，使用相对路径
     return path;

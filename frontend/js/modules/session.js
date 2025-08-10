@@ -17,7 +17,7 @@ export function checkAndRedirect() {
   if (getParticipantId()) {
         // 如果当前不是知识图谱页，则跳转过去
         if (!window.location.pathname.includes('knowledge_graph.html')) {
-           window.location.href = '/knowledge_graph.html';
+           window.location.href = '/pages/knowledge_graph.html';
         }
   }
 }
