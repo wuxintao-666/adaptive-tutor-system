@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import Mock, MagicMock
-from backend.app.services.sandbox_service_improved import SandboxService
+from backend.app.services.sandbox_service import SandboxService
 
 
 # 模拟的 Playwright 管理器

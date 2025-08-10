@@ -44,9 +44,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./backend/app/db/database.db"
     
     # File paths
-    DATA_DIR: str = "./backend/data"
-    DOCUMENTS_DIR: str = "./backend/data/documents"
-    VECTOR_STORE_DIR: str = "./backend/data/vector_store"
+    DATA_DIR: str = "./backend/app/data"
+    DOCUMENTS_DIR: str = "./backend/app/data/documents"
+    VECTOR_STORE_DIR: str = "./backend/app/data/vector_store"
     KB_ANN_FILENAME: str = "kb.ann"
     KB_CHUNKS_FILENAME: str = "kb_chunks.json"
 

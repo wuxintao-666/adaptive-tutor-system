@@ -8,6 +8,7 @@ class EventType(str, Enum):
     """行为事件类型枚举
     
     根据TDD-II-07文档定义，对应前端behavior_tracker.js捕获的所有事件类型
+    以及后端生成的事件类型（如state_snapshot）
     """
     CODE_EDIT = "code_edit"
     AI_HELP_REQUEST = "ai_help_request"
@@ -15,6 +16,7 @@ class EventType(str, Enum):
     DOM_ELEMENT_SELECT = "dom_element_select"
     USER_IDLE = "user_idle"
     PAGE_FOCUS_CHANGE = "page_focus_change"
+    STATE_SNAPSHOT = "state_snapshot"
 
 
 class CodeEditData(BaseModel):

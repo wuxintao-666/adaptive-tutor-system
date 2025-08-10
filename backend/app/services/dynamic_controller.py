@@ -1,12 +1,20 @@
 # backend/app/services/dynamic_controller.py
-from typing import Dict, Any, List, Optional, Union
+from typing import Any, Optional
 from sqlalchemy.orm import Session
 from app.schemas.chat import ChatRequest, ChatResponse, UserStateSummary, SentimentAnalysisResult
 from app.services.sentiment_analysis_service import SentimentAnalysisService
-from app.services.user_state_service import UserStateService, StudentProfile
+from app.services.user_state_service import UserStateService
 from app.services.rag_service import RAGService
 from app.services.prompt_generator import PromptGenerator
 from app.services.llm_gateway import LLMGateway
+from app.crud.crud_event import event as crud_event
+from app.crud.crud_chat_history import chat_history as crud_chat_history
+from app.schemas.chat import ChatHistoryCreate
+from app.schemas.behavior import BehaviorEvent
+# 准备事件数据
+from app.schemas.behavior import EventType, AiHelpRequestData
+from datetime import datetime, UTC
+
 
 class DynamicController:
     """动态控制器 - 编排各个服务的核心逻辑"""
@@ -45,6 +53,7 @@ class DynamicController:
         Args:
             request: 聊天请求
             db: 数据库会话
+            background_tasks: 后台任务处理器（可选）
             
         Returns:
             ChatResponse: AI回复
@@ -67,12 +76,7 @@ class DynamicController:
                     details={}
                 )
 
-            # 更新用户状态（包含情感信息）
-            if self.sentiment_service:
-                self._update_user_state_with_sentiment(profile, sentiment_result)
-
-            # 构建用户状态摘要
-            # TODO: cxz 改用pulic
+            # 构建用户状态摘要（同时更新用户情感状态）
             user_state_summary = self._build_user_state_summary(profile, sentiment_result)
             
             # 步骤5: RAG检索
@@ -115,7 +119,7 @@ class DynamicController:
             response = ChatResponse(ai_response=ai_response)
 
             # 步骤9: 记录AI交互
-            self._log_ai_interaction(request, response, db, background_tasks, system_prompt, retrieved_knowledge)
+            DynamicController._log_ai_interaction(request, response, db, background_tasks, system_prompt)
             
             return response
             
@@ -129,21 +133,8 @@ class DynamicController:
                 ai_response="I'm sorry, but a critical error occurred on our end. Please notify the research staff."
             )
     
-    def _update_user_state_with_sentiment(
-        self, 
-        profile: StudentProfile,
-        sentiment_result: SentimentAnalysisResult
-    ):
-        """更新用户状态中的情感信息"""
-        # 使用StudentProfile的属性，确保兼容性
-        if hasattr(profile, 'emotion_state'):
-            profile.emotion_state['current_sentiment'] = sentiment_result.label
-            profile.emotion_state['confidence'] = sentiment_result.confidence
-            if sentiment_result.details:
-                profile.emotion_state['details'] = sentiment_result.details
-    
+    @staticmethod
     def _build_user_state_summary(
-        self, 
         profile: Any, 
         sentiment_result: SentimentAnalysisResult
     ) -> UserStateSummary:
@@ -158,6 +149,13 @@ class DynamicController:
         if sentiment_result.details:
             emotion_state["details"] = sentiment_result.details
         
+        # 更新传入的profile对象中的情感状态
+        if hasattr(profile, 'emotion_state'):
+            profile.emotion_state['current_sentiment'] = sentiment_result.label
+            profile.emotion_state['confidence'] = sentiment_result.confidence
+            if sentiment_result.details:
+                profile.emotion_state['details'] = sentiment_result.details
+        
         return UserStateSummary(
             participant_id=profile.participant_id,
             emotion_state=emotion_state,
@@ -166,14 +164,13 @@ class DynamicController:
             is_new_user=profile.is_new_user,
         )
     
+    @staticmethod
     def _log_ai_interaction(
-        self, 
         request: ChatRequest, 
         response: ChatResponse, 
         db: Session,
         background_tasks: Optional[Any] = None,
         system_prompt: Optional[str] = None,
-        retrieved_knowledge: Optional[List[str]] = None
     ):
         """
         根据TDD-I规范，异步记录AI交互。
@@ -181,16 +178,11 @@ class DynamicController:
         2. 在 chat_history 中记录用户和AI的完整消息。
         """
         try:
-            from app.crud.crud_event import event as crud_event
-            from app.crud.crud_chat_history import chat_history as crud_chat_history
-            from app.schemas.behavior import BehaviorEvent
-            from app.schemas.chat import ChatHistoryCreate
-
-            # 准备事件数据
             event = BehaviorEvent(
                 participant_id=request.participant_id,
-                event_type="ai_chat",
-                event_data={"user_message_length": len(request.user_message)}
+                event_type=EventType.AI_HELP_REQUEST,
+                event_data=AiHelpRequestData(message=request.user_message),
+                timestamp=datetime.now(UTC)
             )
             
             # 准备用户聊天记录
@@ -224,9 +216,3 @@ class DynamicController:
         except Exception as e:
             # 数据保存失败必须报错，科研数据完整性优先
             raise RuntimeError(f"Failed to log AI interaction for {request.participant_id}: {e}")
-
-    
-
-
-# 注意：DynamicController实例现在通过依赖注入容器创建
-# 请使用 get_dynamic_controller() 函数获取实例

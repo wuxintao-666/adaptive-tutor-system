@@ -177,12 +177,13 @@ class InteractionAndAssertCheckpoint(BaseCheckpoint):
     """交互和断言检查点模型
     
     用于模拟用户交互（点击、输入等）并进行断言检查。
+    注意：断言对象不能再次嵌套交互脚本，只能嵌套其他类型的断言。
     
     Attributes:
         action_selector: 动作选择器，用于定位要执行动作的元素
         action_type: 动作类型，如 'click', 'type_text' 等
         action_value: 动作值（用于输入文本等）
-        assertion: 断言对象，可以是任何类型的检查点
+        assertion: 断言对象，可以是除InteractionAndAssertCheckpoint外的任何检查点类型
     """
     action_selector: str = Field(..., min_length=1, description="动作选择器")
     action_type: ActionType = Field(..., description="动作类型")
@@ -191,9 +192,8 @@ class InteractionAndAssertCheckpoint(BaseCheckpoint):
         AssertAttributeCheckpoint,
         AssertStyleCheckpoint,
         AssertTextContentCheckpoint,
-        CustomScriptCheckpoint,
-        'InteractionAndAssertCheckpoint'
-    ]] = Field(None, description="断言对象")
+        CustomScriptCheckpoint
+    ]] = Field(None, description="断言对象，不能再次嵌套交互脚本")
 
 
 # 更新InteractionAndAssertCheckpoint的前向引用
@@ -206,7 +206,7 @@ Checkpoint = Union[
     AssertStyleCheckpoint,
     AssertTextContentCheckpoint,
     CustomScriptCheckpoint,
-    InteractionAndAssertCheckpoint
+    "InteractionAndAssertCheckpoint"  # 使用字符串前向引用
 ]
 
 

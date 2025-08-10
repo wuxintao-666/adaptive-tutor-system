@@ -1,7 +1,7 @@
 from typing import Dict, Any
 from sqlalchemy.orm import Session
-from ..crud.crud_event import event as crud_event
-from ..schemas.behavior import BehaviorEvent
+from app.crud.crud_event import event as crud_event
+from app.schemas.behavior import BehaviorEvent
 from datetime import datetime, timedelta, UTC
 
 # 导入BKT模型
@@ -223,9 +223,10 @@ class UserStateService:
             print(f"INFO: Creating snapshot for {participant_id}...")
             
             # 创建快照事件
+            from ..schemas.behavior import EventType
             snapshot_event = BehaviorEvent(
                 participant_id=participant_id,
-                event_type="state_snapshot",
+                event_type=EventType.STATE_SNAPSHOT,
                 event_data=profile.to_dict(),
                 timestamp=datetime.now(UTC)
             )
