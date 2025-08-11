@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # Model configuration tells Pydantic where to find the .env file.
     model_config = SettingsConfigDict(
-        env_file="../../.env", 
+        env_file=".env", 
         env_file_encoding='utf-8', 
         extra='ignore',
         case_sensitive=True

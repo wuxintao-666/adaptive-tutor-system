@@ -289,10 +289,11 @@ This example is useful for print stylesheets. It uses an [attribute selector](/e
 #### HTML
 
 ```html
+
 <ul>
-  <li><a href="https://mozilla.com">Mozilla</a></li>
-  <li><a href="/">MDN</a></li>
-  <li><a href="https://openwebdocs.org">OpenWebDocs</a></li>
+    <li><a href="https://mozilla.com">Mozilla</a></li>
+    <li><a href="/">MDN</a></li>
+    <li><a href="https://openwebdocs.org">OpenWebDocs</a></li>
 </ul>
 ```
 
