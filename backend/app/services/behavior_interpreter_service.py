@@ -28,6 +28,7 @@ FRUSTRATION_INTERVAL_SECONDS = 10
 
 class BehaviorInterpreterService:
     def __init__(self):
+
         # 将规则参数保存在实例中，便于未来外部配置化
         self.window_minutes = FRUSTRATION_WINDOW_MINUTES
         self.error_rate_threshold = FRUSTRATION_ERROR_RATE_THRESHOLD
@@ -267,6 +268,10 @@ class BehaviorInterpreterService:
         # 默认：不执行任何动作（原始事件仍然会写入 event_logs 以便离线分析）
         return
 
+
+  def interpret(self, data, is_replay=False):
+      # 临时实现，返回空结果
+      return {}
 
 # 单例导出
 behavior_interpreter_service = BehaviorInterpreterService()

@@ -16,6 +16,24 @@ function initMainApp() {
         console.error('必要的DOM元素未找到');
         return;
     }
+    
+    // 从URL获取topicId
+    const urlParams = new URLSearchParams(window.location.search);
+    const topicId = urlParams.get('topic');
+    
+    // 如果有topicId，加载对应的知识点内容
+    if (topicId && window.DocsModule) {
+        // 更新页面标题
+        const headerTitle = document.querySelector('.header-title');
+        if (headerTitle) {
+            headerTitle.textContent = `学习 - ${topicId}`;
+        }
+        
+        // 加载知识点内容
+        window.DocsModule.loadDocumentForTag(topicId.toLowerCase()).catch(error => {
+            console.error('加载知识点内容失败:', error);
+        });
+    }
 
     // 初始化知识点内容
     if (window.DocsModule && window.DocsModule.initKnowledgeContent) {

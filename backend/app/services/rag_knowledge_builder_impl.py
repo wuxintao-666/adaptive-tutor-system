@@ -1,7 +1,7 @@
-# backend/app/services/knowledge_builder_impl.py
+# backend/app/services/rag_knowledge_builder_impl.py
 import os
 import json
-from typing import List, Iterator
+from typing import List, Optional
 from openai import OpenAI
 from annoy import AnnoyIndex
 from app.core.document import Document
@@ -15,7 +15,7 @@ class KnowledgeBaseBuilderImpl(KnowledgeBaseBuilder):
     def __init__(self):
         self.documents: List[Document] = []
         self.embeddings: List[List[float]] = []
-        self.index: AnnoyIndex = None
+        self.index: Optional[AnnoyIndex] = None
         self.chunk_size = 500  # 每个文本块的最大字符数
         self.chunk_overlap = 50  # 文本块之间的重叠字符数
         
@@ -129,7 +129,8 @@ class KnowledgeBaseBuilderImpl(KnowledgeBaseBuilder):
         
         return embeddings
     
-    def _build_annoy_index(self, embeddings: List[List[float]]) -> AnnoyIndex:
+    @staticmethod
+    def _build_annoy_index(embeddings: List[List[float]]) -> AnnoyIndex:
         """构建Annoy索引"""
         if not embeddings:
             raise ValueError("No embeddings to build index")
