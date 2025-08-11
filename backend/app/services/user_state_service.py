@@ -6,7 +6,9 @@ from datetime import datetime, timedelta, UTC
 
 # 导入BKT模型
 from ..models.bkt import BKTModel
-from .behavior_interpreter_service import BehaviorInterpreterService
+
+# 移除循环导入
+# from .behavior_interpreter_service import BehaviorInterpreterService
 
 class StudentProfile:
     def __init__(self, participant_id, is_new_user=True):
@@ -79,14 +81,19 @@ class UserStateService:
     
     def __init__(self):
         self._state_cache: Dict[str, StudentProfile] = {}
-        # 引入解释器，用于回放
-        
-        self.interpreter = BehaviorInterpreterService()
+        # 移除循环依赖：不再在初始化时创建 BehaviorInterpreterService 实例
+        # self.interpreter = BehaviorInterpreterService()
     
     def handle_event(self, event: BehaviorEvent, db: Session, background_tasks=None):
         """处理事件，并可能创建快照"""
-        # 调用解释器处理事件
-        self.interpreter.interpret_event(event)
+        # 修改调用方式：使用依赖注入
+        from .behavior_interpreter_service import behavior_interpreter_service
+        behavior_interpreter_service.interpret_event(
+            event, 
+            user_state_service=self, 
+            db_session=db, 
+            is_replay=False
+        )
         
         # 事件处理后，检查是否需要创建快照
         self._maybe_create_snapshot(event.participant_id, db, background_tasks)
@@ -191,6 +198,7 @@ class UserStateService:
             return  # 没有事件需要回放
         
         # 4. 回放事件
+        from .behavior_interpreter_service import behavior_interpreter_service
         for event in events_after_snapshot:
             # 将数据库模型转换为Pydantic模型
             # 如果event已经是BehaviorEvent实例或具有正确属性的mock对象，则直接使用
@@ -204,7 +212,12 @@ class UserStateService:
                     print(f"WARNING: Failed to validate event {event}. Skipping.")
                     continue
             # 调用解释器，但在回放模式下
-            self.interpreter.interpret_event(event_schema, is_replay=True)
+            behavior_interpreter_service.interpret_event(
+                event_schema, 
+                user_state_service=self, 
+                db_session=db, 
+                is_replay=True
+            )
         
         print(f"INFO: Recovery complete for {participant_id}.")
 
