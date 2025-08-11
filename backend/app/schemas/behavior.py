@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Dict, Optional, Union, Literal
+from typing import Dict, Any,Literal, Optional, Union, Literal
 from datetime import datetime
 from enum import Enum
 
@@ -101,10 +101,22 @@ class BehaviorEvent(BaseModel):
         event_data: 事件数据，根据事件类型有不同的结构
         timestamp: 事件发生的时间戳，可选字段，默认为当前时间
     """
+
+    # 与 TDD-II-07 对齐的事件类型枚举（若将来扩展只需在此添加）TODO：ceq可能添加热力图事件（heatmap_snapshot）
+    EventType = Literal[
+    "code_edit",
+    "ai_help_request",
+    "test_submission",
+    "dom_element_select",
+    "user_idle",
+    "page_focus_change"
+]
+
     participant_id: str = Field(..., description="参与者ID，用于标识特定用户")
     event_type: EventType = Field(..., description="事件类型")
     event_data: EventDataType = Field(..., description="事件数据，根据事件类型有不同的结构")
     timestamp: Optional[datetime] = Field(None, description="事件发生的时间戳，可选字段，默认为当前时间")
+
     
     class Config:
         orm_mode = True

@@ -1,4 +1,6 @@
 
+//导入tracker，初始化，为了记录元素选择的行为ceq
+import tracker from '../js/modules/behavior_tracker.js';
 
 // ==================== 主应用逻辑 ====================
 let allowedTags = [];
@@ -9,7 +11,7 @@ function initMainApp() {
     const stopButton = document.getElementById('stopSelector');
     const statusBadge = document.getElementById('statusBadge');
     const iframe = document.getElementById('element-selector-iframe');
-    
+
     if (!startButton || !stopButton || !iframe) {
         console.error('必要的DOM元素未找到');
         return;
@@ -32,15 +34,15 @@ function initMainApp() {
             console.error('加载知识点内容失败:', error);
         });
     }
-    
+
     // 初始化知识点内容
     if (window.DocsModule && window.DocsModule.initKnowledgeContent) {
         window.DocsModule.initKnowledgeContent();
     }
-    
+
     // 初始化
     startButton.disabled = true;
-    
+
     // 获取用户学习进度
     if (window.DocsModule && window.DocsModule.ApiClient) {
         window.DocsModule.ApiClient.get(`/progress/participants/user123/progress`).then(data => {
@@ -58,9 +60,9 @@ function initMainApp() {
         allowedTags = ['div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'img', 'table', 'tr', 'td', 'th', 'ul', 'ol', 'li', 'form', 'input', 'button', 'textarea', 'select', 'option'];
         startButton.disabled = false;
     }
-    
+
     // iframe加载事件
-    iframe.addEventListener('load', function() {
+    iframe.addEventListener('load', function () {
         try {
             const doc = iframe.contentDocument || iframe.contentWindow.document;
             const html = doc.documentElement.outerHTML;
@@ -70,12 +72,37 @@ function initMainApp() {
             const codeElement = document.getElementById('selectedElementCode');
             if (codeElement) codeElement.textContent = '无法获取iframe页面源码';
         }
-        
+
         console.log('预览框架已加载:', iframe.src);
         showStatus('info', '预览页面已加载，选择器已就绪');
         initBridge();
+        // ===== 静态导入的 tracker（如果会影响可调整前为动态 import） =====
+        try {
+            if (!window.participantId) {
+                // TODO：ceq这里id临时占位测试，需要替换（后端导入/session）
+                window.participantId = 'user123';
+            }
+
+            if (typeof tracker.initDOMSelector === 'function') {
+                tracker.initDOMSelector('startSelector', 'stopSelector', 'element-selector-iframe');
+            } else {
+                console.warn('[BehaviorTracker] initDOMSelector 方法不存在。');
+            }
+
+            if (typeof tracker.initChat === 'function') {
+                tracker.initChat('send-message', '#user-message');
+            }
+
+            if (typeof tracker.initIdleAndFocus === 'function') {
+                tracker.initIdleAndFocus();
+            }
+        } catch (err) {
+            console.warn('[BehaviorTracker] 使用静态导入的 tracker 初始化失败：', err);
+        }
+
+
     });
-    
+
     // 初始化桥接
     function initBridge() {
         if (bridge) bridge.destroy();
@@ -86,9 +113,9 @@ function initMainApp() {
         });
         console.log('选择器桥接已初始化');
     }
-    
+
     // 启动选择器
-    startButton.addEventListener('click', function() {
+    startButton.addEventListener('click', function () {
         if (!bridge) {
             showStatus('error', '桥接未初始化，请刷新页面重试');
             return;
@@ -98,43 +125,43 @@ function initMainApp() {
         showStatus('info', '请在预览区域中选择一个元素');
         bridge.start(allowedTags);
     });
-    
+
     // 停止选择器
-    stopButton.addEventListener('click', function() {
+    stopButton.addEventListener('click', function () {
         stopSelector();
     });
-    
+
     // Tab切换
     const tabKnowledge = document.getElementById('tab-knowledge');
     const tabCode = document.getElementById('tab-code');
     const knowledgeContent = document.getElementById('knowledge-content');
     const codeContent = document.getElementById('code-content');
-    
+
     if (tabKnowledge && tabCode) {
-        tabKnowledge.addEventListener('click', function() {
+        tabKnowledge.addEventListener('click', function () {
             if (knowledgeContent) knowledgeContent.style.display = '';
             if (codeContent) codeContent.style.display = 'none';
             this.classList.add('active');
             tabCode.classList.remove('active');
         });
-        
-        tabCode.addEventListener('click', function() {
+
+        tabCode.addEventListener('click', function () {
             if (knowledgeContent) knowledgeContent.style.display = 'none';
             if (codeContent) codeContent.style.display = '';
             this.classList.add('active');
             tabKnowledge.classList.remove('active');
         });
     }
-    
+
     // 初始化知识点展示区
     if (window.DocsModule) {
         window.DocsModule.initKnowledgeContent();
     }
-    
+
     // 返回源代码按钮
     const showSourceBtn = document.getElementById('showSourceBtn');
     if (showSourceBtn) {
-        showSourceBtn.addEventListener('click', function() {
+        showSourceBtn.addEventListener('click', function () {
             try {
                 const doc = iframe.contentDocument || iframe.contentWindow.document;
                 const html = doc.documentElement.outerHTML;
@@ -156,22 +183,22 @@ async function handleElementSelected(info) {
     const codePre = document.getElementById('selectedElementCode');
     const startButton = document.getElementById('startSelector');
     const stopButton = document.getElementById('stopSelector');
-    
+
     // 显示状态信息
     showStatus('success', `已选择 ${info.tagName} 元素`);
-    
+
     // 显示选中的元素代码
     if (codePre) {
         codePre.textContent = info.outerHTML || '';
     }
-    
+
     // 自动加载知识点内容
     if (info.tagName && window.DocsModule) {
         await window.DocsModule.loadDocumentForTag(info.tagName.toLowerCase());
         // 加载完知识点后切换到知识点展示tab
         if (tabKnowledge) tabKnowledge.click();
     }
-    
+
     // 切换按钮状态
     if (startButton) startButton.style.display = 'inline-block';
     if (stopButton) stopButton.style.display = 'none';

@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 恢复按钮状态
                 submitButton.disabled = false;
                 submitButton.textContent = '提交';
+
             }
         });
     }
