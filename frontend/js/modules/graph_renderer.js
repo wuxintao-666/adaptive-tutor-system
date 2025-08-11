@@ -54,14 +54,11 @@ export function setupGraphInteractions(graphInstance, dependencies, completedTop
     const node = evt.target;
     const id = node.id();
     const status = node.data('status');
-    // TODO : 后续需要根据实际业务逻辑调整节点跳转路径
+    // 根据节点状态和用户选择跳转到学习或测试页面
     if (status === NODE_STATUS.COMPLETED || status === NODE_STATUS.UNLOCKED) {
       showJumpDialog(`当前节点为「${node.data('label')}」，请选择操作：`, id);
     } else {
-      const confirmJump = confirm(`「${node.data('label')}」尚未解锁，是否继续查看测试？`);
-      if (confirmJump) {
-        window.location.href = `/test/${id}`;
-      }
+      alert(`「${node.data('label')}」尚未解锁，请先完成前置知识点。`);
     }
   });
 }
@@ -103,10 +100,10 @@ function showJumpDialog(message, id) {
   document.body.appendChild(dialog);
 
   document.getElementById("learn-btn").onclick = function () {
-    window.location.href = `/learn/${id}`;
+    window.location.href = `/pages/learning_page.html?topic=${id}`;
   };
   document.getElementById("test-btn").onclick = function () {
-    window.location.href = `/test/${id}`;
+    window.location.href = `/pages/test_page.html?topic=${id}`;
   };
   document.getElementById("cancel-btn").onclick = function () {
     dialog.remove();

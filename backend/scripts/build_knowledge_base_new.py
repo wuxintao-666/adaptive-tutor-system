@@ -12,7 +12,7 @@ project_root = Path(__file__).parent.parent.parent
 os.chdir(project_root)
 
 from app.core.config import settings
-from app.services.knowledge_builder_impl import KnowledgeBaseBuilderImpl
+from app.services.rag_knowledge_builder_impl import KnowledgeBaseBuilderImpl
 
 def main():
     """主函数：构建知识库"""

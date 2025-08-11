@@ -12,7 +12,7 @@ class BrowserLauncher(Protocol):
 class PlaywrightContextManager(Protocol):
     def __enter__(self):
         ...
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         ...
 
@@ -22,7 +22,7 @@ class DefaultPlaywrightManager:
     def __enter__(self):
         self._playwright = sync_playwright().__enter__()
         return self._playwright
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         return self._playwright.__exit__(exc_type, exc_val, exc_tb)
 
@@ -31,7 +31,7 @@ class SandboxService:
     def __init__(self, playwright_manager=None, headless=True):
         """
         初始化沙箱服务
-        
+
         Args:
             playwright_manager: Playwright 上下文管理器，用于依赖注入
             headless: 是否以无头模式运行浏览器
@@ -42,11 +42,11 @@ class SandboxService:
     def run_evaluation(self, user_code: Dict[str, str], checkpoints: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         运行代码评测
-        
+
         Args:
             user_code: 用户提交的代码，包含 html, css, js
             checkpoints: 检查点列表
-            
+
         Returns:
             评测结果字典
         """
@@ -83,11 +83,11 @@ class SandboxService:
     def _evaluate_checkpoint(self, page: Page, checkpoint: Dict[str, Any]) -> (bool, str):
         """
         评估单个检查点
-        
+
         Args:
             page: Playwright 页面对象
             checkpoint: 检查点配置
-            
+
         Returns:
             (是否通过, 详细信息) 的元组
         """

@@ -11,6 +11,7 @@ def get_frontend_config():
     为前端应用程序提供安全、非敏感的配置变量集合。
     """
     config_data = FrontendConfig(
-        api_base_url=settings.API_V1_STR
+        api_base_url=settings.API_V1_STR,
+        backend_port=settings.BACKEND_PORT
     )
     return StandardResponse(data=config_data)

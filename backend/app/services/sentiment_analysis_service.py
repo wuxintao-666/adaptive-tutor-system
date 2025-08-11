@@ -1,7 +1,6 @@
 import os
 import warnings
-from typing import Dict, Any
-from ..schemas.chat import SentimentAnalysisResult
+from app.schemas.chat import SentimentAnalysisResult
 
 class SentimentAnalysisService:
     def __init__(self):

@@ -15,4 +15,4 @@ class StandardResponse(BaseModel, Generic[T]):
     """
     code: int = 200
     message: str = 'success'
-    data: Optional[T]
+    data: Optional[T] = None
