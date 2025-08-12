@@ -268,10 +268,9 @@ class BehaviorInterpreterService:
         # 默认：不执行任何动作（原始事件仍然会写入 event_logs 以便离线分析）
         return
 
-
-  def interpret(self, data, is_replay=False):
-      # 临时实现，返回空结果
-      return {}
+    def interpret(self, data, is_replay=False):
+        # 临时实现，返回空结果
+        return {}
 
 # 单例导出
 behavior_interpreter_service = BehaviorInterpreterService()
