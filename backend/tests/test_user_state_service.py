@@ -42,7 +42,7 @@ class TestUserStateService:
         mock_crud_participant_patch.create.return_value = mock_participant
 
         # 同样需要 patch BehaviorInterpreterService，因为 UserStateService 在初始化时会导入它
-        with patch('app.services.BehaviorInterpreterService', MagicMock()):
+        with patch('app.services.behavior_interpreter_service.BehaviorInterpreterService', MagicMock()):
             service = UserStateService()
         
         participant_id = "new_user_123"
@@ -93,7 +93,7 @@ class TestUserStateService:
         mock_participant.id = participant_id
         mock_crud_participant_patch.get.return_value = mock_participant
         
-        with patch('app.services.BehaviorInterpreterService', MagicMock()):
+        with patch('app.services.behavior_interpreter_service.BehaviorInterpreterService', MagicMock()):
             service = UserStateService()
             
         # 配置 mock，使其在被调用时设置缓存
@@ -128,7 +128,7 @@ class TestUserStateService:
         # 1. 准备
         participant_id = "cached_user_789"
         
-        with patch('app.services.BehaviorInterpreterService', MagicMock()):
+        with patch('app.services.behavior_interpreter_service.BehaviorInterpreterService', MagicMock()):
             service = UserStateService()
         
         # 手动在缓存中放入一个该用户的 profile
@@ -149,7 +149,7 @@ class TestUserStateService:
         mock_recover.assert_not_called()
 
     @patch('app.services.user_state_service.crud_event')
-    @patch('app.services.user_state_service.BehaviorInterpreterService')
+    @patch('app.services.behavior_interpreter_service.BehaviorInterpreterService')
     def test_recovery_from_snapshot(self, mock_interpreter_class, mock_crud_event, mock_db_session):
         """
         测试用例4: 详细测试状态恢复流程 - 从快照恢复。
@@ -178,8 +178,12 @@ class TestUserStateService:
 
         # 模拟 BehaviorEvent.model_validate
         with patch('app.schemas.behavior.BehaviorEvent.model_validate', side_effect=lambda x: x):
-            service = UserStateService()
-            service._recover_from_history_with_snapshot(participant_id, db=mock_db_session)
+            with patch('app.services.behavior_interpreter_service.behavior_interpreter_service') as mock_behavior_interpreter_service:
+                service = UserStateService()
+                service._recover_from_history_with_snapshot(participant_id, db=mock_db_session)
+
+                # 验证解释器的实例方法被调用
+                mock_behavior_interpreter_service.interpret_event.assert_called_once()
 
         # 3. 断言
         mock_crud_event.get_latest_snapshot.assert_called_once_with(mock_db_session, participant_id=participant_id)
@@ -187,12 +191,9 @@ class TestUserStateService:
         
         profile = service._state_cache[participant_id]
         assert profile.bkt_model["topic1"].get_mastery_prob() == 0.8
-        
-        # 验证解释器的实例方法被调用
-        mock_interpreter_instance.interpret_event.assert_called_once()
 
     @patch('app.services.user_state_service.crud_event')
-    @patch('app.services.user_state_service.BehaviorInterpreterService')
+    @patch('app.services.behavior_interpreter_service.BehaviorInterpreterService')
     def test_recovery_from_scratch(self, mock_interpreter_class, mock_crud_event, mock_db_session):
         """
         测试用例5: 详细测试状态恢复流程 - 无快照，从零开始恢复。
@@ -210,13 +211,16 @@ class TestUserStateService:
 
         # 模拟 BehaviorEvent.model_validate
         with patch('app.schemas.behavior.BehaviorEvent.model_validate', side_effect=lambda x: x):
-            service = UserStateService()
-            service._recover_from_history_with_snapshot(participant_id, db=mock_db_session)
+            with patch('app.services.behavior_interpreter_service.behavior_interpreter_service') as mock_behavior_interpreter_service:
+                service = UserStateService()
+                service._recover_from_history_with_snapshot(participant_id, db=mock_db_session)
+
+                # 验证解释器的实例方法被调用
+                assert mock_behavior_interpreter_service.interpret_event.call_count == 3
 
         # 3. 断言
         mock_crud_event.get_latest_snapshot.assert_called_once_with(mock_db_session, participant_id=participant_id)
         mock_crud_event.get_by_participant.assert_called_once_with(mock_db_session, participant_id=participant_id)
-        assert mock_interpreter_instance.interpret_event.call_count == 3
 
     @patch('app.services.user_state_service.BKTModel')
     def test_update_bkt_on_submission(self, mock_bkt_model_class):
@@ -233,7 +237,7 @@ class TestUserStateService:
         # 当 BKTModel 类被实例化时，返回我们的模拟实例
         mock_bkt_model_class.return_value = mock_bkt_instance
         
-        with patch('app.services.BehaviorInterpreterService', MagicMock()):
+        with patch('app.services.behavior_interpreter_service.BehaviorInterpreterService', MagicMock()):
             service = UserStateService()
         
         # 确保用户 profile 已存在于缓存中
