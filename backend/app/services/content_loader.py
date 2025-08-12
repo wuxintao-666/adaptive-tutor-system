@@ -12,6 +12,7 @@ from app.schemas.content import (
     AssertAttributeCheckpoint,
     AssertStyleCheckpoint,
     AssertTextContentCheckpoint,
+    AssertElementCheckpoint,
     CustomScriptCheckpoint,
     InteractionAndAssertCheckpoint,
     BaseCheckpoint
@@ -48,6 +49,8 @@ def load_json_content(content_type: str, topic_id: str) -> Union[LearningContent
                     processed_checkpoints.append(AssertStyleCheckpoint(**checkpoint_data))
                 elif checkpoint_type == "assert_text_content":
                     processed_checkpoints.append(AssertTextContentCheckpoint(**checkpoint_data))
+                elif checkpoint_type == "assert_element":
+                    processed_checkpoints.append(AssertElementCheckpoint(**checkpoint_data))
                 elif checkpoint_type == "custom_script":
                     processed_checkpoints.append(CustomScriptCheckpoint(**checkpoint_data))
                 elif checkpoint_type == "interaction_and_assert":
@@ -61,6 +64,8 @@ def load_json_content(content_type: str, topic_id: str) -> Union[LearningContent
                             checkpoint_data["assertion"] = AssertStyleCheckpoint(**assertion_data)
                         elif assertion_type == "assert_text_content":
                             checkpoint_data["assertion"] = AssertTextContentCheckpoint(**assertion_data)
+                        elif assertion_type == "assert_element":
+                            checkpoint_data["assertion"] = AssertElementCheckpoint(**assertion_data)
                         elif assertion_type == "custom_script":
                             checkpoint_data["assertion"] = CustomScriptCheckpoint(**assertion_data)
                         elif assertion_type == "interaction_and_assert":

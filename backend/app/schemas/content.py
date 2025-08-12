@@ -18,6 +18,7 @@ class AssertionType(str, Enum):
     GREATER_THAN = "greater_than"
     LESS_THAN = "less_than"
     REGEX = "regex"
+    MATCHES = "matches"
 
 
 class ActionType(str, Enum):
@@ -38,6 +39,7 @@ class CheckpointType(str, Enum):
     ASSERT_TEXT_CONTENT = "assert_text_content"
     CUSTOM_SCRIPT = "custom_script"
     INTERACTION_AND_ASSERT = "interaction_and_assert"
+    ASSERT_ELEMENT = "assert_element"
 
 
 class CodeContent(BaseModel):
@@ -162,6 +164,21 @@ class AssertTextContentCheckpoint(BaseCheckpoint):
     value: str = Field(..., description="期望值")
 
 
+class AssertElementCheckpoint(BaseCheckpoint):
+    """元素存在断言检查点模型
+    
+    用于检查DOM元素的存在性。
+    
+    Attributes:
+        selector: 选择器，用于定位要检查的DOM元素
+        assertion_type: 断言方式，如 'exists' 等
+        value: 期望值（用于元素文本内容比较）
+    """
+    selector: str = Field(..., min_length=1, description="CSS选择器")
+    assertion_type: AssertionType = Field(..., description="断言类型")
+    value: str = Field("", description="期望值")
+
+
 class CustomScriptCheckpoint(BaseCheckpoint):
     """自定义脚本检查点模型
     
@@ -205,6 +222,7 @@ Checkpoint = Union[
     AssertAttributeCheckpoint,
     AssertStyleCheckpoint,
     AssertTextContentCheckpoint,
+    AssertElementCheckpoint,
     CustomScriptCheckpoint,
     "InteractionAndAssertCheckpoint"  # 使用字符串前向引用
 ]
@@ -217,11 +235,13 @@ class TestTask(BaseModel):
     
     Attributes:
         topic_id: 知识点ID，用于标识测试任务对应的知识点
+        title: 测试任务标题
         description_md: 任务描述，Markdown格式的详细说明
         start_code: 初始代码，用户开始测试时的基础代码
         checkpoints: 检查点列表，包含所有需要验证的检查点
     """
     topic_id: str = Field(..., min_length=1, description="知识点ID")
+    title: str = Field(..., min_length=1, description="测试任务标题")
     description_md: str = Field(..., min_length=1, description="任务描述")
     start_code: CodeContent = Field(..., description="初始代码")
     checkpoints: List[Checkpoint] = Field(..., min_items=1, description="检查点列表")
