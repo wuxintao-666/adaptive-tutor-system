@@ -8,7 +8,7 @@ BehaviorInterpreterService（行为解释服务）
 
 和现有模块的兼容性：
 - 依赖 app.services.user_state_service.UserStateService 的方法：
-    - get_or_create_profile(participant_id, db: Session = None, group="...") -> (profile, is_new)
+    - get_or_create_profile(participant_id, db: Session = None, group="...")
     - update_bkt_on_submission(participant_id, topic_id, is_correct)
     - maybe_create_snapshot(participant_id, db, background_tasks=None)
 - 依赖 app.crud.crud_event.event 中的方法：
@@ -17,14 +17,18 @@ BehaviorInterpreterService（行为解释服务）
   （如果 crud 接口名称不同，需要调整）
 """
 
+import logging
 from datetime import datetime, timedelta
 import traceback
-from typing import Optional, Any
+from typing import Optional, Any, Dict, Callable
 
 # 规则参数（可在这里调整或从配置中读取）
 FRUSTRATION_WINDOW_MINUTES = 2
 FRUSTRATION_ERROR_RATE_THRESHOLD = 0.75
 FRUSTRATION_INTERVAL_SECONDS = 10
+
+# 配置日志
+logger = logging.getLogger(__name__)
 
 
 class BehaviorInterpreterService:
@@ -43,6 +47,15 @@ class BehaviorInterpreterService:
         self.window_minutes = window_minutes
         self.error_rate_threshold = error_rate_threshold
         self.interval_seconds = interval_seconds
+        
+        # 创建事件类型到处理方法的映射
+        self._event_handlers: Dict[str, Callable] = {
+            "test_submission": self._handle_test_submission,
+            "ai_help_request": self._handle_ai_help_request,
+        }
+        # 添加轻量级事件的处理
+        for event_type in ("dom_element_select", "code_edit", "page_focus_change", "user_idle"):
+            self._event_handlers[event_type] = self._handle_lightweight_event
 
     def interpret_event(self, event, user_state_service=None, db_session=None, is_replay: bool = False):
         """
@@ -70,44 +83,41 @@ class BehaviorInterpreterService:
                 timestamp = datetime.utcnow()
                 
             if not participant_id or not event_type:
-                print("BehaviorInterpreterService: 缺少必要字段 participant_id 或 event_type")
+                logger.warning("BehaviorInterpreterService: 缺少必要字段 participant_id 或 event_type")
                 return
                 
         except Exception as e:
-            print(f"BehaviorInterpreterService: 无效的 event 输入：{event}, 错误: {e}")
+            logger.error(f"BehaviorInterpreterService: 无效的 event 输入：{event}, 错误: {e}")
             return
 
-        # 延迟导入 crud_event（用于读取历史事件以做挫败检测）
-        crud_event = None
-        SessionLocal = None
-        if db_session is None:
+        # 使用字典映射来分发事件处理
+        handler = self._event_handlers.get(event_type)
+        if handler:
             try:
-                from app.crud.crud_event import event as crud_event  
-                from app.db.database import SessionLocal
-            except ImportError as e:
-                print(f"BehaviorInterpreterService: 无法导入数据库相关模块: {e}")
-
-        # ------------------------ 处理 test_submission ------------------------
-        if event_type == "test_submission":
-            self._handle_test_submission(
-                participant_id, event_data, timestamp, 
-                user_state_service, db_session, crud_event, SessionLocal, is_replay
-            )
+                # 为不同的处理方法提供相应的参数
+                if event_type == "test_submission":
+                    # 延迟导入 crud_event（用于读取历史事件以做挫败检测）
+                    crud_event = None
+                    SessionLocal = None
+                    if db_session is None:
+                        try:
+                            from app.crud.crud_event import event as crud_event  
+                            from app.db.database import SessionLocal
+                        except ImportError as e:
+                            logger.error(f"BehaviorInterpreterService: 无法导入数据库相关模块: {e}")
+                            
+                    handler(participant_id, event_data, timestamp, 
+                           user_state_service, db_session, crud_event, SessionLocal, is_replay)
+                elif event_type == "ai_help_request":
+                    handler(participant_id, user_state_service, is_replay)
+                elif event_type in ("dom_element_select", "code_edit", "page_focus_change", "user_idle"):
+                    handler(participant_id, event_type, user_state_service, is_replay)
+            except Exception as e:
+                logger.error(f"BehaviorInterpreterService: 处理事件 {event_type} 时发生错误: {e}", exc_info=True)
+        else:
+            # 默认：不执行任何动作（原始事件仍然会写入 event_logs 以便离线分析）
+            logger.info(f"BehaviorInterpreterService: 未处理的事件类型 {event_type}")
             return
-
-        # ------------------------ 处理 ai_help_request ------------------------
-        if event_type == "ai_help_request":
-            self._handle_ai_help_request(participant_id, user_state_service, is_replay)
-            return
-
-        # ------------------------ 处理其它轻量事件 ------------------------
-        # dom_element_select, code_edit, page_focus_change, user_idle：主要更新行为计数器或简单状态
-        if event_type in ("dom_element_select", "code_edit", "page_focus_change", "user_idle"):
-            self._handle_lightweight_event(participant_id, event_type, user_state_service, is_replay)
-            return
-
-        # 默认：不执行任何动作（原始事件仍然会写入 event_logs 以便离线分析）
-        return
 
     def _handle_test_submission(self, participant_id, event_data, timestamp, 
                                user_state_service, db_session, crud_event, SessionLocal, is_replay):
@@ -129,7 +139,7 @@ class BehaviorInterpreterService:
                 mastery = user_state_service.update_bkt_on_submission(participant_id, topic_id, is_correct)
                 # TODO: 如果需要，可以把 mastery 写入日志或触发其他领域事件
             except Exception as e:
-                print(f"BehaviorInterpreterService: 调用 update_bkt_on_submission 失败：{e}")
+                logger.error(f"BehaviorInterpreterService: 调用 update_bkt_on_submission 失败：{e}")
 
         # 2) 挫败检测（PRD：过去 window_minutes 分钟内错误率 > threshold 且 最近两次提交间隔 < interval_seconds）
         # 仅在 is_correct 为 False 时触发检测，且 crud_event 可用时才执行
@@ -178,10 +188,12 @@ class BehaviorInterpreterService:
 
                 # 判定是否挫败
                 if error_rate > self.error_rate_threshold and interval < self.interval_seconds:
-                    self._mark_frustration(participant_id, user_state_service, db, is_replay)
+                    # 遵循TDD架构，调用UserStateService的方法而不是直接修改状态
+                    if not is_replay and user_state_service is not None:
+                        user_state_service.handle_frustration_event(participant_id)
                     
         except Exception as e:
-            print(f"BehaviorInterpreterService: 挫败检测异常（非阻塞）：{e}")
+            logger.error(f"BehaviorInterpreterService: 挫败检测异常（非阻塞）：{e}")
             if not is_replay:
                 traceback.print_exc()
         finally:
@@ -189,75 +201,17 @@ class BehaviorInterpreterService:
             if db is not None and db_session is None:
                 db.close()
 
-    def _mark_frustration(self, participant_id, user_state_service, db, is_replay):
-        """标记用户为挫败状态"""
-        if user_state_service is None:
-            return
-            
-        try:
-            # get_or_create_profile 返回 (profile, is_new)
-            try:
-                profile, _ = user_state_service.get_or_create_profile(participant_id, db)
-            except TypeError:
-                # 兼容无 db 参数签名
-                profile, _ = user_state_service.get_or_create_profile(participant_id)
-                
-            # profile 应是 StudentProfile 实例，设置情绪字段
-            try:
-                profile.emotion_state['is_frustrated'] = True
-            except (AttributeError, TypeError):
-                # profile 可能为 dict-like，做兼容处理
-                try:
-                    profile['emotion_state'] = profile.get('emotion_state', {})
-                    profile['emotion_state']['is_frustrated'] = True
-                except Exception:
-                    pass
-
-            # 创建快照以持久化情绪变化（如果 user_state_service 提供了 maybe_create_snapshot）
-            if not is_replay:  # 回放时不创建快照
-                try:
-                    if hasattr(user_state_service, "maybe_create_snapshot"):
-                        # 调用时尽量传 db，以便 maybe_create_snapshot 能使用它
-                        user_state_service.maybe_create_snapshot(participant_id, db=db, background_tasks=None)
-                except Exception as e:
-                    print(f"BehaviorInterpreterService: 调用 maybe_create_snapshot 失败：{e}")
-        except Exception as e:
-            print(f"BehaviorInterpreterService: 标记挫败失败：{e}")
-
     def _handle_ai_help_request(self, participant_id, user_state_service, is_replay):
         """处理AI求助请求事件"""
         if user_state_service is None:
             return
             
         try:
-            # 获取/创建 profile（尝试传 db=None）
-            try:
-                profile, _ = user_state_service.get_or_create_profile(participant_id, None)
-            except TypeError:
-                profile, _ = user_state_service.get_or_create_profile(participant_id)
-                
-            # 增加求助计数
-            try:
-                profile.behavior_counters.setdefault("help_requests", 0)
-                profile.behavior_counters["help_requests"] += 1
-            except (AttributeError, TypeError):
-                # 兼容 dict-like profile
-                try:
-                    bc = profile.get("behavior_counters", {})
-                    bc["help_requests"] = bc.get("help_requests", 0) + 1
-                    profile["behavior_counters"] = bc
-                except Exception:
-                    pass
-                    
-            # 选择性地创建快照以保存状态
-            if not is_replay:  # 回放时不创建快照
-                try:
-                    if hasattr(user_state_service, "maybe_create_snapshot"):
-                        user_state_service.maybe_create_snapshot(participant_id, db=None)
-                except Exception:
-                    pass
+            # 遵循TDD架构，调用UserStateService的方法而不是直接修改状态
+            if not is_replay:
+                user_state_service.handle_ai_help_request(participant_id)
         except Exception as e:
-            print(f"BehaviorInterpreterService: ai_help_request 处理异常：{e}")
+            logger.error(f"BehaviorInterpreterService: ai_help_request 处理异常：{e}")
 
     def _handle_lightweight_event(self, participant_id, event_type, user_state_service, is_replay):
         """处理轻量级事件（如页面焦点变化、代码编辑等）"""
@@ -265,55 +219,11 @@ class BehaviorInterpreterService:
             return
             
         try:
-            try:
-                profile, _ = user_state_service.get_or_create_profile(participant_id, None)
-            except TypeError:
-                profile, _ = user_state_service.get_or_create_profile(participant_id)
-                
-            # 根据事件类型增加相应计数
-            try:
-                if event_type == "page_focus_change":
-                    profile.behavior_counters.setdefault("focus_changes", 0)
-                    profile.behavior_counters["focus_changes"] += 1
-                elif event_type == "user_idle":
-                    profile.behavior_counters.setdefault("idle_count", 0)
-                    profile.behavior_counters["idle_count"] += 1
-                elif event_type == "dom_element_select":
-                    profile.behavior_counters.setdefault("dom_selects", 0)
-                    profile.behavior_counters["dom_selects"] += 1
-                elif event_type == "code_edit":
-                    profile.behavior_counters.setdefault("code_edits", 0)
-                    profile.behavior_counters["code_edits"] += 1
-            except (AttributeError, TypeError):
-                # dict-like 兼容
-                try:
-                    bc = profile.get("behavior_counters", {})
-                    key_map = {
-                        "page_focus_change": "focus_changes",
-                        "user_idle": "idle_count",
-                        "dom_element_select": "dom_selects",
-                        "code_edit": "code_edits"
-                    }
-                    k = key_map.get(event_type)
-                    if k:
-                        bc[k] = bc.get(k, 0) + 1
-                        profile["behavior_counters"] = bc
-                except Exception:
-                    pass
-
-            # 可选：按策略创建快照
-            if not is_replay:  # 回放时不创建快照
-                try:
-                    if hasattr(user_state_service, "maybe_create_snapshot"):
-                        user_state_service.maybe_create_snapshot(participant_id, db=None)
-                except Exception:
-                    pass
+            # 遵循TDD架构，调用UserStateService的方法而不是直接修改状态
+            if not is_replay:
+                user_state_service.handle_lightweight_event(participant_id, event_type)
         except Exception as e:
-            print(f"BehaviorInterpreterService: 轻量事件处理异常：{e}")
-
-    def interpret(self, data, is_replay=False):
-        # 临时实现，返回空结果
-        return {}
+            logger.error(f"BehaviorInterpreterService: 轻量事件处理异常：{e}")
 
 # 单例导出
 behavior_interpreter_service = BehaviorInterpreterService()
