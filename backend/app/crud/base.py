@@ -67,7 +67,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             ModelType: 创建的记录
         """
         # 使用fastapi的jsonable_encoder，确保数据可被序列化
-        obj_in_data = jsonable_encoder(obj_in)
+        obj_in_data = obj_in.model_dump()
         db_obj = self.model(**obj_in_data)  # SQLAlchemy model
         db.add(db_obj)
         db.commit()

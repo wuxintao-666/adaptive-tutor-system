@@ -35,6 +35,14 @@ class DynamicController:
             prompt_generator: 提示词生成器
             llm_gateway: LLM网关服务
         """
+        # 验证必需的服务
+        if user_state_service is None:
+            raise TypeError("user_state_service cannot be None")
+        if prompt_generator is None:
+            raise TypeError("prompt_generator cannot be None")
+        if llm_gateway is None:
+            raise TypeError("llm_gateway cannot be None")
+        
         self.user_state_service = user_state_service
         self.sentiment_service = sentiment_service
         self.rag_service = rag_service
@@ -79,17 +87,16 @@ class DynamicController:
             # 构建用户状态摘要（同时更新用户情感状态）
             user_state_summary = self._build_user_state_summary(profile, sentiment_result)
 
-            # 步骤5: RAG检索
+            # 步骤3: RAG检索
+            retrieved_knowledge = []
             if self.rag_service:
                 try:
                     retrieved_knowledge = self.rag_service.retrieve(request.user_message)
                 except Exception as e:
                     print(f"⚠️ RAG检索失败，使用空知识内容: {e}")
                     retrieved_knowledge = []
-            else:
-                retrieved_knowledge = []  # RAG服务未配置
 
-            # 步骤6: 生成提示词
+            # 步骤4: 生成提示词
             # 将ConversationMessage转换为字典格式
             conversation_history_dicts = []
             if request.conversation_history:
@@ -98,10 +105,14 @@ class DynamicController:
                         'role': msg.role,
                         'content': msg.content
                     })
+            elif request.conversation_history is None:
+                # 确保即使conversation_history为None也传递空列表
+                conversation_history_dicts = []
 
+            retrieved_knowledge_content = [item['content'] for item in retrieved_knowledge if isinstance(item, dict) and 'content' in item]
             system_prompt, messages = self.prompt_generator.create_prompts(
                 user_state=user_state_summary,
-                retrieved_context=retrieved_knowledge,
+                retrieved_context=retrieved_knowledge_content,
                 conversation_history=conversation_history_dicts,
                 user_message=request.user_message,
                 code_content=request.code_context,
@@ -109,16 +120,16 @@ class DynamicController:
                 topic_id=request.topic_id
             )
 
-            # 步骤7: 调用LLM
+            # 步骤5: 调用LLM
             ai_response = await self.llm_gateway.get_completion(
                 system_prompt=system_prompt,
                 messages=messages
             )
 
-            # 步骤8: 构建响应（只包含AI回复内容，符合TDD-II-10设计）
+            # 步骤6: 构建响应（只包含AI回复内容，符合TDD-II-10设计）
             response = ChatResponse(ai_response=ai_response)
 
-            # 步骤9: 记录AI交互
+            # 步骤7: 记录AI交互
             DynamicController._log_ai_interaction(request, response, db, background_tasks, system_prompt)
 
             return response
@@ -148,13 +159,16 @@ class DynamicController:
         emotion_state["confidence"] = sentiment_result.confidence
         if sentiment_result.details:
             emotion_state["details"] = sentiment_result.details
+        elif "details" not in emotion_state:
+            emotion_state["details"] = {}
 
         # 更新传入的profile对象中的情感状态
-        if hasattr(profile, 'emotion_state'):
-            profile.emotion_state['current_sentiment'] = sentiment_result.label
-            profile.emotion_state['confidence'] = sentiment_result.confidence
-            if sentiment_result.details:
-                profile.emotion_state['details'] = sentiment_result.details
+        # 修复：确保在profile.emotion_state为None时不会出错
+        if hasattr(profile, 'emotion_state') and profile.emotion_state is not None:
+            profile.emotion_state.update(emotion_state)
+        elif hasattr(profile, 'emotion_state') and profile.emotion_state is None:
+            # 如果emotion_state为None，创建一个新的字典
+            profile.emotion_state = emotion_state
 
         return UserStateSummary(
             participant_id=profile.participant_id,
@@ -202,13 +216,13 @@ class DynamicController:
 
             if background_tasks:
                 # 异步执行
-                background_tasks.add_task(crud_event.create, db=db, obj_in=event)
+                background_tasks.add_task(crud_event.create_from_behavior, db=db, obj_in=event)
                 background_tasks.add_task(crud_chat_history.create, db=db, obj_in=user_chat)
                 background_tasks.add_task(crud_chat_history.create, db=db, obj_in=ai_chat)
                 print(f"INFO: AI interaction for {request.participant_id} logged asynchronously.")
             else:
                 # 同步执行 (备用)
-                crud_event.create(db=db, obj_in=event)
+                crud_event.create_from_behavior(db=db, obj_in=event)
                 crud_chat_history.create(db=db, obj_in=user_chat)
                 crud_chat_history.create(db=db, obj_in=ai_chat)
                 print(f"WARNING: AI interaction for {request.participant_id} logged synchronously.")
