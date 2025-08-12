@@ -39,7 +39,7 @@ class AiHelpRequestData(BaseModel):
     message: str = Field(..., min_length=1, description="用户向AI提问的消息内容")
 
 
-class TestSubmissionData(BaseModel):
+class SubmissionData(BaseModel):
     """测试提交数据
     
     Attributes:
@@ -91,7 +91,7 @@ class StateSnapshotData(BaseModel):
 EventDataType = Union[
     CodeEditData,
     AiHelpRequestData,
-    TestSubmissionData,
+    SubmissionData,
     DomElementSelectData,
     UserIdleData,
     PageFocusChangeData,

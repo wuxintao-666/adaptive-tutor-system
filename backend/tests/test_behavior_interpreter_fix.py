@@ -12,7 +12,7 @@ if backend_path not in sys.path:
 
 from app.services.behavior_interpreter_service import BehaviorInterpreterService
 from app.services.user_state_service import UserStateService
-from app.schemas.behavior import BehaviorEvent, EventType, TestSubmissionData, AiHelpRequestData, PageFocusChangeData
+from app.schemas.behavior import BehaviorEvent, EventType, SubmissionData, AiHelpRequestData, PageFocusChangeData
 
 @pytest.fixture
 def interpreter():
@@ -62,7 +62,7 @@ class TestBehaviorInterpreterRefactor:
         test_event = BehaviorEvent(
             participant_id=participant_id,
             event_type=EventType.TEST_SUBMISSION,
-            event_data=TestSubmissionData(topic_id="t1", code={"js":""}),
+            event_data=SubmissionData(topic_id="t1", code={"js":""}),
             timestamp=datetime.utcnow()
         )
         
@@ -137,7 +137,7 @@ class TestBehaviorInterpreterRefactor:
         events = {
             "test_submission": BehaviorEvent(
                 participant_id=participant_id, event_type="test_submission",
-                event_data=TestSubmissionData(topic_id="t1", code={"js": ""})
+                event_data=SubmissionData(topic_id="t1", code={"js": ""})
             ),
             "ai_help_request": BehaviorEvent(
                 participant_id=participant_id, event_type="ai_help_request",
