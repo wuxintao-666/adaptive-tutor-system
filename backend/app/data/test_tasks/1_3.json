@@ -1,0 +1,75 @@
+{
+  "topic_id":"1_3",
+  "title": "构建页面基本结构",
+  "description_md": "# 任务描述：\n## 任务一：\n请完成html的头部结构，包含<!DOCTYPE html>声明、<html>和<head>标签。\n## 任务二：\n将html语言设置为中文。\n## 任务三：\n将网页的字符编码定义为UTF-8。\n## 任务四：\n设置网页的viewport，设置宽度与设备屏幕一致，并设置网页的缩放比例。\n## 任务五：\n设置网页的标题为猫咪展示 Demo。\n##任务六：\n请完成body标签的定义，你的页面内容会在这里显示！\n##任务七：\n请在<body>标签内部添加<footer>标签完成页面底部信息的定义。\n## 示例代码：\n```\n<!DOCTYPE html>\n<html lang=\"zh\">\n\t<head>\n\t\t<meta charset=\"UTF-8\">\n\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\t\t<title>猫咪展示 Demo</title>\n\t</head>\n<body>\n</body>\n</html>\n```",
+  "start_code": {
+    "html": "#请在此处完成html基础结构的定义！",
+    "css": "",
+    "js": ""
+  },
+  "checkpoints": [
+    {
+      "name": "声明检查",
+      "type": "custom_script",
+      "script": "return !!document.doctype && document.doctype.name === 'html';",
+      "feedback": "请在代码最顶端添加<!DOCTYPE html>声明。"
+    },
+    {
+      "name": "<html>标签及语言设置检查",
+      "type": "custom_script",
+      "script": "return !!document.documentElement && document.documentElement.lang === 'zh';",
+      "feedback": "请在代码最顶端添加<!DOCTYPE html>声明。"
+    },
+    {
+      "name": "<head>标签检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('html').contains(document.querySelector('head'))",
+      "feedback": "请在<html>标签内添加<head>标签。"
+    },
+    {
+      "name": "字符编码检查",
+      "type": "assert_attribute",
+      "selector": "meta",
+      "attribute": "charset",
+      "assertion_type": "equals",
+      "value": "UTF-8",
+      "feedback": "请在<head>标签内添加<meta charset=\"UTF-8\">标签，将字符编码定义为UTF-8。"
+    },
+    {
+      "name": "viewport检查",
+      "type": "assert_attribute",
+      "selector": "meta",
+      "attribute": "content",
+      "assertion_type": "equals",
+      "value": "width=device-width, initial-scale=1.0",
+      "feedback": "请在<head>标签内添加<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">标签，设置网页的宽度与设备的屏幕一致，并设置网页的初始缩放比例为1.0。"
+    },
+    {
+      "name": "标题检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('head').contains(document.querySelector('title'))",
+      "feedback": "请在<head>标签内添加<title>标签，设置网页的标题。"
+    },
+    {
+      "name": "标题内容检查",
+      "type": "assert_text_content",
+      "selector": "title",
+      "assertion_type": "equals",
+      "value": "猫咪展示 Demo",
+      "feedback": "请<title>标签内设置网页的标题为猫咪展示 Demo。"
+    },
+    {
+      "name": "<body>标签检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('html').contains(document.querySelector('body'))",
+      "feedback": "请在<html>标签中添加<body>标签。"
+    },
+    {
+      "name": "<footer>标签检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('body').contains(document.querySelector('footer'))",
+      "feedback": "请在<body>标签内添加<footer>标签。"
+    }
+  ]
+}
+

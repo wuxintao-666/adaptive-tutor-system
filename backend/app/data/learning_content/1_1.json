@@ -1,0 +1,42 @@
+{
+    "topic_id": "1_1",
+    "title": "使用h元素和p元素体验标题与段落",
+    "levels": [
+        {
+            "level": 1,
+            "description": "基础概念：HTML标题元素（h1-h6）用于定义文档层级标题，h1重要性最高，h6最低；p元素定义文本段落。核心要点是标题建立内容结构，段落组织详细文本，两者均为块级元素，共同构成页面基础骨架。"
+        },
+        {
+            "level": 2,
+            "description": "详细解析：语法为<h1>标题</h1>到<h6>小标题</h6>，数字越小字体越大；<p>段落文本</p>。基本用法：标题需按层级顺序使用（如h1后接h2），段落可包含任意文本。属性如全局id/class可添加样式，但默认无必需属性。"
+        },
+        {
+            "level": 3,
+            "description": "实际应用：场景包括新闻文章或产品页。示例：<h1>科技峰会2024</h1><h2>人工智能论坛</h2><p>探索AI如何改变未来工作方式。</p><p>会议将于6月在北京举行。</p>。代码展示标题层级与段落组合。"
+        },
+        {
+            "level": 4,
+            "description": "原理分析：标题元素通过语义化提升SEO和可访问性（屏幕朗读依赖层级）。注意事项：避免跳过标题级别（如h1直接到h3），段落勿嵌套块级元素；CSS重置可能影响默认样式，需测试跨浏览器兼容性。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

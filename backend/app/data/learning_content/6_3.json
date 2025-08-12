@@ -1,0 +1,42 @@
+{
+    "topic_id": "6_3",
+    "title": "修改页面元素（DOM 操作）",
+    "levels": [
+        {
+            "level": 1,
+            "description": "DOM操作是JavaScript动态修改网页内容的核心技术。基础概念包括：DOM（文档对象模型）将HTML文档表示为树状结构；节点（Node）是所有DOM元素的基础类型；元素节点（如div/input）是常见操作对象。核心要点是通过JS选择元素后修改其属性、内容或样式。"
+        },
+        {
+            "level": 2,
+            "description": "常用语法：1) 选择元素：document.getElementById()/querySelector()；2) 获取表单值：input.value/checkbox.checked；3) 阻止默认事件：event.preventDefault()；4) 修改内容：element.textContent/innerHTML。基本用法分三步：获取元素引用→处理数据→更新DOM。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：用户交互反馈、动态内容加载等。示例：实现颜色选择器。HTML结构：<div id='colorBox'></div><input type='color' id='colorPicker'>。JS代码：\nconst picker = document.getElementById('colorPicker');\npicker.addEventListener('change', (e) => {\n  document.getElementById('colorBox').style.backgroundColor = e.target.value;\n});\n用户选择颜色后实时更新方块背景色。"
+        },
+        {
+            "level": 4,
+            "description": "原理：DOM操作触发浏览器重绘（Repaint）和重排（Reflow），频繁操作影响性能。注意事项：1) 批量修改时先用document.createDocumentFragment()暂存；2) 避免在循环中直接操作DOM；3) 单选框/复选框需遍历name属性获取选中值；4) innerHTML有XSS风险，优先用textContent。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

@@ -1,0 +1,42 @@
+{
+    "topic_id": "3_1",
+    "title": "文本框与按钮的使用",
+    "levels": [
+        {
+            "level": 1,
+            "description": "文本框（input type=\"text\"）是HTML表单元素，用于接收用户输入的文本数据，核心属性包括type和placeholder。按钮（button）是交互元素，用于触发动作如提交表单，核心属性包括type和textContent。两者结合可实现用户输入与操作响应。"
+        },
+        {
+            "level": 2,
+            "description": "文本框语法：<input type=\"text\" placeholder=\"提示文本\" name=\"字段名\">，placeholder提供输入提示。按钮语法：<button type=\"button\">按钮文本</button>，type属性定义行为（button/submit/reset）。在表单中，按钮可置于文本框下方，通过CSS控制布局。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：用户注册表单。示例：创建邮箱输入框和提交按钮，文本框提示输入邮箱，按钮触发验证。代码片段：<form><label>邮箱：</label><input type=\"email\" placeholder=\"输入邮箱地址\"><button type=\"submit\">注册</button></form>。结合CSS添加间距：label, input { margin-bottom: 10px; }。"
+        },
+        {
+            "level": 4,
+            "description": "原理：文本框基于HTMLInputElement接口，支持事件如onchange；按钮触发事件需JavaScript处理。注意事项：placeholder非替代label，应确保可访问性；按钮避免使用div模拟，优先用button元素；移动端需适配触控大小。验证输入避免仅靠客户端。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

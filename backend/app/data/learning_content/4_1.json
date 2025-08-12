@@ -1,0 +1,42 @@
+{
+    "topic_id": "4_1",
+    "title": "设置颜色与字体",
+    "levels": [
+        {
+            "level": 1,
+            "description": "CSS字体设置用于定义文本的字体族，提升可读性和美观性；颜色属性控制文本颜色，增强视觉层次；背景属性设置元素背景，渐变背景可创建平滑色彩过渡，是网页风格统一的核心。"
+        },
+        {
+            "level": 2,
+            "description": "font-family语法：`font-family: \"字体名\", 回退字体;`，如`\"Times New Roman\", serif`。color语法：`color: 颜色值;`，支持十六进制（#ff0000）、RGB或颜色名。background语法：`background: linear-gradient(方向, 起始色, 结束色);`，方向如`to right`表示从左到右渐变。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：为导航栏设置字体和背景。示例代码：HTML中`<nav class=\"navbar\">导航链接</nav>`，CSS中`.navbar { font-family: \"Georgia\", serif; color: #333; background: linear-gradient(to right, #ff7e5f, #feb47b); }`。这使导航栏更醒目，避免与测试题重复。"
+        },
+        {
+            "level": 4,
+            "description": "原理：字体渲染依赖用户系统字体库，颜色基于RGB模型，渐变通过CSS图像处理。注意事项：使用字体回退链确保兼容性；颜色对比度需满足WCAG可访问性标准；渐变在旧浏览器需添加前缀如`-webkit-linear-gradient`。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

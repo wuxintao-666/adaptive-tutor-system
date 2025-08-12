@@ -1,0 +1,42 @@
+{
+    "topic_id": "4_2",
+    "title": "理解盒模型",
+    "levels": [
+        {
+            "level": 1,
+            "description": "盒模型是CSS布局的核心概念，每个HTML元素都被视为一个矩形盒子。它由四个部分组成：内容区域(content)、内边距(padding)、边框(border)和外边距(margin)。这些部分共同决定了元素在页面中的实际占用空间。"
+        },
+        {
+            "level": 2,
+            "description": "盒模型的关键属性包括：width/height控制内容尺寸，padding设置内容与边框的间距，border定义边框样式，margin控制元素间的距离。box-sizing属性可改变计算方式：content-box（默认）只包含内容，border-box包含边框和内边距。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：头像容器添加圆角和阴影增强视觉效果。示例：为头像容器设置圆角边框和柔和阴影。代码：.avatar-container { border-radius: 50%; padding: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); background: white; }"
+        },
+        {
+            "level": 4,
+            "description": "注意事项：1) 使用border-box可避免布局错位 2) 阴影过多影响性能 3) 圆角在旧浏览器需前缀 4) 内边距会影响元素实际尺寸 5) 负margin可实现特殊布局但慎用。调试时可用浏览器开发者工具查看盒模型结构。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

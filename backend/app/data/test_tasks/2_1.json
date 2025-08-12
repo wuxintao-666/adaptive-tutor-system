@@ -1,0 +1,37 @@
+{
+  "topic_id":"2_1",
+  "title": "使用盒子元素进行内容划分",
+  "description_md": "# 任务描述：\n使用div标签将以下文本内容包裹起来，并定义id属性为first-section",
+  "start_code": {
+    "html": "<h3>猫咪照顾要点</h3>\n<p>猫咪是非常可爱的宠物，它们需要定期的照顾和关爱。</p>\n<h3>猫咪喜欢的活动</h3>\n<p>猫咪喜欢抓老鼠、晒太阳和玩毛绒球。</p>",
+    "css": "",
+    "js": ""
+  },
+  "checkpoints": [
+    {
+      "name": "div元素存在检查",
+      "type": "assert_attribute",
+      "selector": "div",
+      "attribute": "",
+      "assertion_type": "exists",
+      "value": "",
+      "feedback": "请在代码中添加一个div元素。"
+    },
+    {
+      "name": "div元素位置检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('div').getBoundingClientRect().top < document.querySelector('h3').getBoundingClientRect().top",
+      "feedback": "div元素应该在h3元素的上方。"
+    },
+    {
+      "name": "div元素id属性检查",
+      "type": "assert_attribute",
+      "selector": "div",
+      "attribute": "id",
+      "assertion_type": "equals",
+      "value": "first-section",
+      "feedback": "div元素的id属性应该设置为'first-section'。"
+    }
+  ]
+}
+

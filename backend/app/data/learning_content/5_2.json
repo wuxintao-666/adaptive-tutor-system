@@ -1,0 +1,42 @@
+{
+    "topic_id": "5_2",
+    "title": "引入音频文件",
+    "levels": [
+        {
+            "level": 1,
+            "description": "HTML5的audio元素用于在网页中嵌入音频内容，核心功能是提供原生音频播放支持。通过controls属性可显示浏览器默认播放控件，支持MP3/WAV等格式，需配合source子元素指定音频源文件。"
+        },
+        {
+            "level": 2,
+            "description": "语法：<audio controls><source src='音频文件' type='MIME类型'></audio>。type属性指定音频格式如audio/mpeg(MP3)或audio/wav(WAV)。可添加loop实现循环播放，autoplay自动播放（需注意浏览器限制）。多个source元素可提供格式备选方案。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：网页背景音乐、音效播放、播客嵌入等。示例：添加鸟鸣声音频（非测试题的猫咪叫声）：\n<audio controls>\n  <source src='birdsong.mp3' type='audio/mpeg'>\n  <source src='birdsong.ogg' type='audio/ogg'>\n  您的浏览器不支持音频播放\n</audio>\n此代码优先加载MP3格式，若不支持则尝试OGG格式，最后显示后备文本。"
+        },
+        {
+            "level": 4,
+            "description": "原理：浏览器通过MIME类型识别解码器。注意事项：1) 移动端autoplay常被阻止 2) 提供多格式源确保兼容性 3) 后备文本满足无障碍要求 4) 预加载策略（preload）影响性能 5) 跨域资源需CORS配置 6) 音频文件需考虑版权问题。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

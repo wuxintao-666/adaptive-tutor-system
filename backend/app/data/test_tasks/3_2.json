@@ -1,0 +1,109 @@
+{
+  "topic_id":"3.2",
+  "title": "复选框与单选框",
+  "description_md": "# 复选框与单选框\n##任务一：\n请创建一个复选框，name值是：likes，value值分别是是：晒太阳和抓老鼠，选择内容是：喜欢晒太阳和爱抓老鼠。\n##任务二：\n在复选框下方创建一个单选框，name值是：gender，value值分别是公和母，选择内容分别为公猫和母猫。",
+  "start_code": {
+    "html": "",
+    "css": "",
+    "js": ""
+  },
+  "checkpoints": [
+    {
+      "name": "复选框type属性检查",
+      "type": "assert_attribute",
+      "selector": "label",
+      "attribute": "type",
+      "assertion_type": "equals",
+      "value": "checkbox",
+      "feedback": "复选框的type属性应该为checkbox"
+    },
+    {
+        "name": "复选框name属性检查",
+        "type": "assert_attribute",
+        "selector": "input",
+        "attribute": "name",
+        "assertion_type": "equals",
+        "value": "likes",
+        "feedback": "name属性应该为likes"
+    },
+    {
+        "name": "复选框数量检查",
+        "type": "custom_script",
+        "script": "document.querySelectorAll('input[name=\"likes\"][type=\"checkbox\"]').length === 2",
+        "feedback": "复选框数量应该为2"
+    },
+    {
+      "name": "第一个复选框value属性检查",
+      "type": "custom_script",
+      "script": "document.querySelector('input[name=\"likes\"][type=\"checkbox\"]:nth-child(1)').value === '晒太阳'",
+      "feedback": "第一个复选框的value属性应该为：晒太阳"
+    },
+    {
+        "name": "第一个复选框内容检查",
+        "type": "custom_script",
+        "script": "document.querySelector('input[name=\"likes\"][type=\"checkbox\"]:nth-child(1)+label').innerText === '喜欢晒太阳'",
+        "feedback": "第一个复选框内容应该为：喜欢晒太阳"
+    },
+    {
+        "name": "第二复选框value属性检查",
+        "type": "custom_script",
+        "script": "document.querySelector('input[name=\"likes\"][type=\"checkbox\"]:nth-child(2)').value === '抓老鼠'",
+        "feedback": "第二个复选框的value属性应该为抓老鼠"
+    },
+    {
+        "name": "第二个复选框内容检查",
+        "type": "custom_script",
+        "script": "document.querySelector('input[name=\"likes\"][type=\"checkbox\"]:nth-child(2)+label').innerText === '抓老鼠'",
+        "feedback": "第二个复选框内容应该为：爱抓老鼠"
+    },
+    {
+        "name": "单选框type属性检查",
+        "type": "assert_attribute",
+        "selector": "label",
+        "attribute": "type",
+        "assertion_type": "equals",
+        "value": "radio",
+        "feedback": "单选框的type属性应该为radio"
+    },
+    {
+        "name": "单选框name属性检查",
+        "type": "assert_attribute",
+        "selector": "input",
+        "attribute": "name",
+        "assertion_type": "equals",
+        "value": "gender",
+        "feedback": "name属性应该为gender"
+    },
+    {
+        "name": "单选框数量检查",
+        "type": "custom_script",
+        "script": "document.querySelectorAll('input[name=\"gender\"][type=\"radio\"]').length === 2",
+        "feedback": "单选框数量应为2"
+    },
+    {
+        "name": "第一个单选框value属性检查",
+        "type": "custom_script",
+        "script": "document.querySelector('input[name=\"gender\"][type=\"radio\"]:nth-child(1)').value === '公'",
+        "feedback": "第一个单选框的value属性应该为：公"
+    },
+    {
+        "name": "第一个单选框内容检查",
+        "type": "custom_script",
+        "script": "document.querySelector('input[name=\"gender\"][type=\"radio\"]:nth-child(1)+label').innerText === '公猫'",
+        "feedback": "第一个单选框的value属性应该为：公猫"
+    },
+    {
+        "name": "第二个单选框value属性检查",
+        "type": "custom_script",
+        "script": "document.querySelector('input[name=\"gender\"][type=\"radio\"]:nth-child(2)').value === '母'",
+        "feedback": "第二个单选框的value属性应该为：母"
+    },
+    {
+        "name": "第二个单选框内容检查",
+        "type": "custom_script",
+        "script": "document.querySelector('input[name=\"gender\"][type=\"radio\"]:nth-child(2)+label').innerText === '母猫'",
+        "feedback": "第二个单选框的value属性应该为：母猫"
+    }
+  ]
+}
+
