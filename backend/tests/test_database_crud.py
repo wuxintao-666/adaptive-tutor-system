@@ -21,7 +21,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 在导入项目模块前设置测试环境
 os.environ["APP_ENV"] = "testing"
-os.environ["DATABASE_URL"] = "sqlite:///./backend/app/db/database.db"  # 使用实际的数据库文件
+# 使用绝对路径确保在任何目录下运行测试都能找到数据库文件
+import os
+current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+db_path = os.path.join(current_dir, "app", "db", "database.db")
+os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
 os.environ["TUTOR_OPENAI_API_KEY"] = "test-key"
 os.environ["TUTOR_EMBEDDING_API_KEY"] = "test-key"
 os.environ["TUTOR_TRANSLATION_API_KEY"] = "test-key"
