@@ -297,6 +297,9 @@ class SandboxService:
                 except Exception as e:
                     return False, f"执行自定义脚本时发生错误: {e}"
 
+            else:
+                return False, f"不支持的断言类型: '{assertion_type}'"
+
             return True, "通过"
         except AssertionError as e:
             return False, str(e)
@@ -328,28 +331,23 @@ class SandboxService:
                 return float(num), unit
             return value, ""
         
-        # 特殊处理：如果比较的是颜色值，需要特殊处理
-        if "color" in str(expected_value).lower() or "color" in str(actual_value).lower():
-            # 将颜色值转换为统一格式进行比较
-            normalized_actual = self._normalize_color_value(actual_value)
-            normalized_expected = self._normalize_color_value(expected_value)
-            return normalized_actual == normalized_expected
-        
-        # 对于非数值比较，直接字符串比较
-        if assertion_op == "equals":
-            return actual_value == expected_value
-        elif assertion_op == "contains":
-            return expected_value in actual_value
-        elif assertion_op == "not_equals":
-            return actual_value != expected_value
-        elif assertion_op == "not_contain":
-            return expected_value not in actual_value
+        # 尝试进行颜色比较
+        norm_actual = self._normalize_color_value(actual_value)
+        norm_expected = self._normalize_color_value(expected_value)
+        is_actual_color = norm_actual.startswith(('#', 'rgba'))
+        is_expected_color = norm_expected.startswith(('#', 'rgba'))
+
+        if is_actual_color and is_expected_color:
+            if assertion_op == 'equals':
+                return norm_actual == norm_expected
+            elif assertion_op == 'not_equals':
+                return norm_actual != norm_expected
         
         # 数值比较需要解析单位
         try:
             actual_num, actual_unit = parse_value_with_unit(actual_value)
             expected_num, expected_unit = parse_value_with_unit(expected_value)
-            
+
             # 检查单位是否一致（如果不一致，需要转换）
             if actual_unit != expected_unit and actual_unit and expected_unit:
                 # 简单的单位转换（支持常见的CSS单位转换）
@@ -364,7 +362,7 @@ class SandboxService:
                     # 百分比需要特殊处理
                     '%': None
                 }
-                
+
                 # 如果单位可以转换
                 if actual_unit in conversion_factors and expected_unit in conversion_factors:
                     if actual_unit != '%' and expected_unit != '%':
@@ -372,8 +370,10 @@ class SandboxService:
                         actual_in_px = actual_num * conversion_factors[actual_unit]
                         actual_num = actual_in_px / conversion_factors[expected_unit]
                         actual_unit = expected_unit
-            
+
             # 数值比较
+            if assertion_op == "equals":
+                return actual_num == expected_num
             if assertion_op == "greater_than":
                 return actual_num > expected_num
             elif assertion_op == "less_than":
@@ -382,10 +382,20 @@ class SandboxService:
                 return actual_num >= expected_num
             elif assertion_op == "less_than_or_equal":
                 return actual_num <= expected_num
-        except ValueError:
+        except (ValueError, TypeError):
             # 如果解析失败，回退到字符串比较
             pass
-        
+
+        # 对于非数值比较，直接字符串比较
+        if assertion_op == "equals":
+            return actual_value == expected_value
+        elif assertion_op == "contains":
+            return expected_value in actual_value
+        elif assertion_op == "not_equals":
+            return actual_value != expected_value
+        elif assertion_op == "not_contain":
+            return expected_value not in actual_value
+
         # 默认返回False
         return False
     @staticmethod
