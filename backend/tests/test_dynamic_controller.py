@@ -1,62 +1,31 @@
 """
-DynamicController测试文件
+DynamicController 测试文件
 
-注意：此测试文件目前使用mock来模拟缺失的chat_history模块，
-专注于测试DynamicController的核心逻辑。
+测试 DynamicController 的核心功能，包括：
+- 自适应响应生成
+- 用户状态管理
+- 情感分析集成
+- RAG服务集成
+- AI交互日志记录
 
-TODO: 当chat_history模型完善后，需要：
-1. 移除mock模块导入
-2. 增强日志记录相关的测试验证
-3. 添加真实的数据库交互测试
+注意：此测试文件使用真实的chat_history模块，不再需要mock。
 """
 
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
-import sys
-import os
+import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime, UTC
+from fastapi import BackgroundTasks
 
-# 将 backend 目录添加到 sys.path 中
-backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, backend_path)
-
-# TODO: 当所有模型文件完善后，移除这些mock导入
-# 模拟缺失的模块以避免导入错误
-import sys
-from unittest.mock import MagicMock
-
-# 创建模拟的缺失模型模块
-missing_models = [
-    'app.models.chat_history',
-    'app.models.survey_result'
-]
-
-for model_name in missing_models:
-    mock_module = MagicMock()
-    # 为每个模块创建一个通用的模型类
-    mock_module.__dict__.update({
-        'ChatHistory': MagicMock(),
-        'SurveyResult': MagicMock(),
-        '__all__': ['ChatHistory', 'SurveyResult']
-    })
-    sys.modules[model_name] = mock_module
-
-# 创建模拟的缺失CRUD模块
-missing_crud_modules = [
-    'app.crud.crud_chat_history',
-    'app.crud.crud_survey_result'
-]
-
-for crud_name in missing_crud_modules:
-    mock_crud_module = MagicMock()
-    mock_crud_module.chat_history = MagicMock()
-    mock_crud_module.survey_result = MagicMock()
-    sys.modules[crud_name] = mock_crud_module
-
+# 正常导入所有需要的模块
 from app.services.dynamic_controller import DynamicController
-from app.schemas.chat import ChatRequest, ChatResponse, UserStateSummary, SentimentAnalysisResult
-from app.services.user_state_service import StudentProfile
-from app.schemas.behavior import BehaviorEvent, EventType, AiHelpRequestData
+from app.schemas.chat import (
+    ChatRequest, ChatResponse, ConversationMessage, 
+    SentimentAnalysisResult, UserStateSummary, ChatHistoryCreate
+)
+from app.schemas.behavior import BehaviorEvent, EventType
+from app.models.chat_history import ChatHistory
+from app.crud.crud_chat_history import chat_history as crud_chat_history
 
 # --- 测试夹具 ---
 
@@ -64,7 +33,8 @@ from app.schemas.behavior import BehaviorEvent, EventType, AiHelpRequestData
 def mock_user_state_service():
     """创建模拟的UserStateService"""
     mock_service = MagicMock()
-    mock_profile = StudentProfile("test_user_123", is_new_user=False)
+    mock_profile = MagicMock()
+    mock_profile.participant_id = "test_user_123"  # 添加participant_id
     mock_profile.emotion_state = {
         'current_sentiment': 'NEUTRAL',
         'is_frustrated': False,
@@ -75,10 +45,11 @@ def mock_user_state_service():
         'error_count': 0,
         'help_requests': 2
     }
-    mock_profile.bkt_model = {
+    mock_profile.bkt_model = {  # 使用正确的属性名
         'topic_1': MagicMock(),
         'topic_2': MagicMock()
     }
+    mock_profile.is_new_user = False  # 添加is_new_user属性
     mock_service.get_or_create_profile.return_value = (mock_profile, False)
     return mock_service
 
@@ -128,8 +99,6 @@ def mock_db_session():
 @pytest.fixture
 def sample_chat_request():
     """创建示例聊天请求"""
-    from app.schemas.chat import ConversationMessage
-    
     return ChatRequest(
         participant_id="test_user_123",
         user_message="我需要帮助理解CSS选择器",
@@ -350,13 +319,15 @@ class TestDynamicController:
         mock_db_session
     ):
         """测试新用户的处理"""
-        # 创建新用户的profile
+                # 创建新用户的profile
         mock_user_state_service = MagicMock()
-        new_user_profile = StudentProfile("new_user_456", is_new_user=True)
+        new_user_profile = MagicMock()
+        new_user_profile.participant_id = "new_user_456"  # 添加participant_id
         new_user_profile.emotion_state = {'current_sentiment': 'NEUTRAL', 'is_frustrated': False}
         new_user_profile.behavior_counters = {'submission_timestamps': [], 'error_count': 0}
-        new_user_profile.bkt_model = {}
-        
+        new_user_profile.bkt_model = {}  # 使用正确的属性名
+        new_user_profile.is_new_user = True  # 添加is_new_user属性
+
         mock_user_state_service.get_or_create_profile.return_value = (new_user_profile, True)
         
         controller = DynamicController(
@@ -388,7 +359,8 @@ class TestDynamicController:
     def test_build_user_state_summary(self, mock_user_state_service):
         """测试用户状态摘要构建"""
         # 准备测试数据
-        profile = StudentProfile("test_user_123", is_new_user=False)
+        profile = MagicMock()
+        profile.participant_id = "test_user_123"  # 添加participant_id
         profile.emotion_state = {
             'current_sentiment': 'NEUTRAL',
             'is_frustrated': False
@@ -398,10 +370,11 @@ class TestDynamicController:
             'error_count': 0,
             'help_requests': 3
         }
-        profile.bkt_model = {
+        profile.bkt_model = {  # 使用正确的属性名
             'topic_1': MagicMock(),
             'topic_2': MagicMock()
         }
+        profile.is_new_user = False  # 添加is_new_user属性
         
         sentiment_result = SentimentAnalysisResult(
             label="positive",
@@ -432,9 +405,6 @@ class TestDynamicController:
         mock_db_session
     ):
         """测试AI交互日志记录成功"""
-        # TODO: 当chat_history模型完善后，增强此测试的验证逻辑
-        # 目前使用mock来避免依赖问题，专注于测试内部逻辑
-        
         # 准备响应
         response = ChatResponse(ai_response="AI回复内容")
         system_prompt = "系统提示词"
@@ -455,25 +425,21 @@ class TestDynamicController:
         assert event.participant_id == "test_user_123"
         assert event.event_type == EventType.AI_HELP_REQUEST
         
-        # TODO: 当chat_history模型完善后，取消注释以下验证
-        # # 验证聊天历史记录
-        # assert mock_crud_chat_history.create.call_count == 2
-        # 
-        # # 验证用户消息记录
-        # user_call = mock_crud_chat_history.create.call_args_list[0]
-        # user_chat = user_call[1]['obj_in']
-        # assert user_chat.role == "user"
-        # assert user_chat.message == "我需要帮助理解CSS选择器"
-        # 
-        # # 验证AI消息记录
-        # ai_call = mock_crud_chat_history.create.call_args_list[1]
-        # ai_chat = ai_call[1]['obj_in']
-        # assert ai_chat.role == "ai"
-        # assert ai_chat.message == "AI回复内容"
-        # assert ai_chat.raw_prompt_to_llm == system_prompt
+        # 验证聊天历史记录
+        assert mock_crud_chat_history.create.call_count == 2
         
-        # 临时验证：确保方法被调用（基本功能测试）
-        assert mock_crud_chat_history.create.call_count >= 0  # 至少被调用过
+        # 验证用户消息记录
+        user_call = mock_crud_chat_history.create.call_args_list[0]
+        user_chat = user_call[1]['obj_in']
+        assert user_chat.role == "user"
+        assert user_chat.message == "我需要帮助理解CSS选择器"
+        
+        # 验证AI消息记录
+        ai_call = mock_crud_chat_history.create.call_args_list[1]
+        ai_chat = ai_call[1]['obj_in']
+        assert ai_chat.role == "ai"
+        assert ai_chat.message == "AI回复内容"
+        assert ai_chat.raw_prompt_to_llm == system_prompt
 
     @patch('app.services.dynamic_controller.crud_event')
     @patch('app.services.dynamic_controller.crud_chat_history')
@@ -485,8 +451,6 @@ class TestDynamicController:
         mock_db_session
     ):
         """测试使用后台任务的AI交互日志记录"""
-        # TODO: 当chat_history模型完善后，增强此测试的验证逻辑
-        
         # 准备后台任务模拟
         mock_background_tasks = MagicMock()
         response = ChatResponse(ai_response="AI回复内容")
@@ -508,15 +472,11 @@ class TestDynamicController:
         event_task_call = mock_background_tasks.add_task.call_args_list[0]
         assert event_task_call[0][0] == mock_crud_event.create
         
-        # TODO: 当chat_history模型完善后，取消注释以下验证
-        # # 验证聊天历史记录任务
-        # chat_task_calls = mock_background_tasks.add_task.call_args_list[1:]
-        # assert len(chat_task_calls) == 2
-        # assert chat_task_calls[0][0][0] == mock_crud_chat_history.create
-        # assert chat_task_calls[1][0][0] == mock_crud_chat_history.create
-        
-        # 临时验证：确保聊天历史记录任务被添加
-        assert mock_background_tasks.add_task.call_count >= 3  # 至少添加了3个任务
+        # 验证聊天历史记录任务
+        chat_task_calls = mock_background_tasks.add_task.call_args_list[1:]
+        assert len(chat_task_calls) == 2
+        assert chat_task_calls[0][0][0] == mock_crud_chat_history.create
+        assert chat_task_calls[1][0][0] == mock_crud_chat_history.create
 
     @patch('app.services.dynamic_controller.crud_event')
     @patch('app.services.dynamic_controller.crud_chat_history')
@@ -528,8 +488,6 @@ class TestDynamicController:
         mock_db_session
     ):
         """测试AI交互日志记录失败时的处理"""
-        # TODO: 当chat_history模型完善后，增强此测试的验证逻辑
-        
         # 配置CRUD操作抛出异常
         mock_crud_event.create.side_effect = Exception("数据库错误")
         
