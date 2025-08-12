@@ -1,0 +1,42 @@
+{
+    "topic_id": "2.3",
+    "title": "创建无序列表",
+    "levels": [
+        {
+            "level": 1,
+            "description": "无序列表（ul）用于展示没有特定顺序的项目集合。核心要点：1) 用<ul>标签定义列表容器 2) 每个列表项用<li>标签包裹 3) 浏览器默认添加项目符号（如圆点）"
+        },
+        {
+            "level": 2,
+            "description": "语法结构：<ul>内只能包含<li>元素，<li>可包含文本/其他HTML元素。基本用法：1) 创建<ul>容器 2) 添加多个<li>子项 3) 通过CSS的list-style-type属性修改符号样式（如circle/square）"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：商品特征列表、导航菜单项。示例：<h3>早餐选择</h3><ul><li>牛奶燕麦</li><li>煎蛋吐司</li><li>水果沙拉</li></ul> 注意：列表项内容可以是文本/图片/链接等组合"
+        },
+        {
+            "level": 4,
+            "description": "原理：浏览器解析<ul>时生成块级容器，为每个<li>添加::marker伪元素实现符号渲染。注意事项：1) 避免在<ul>内直接放非<li>元素 2) 嵌套列表时需在<li>内创建新<ul> 3) 用CSS重置默认边距保证布局一致性"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

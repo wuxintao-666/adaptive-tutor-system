@@ -1,0 +1,134 @@
+{
+  "topic_id":"2_end",
+  "title": "第二章盒子与列表使用综合测试",
+  "description_md": "# 综合测试\n\n ## 测试任务：\n请在页面内容中完成有序列表和无序列表的构建，并将这两个列表放入一个id为list-demo的盒子中。\n### 任务一：定义一个id为list-demo的盒子。\n### 任务二：添加一个h3标题：猫咪叫声示例，并在下方创建一个有序列表，并在其中添加三个项目：1.每日梳毛，2.定时喂食，3.清洁猫砂盆\n\n### 任务三：添加一个h3标题：猫咪日常视频，并在下方创建一个无序列表，并在其中添加三个项目：1.抓老鼠，2.晒太阳，3.玩毛绒球\n",
+  "start_code": {
+    "html": "```\n<!DOCTYPE html>\n<html lang=\"zh\">\n\t<head>\n\t\t<meta charset=\"UTF-8\">\n\t\t<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n\t\t<title>猫咪展示 Demo</title>\n\t</head>\n<body>\n</body>\n</html>\n```",
+    "css": "",
+    "js": ""
+  },
+  "checkpoints": [
+    {
+      "name": "div元素存在检查",
+      "type": "assert_attribute",
+      "selector": "div",
+      "attribute": "",
+      "assertion_type": "exists",
+      "value": "",
+      "feedback": "请在代码中添加一个div元素。"
+    },
+    {
+      "name": "div元素位置检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('body').contains(document.querySelector('div'))",
+      "feedback": "请将创建的div元素放在<body>元素内部。"
+    },
+    {
+      "name": "div元素id属性检查",
+      "type": "assert_attribute",
+      "selector": "div",
+      "attribute": "id",
+      "assertion_type": "equals",
+      "value": "list-demo",
+      "feedback": "div元素的id属性应该设置为'list-demo'。"
+    },
+    {
+      "name": "h3元素存在检查",
+      "type": "assert_attribute",
+      "selector": "h3",
+      "attribute": "",
+      "assertion_type": "exists",
+      "value": "",
+      "feedback": "请在代码中添加一个h3标题元素。"
+    },
+    {
+      "name": "h3元素数量检查",
+      "type": "custom_script",
+      "script": "return document.querySelectorAll('h3').length === 2",
+      "feedback": "div元素中应该有2个h3标题元素。"
+    },
+    {
+      "name": "第一个h3标题内容检查",
+      "type": "assert_text_content",
+      "selector": "h3:nth-of-type(1)",
+      "assertion_type": "equals",
+      "value": "猫咪叫声示例",
+      "feedback": "第一个h3标题的内容应该为：猫咪叫声示例"
+    },
+    {
+      "name": "第二个h3标题内容检查",
+      "type": "assert_text_content",
+      "selector": "h3:nth-of-type(2)",
+      "assertion_type": "equals",
+      "value": "猫咪日常视频",
+      "feedback": "第二个h3标题的内容应该为：猫咪日常视频"
+    },
+    {
+      "name": "ol元素存在检查",
+      "type": "assert_attribute",
+      "selector": "ol",
+      "attribute": "",
+      "assertion_type": "exists",
+      "value": "",
+      "feedback": "请在代码中添加一个ol元素。"
+    },
+    {
+      "name": "有序列表中li元素列表项数量检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ol').querySelectorAll('li').length == 3",
+      "feedback": "ol元素里应该包含3个li元素。"
+    },
+    {
+      "name": "有序列表中li元素第一个列表项内容检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ol li:nth-child(1)').textContent == '每日梳毛'",
+      "feedback": "有序列表中第一个li元素的内容应该是'每日梳毛'。"
+    },
+    {
+      "name": "有序列表中li元素第二个列表项内容检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ol li:nth-child(2)').textContent == '定时喂食'",
+      "feedback": "有序列表中第一个li元素的内容应该是'定时喂食'。"
+    },
+    {
+      "name": "有序列表中li元素第三个列表项内容检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ol li:nth-child(3)').textContent == '清洁猫砂盆'",
+      "feedback": "有序列表中第一个li元素的内容应该是'清洁猫砂盆'。"
+    },
+    {
+      "name": "ul元素存在检查",
+      "type": "assert_attribute",
+      "selector": "ul",
+      "attribute": "",
+      "assertion_type": "exists",
+      "value": "",
+      "feedback": "请在代码中添加一个ul元素。"
+    },
+    {
+      "name": "无序列表中li元素列表项数量检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ul').querySelectorAll('li').length == 3",
+      "feedback": "ul元素里应该包含3个li元素。"
+    },
+    {
+      "name": "无序列表中li元素第一个列表项内容检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ul li:nth-child(1)').textContent == '抓老鼠'",
+      "feedback": "无序列表中第一个li元素的内容应该是'抓老鼠'。"
+    },
+    {
+      "name": "无序列表中li元素第二个列表项内容检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ul li:nth-child(2)').textContent == '晒太阳'",
+      "feedback": "无序列表中第二个li元素的内容应该是'晒太阳'。"
+    },
+    {
+      "name": "无序列表中li元素第三个列表项内容检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ul li:nth-child(3)').textContent == '玩毛绒球'",
+      "feedback": "无序列表中第三个li元素的内容应该是'玩毛绒球'。"
+    }
+  ]
+}
+

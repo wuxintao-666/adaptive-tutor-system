@@ -1,0 +1,42 @@
+{
+    "topic_id": "5_3",
+    "title": "嵌入视频内容",
+    "levels": [
+        {
+            "level": 1,
+            "description": "HTML5的<video>标签用于在网页中嵌入视频内容，核心要点包括：支持用户交互控制（如播放/暂停）、提供多种视频格式兼容性、确保无障碍访问。标签的核心属性如controls启用默认播放控件，width和height定义尺寸，备用文本用于浏览器不支持时显示提示信息。"
+        },
+        {
+            "level": 2,
+            "description": "语法结构：<video>标签包含controls属性启用控件，width设置宽度（百分比或像素值）。内部使用<source>子标签指定src（视频路径）和type（格式如video/mp4）。多个<source>可提供备选格式。例如：<video controls width=\"100%\"><source src=\"example.mp4\" type=\"video/mp4\">备用文本</video>。"
+        },
+        {
+            "level": 3,
+            "description": "实际应用场景：在新闻网站嵌入教育视频。示例代码：嵌入野生动物纪录片，设置controls、width=\"100%\"适配响应式布局，添加<source>指定MP4格式，并包含备用提示。代码片段：<video controls width=\"100%\"><source src=\"wildlife.mp4\" type=\"video/mp4\">您的浏览器不支持视频播放。</video>。"
+        },
+        {
+            "level": 4,
+            "description": "原理分析：浏览器使用HTML5视频API解析<video>标签，加载视频流并渲染播放器。注意事项：优先使用MP4格式确保兼容性（支持H.264编码），添加preload=\"none\"优化页面加载性能，备用文本必须简洁明了，避免使用autoplay以免影响用户体验。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

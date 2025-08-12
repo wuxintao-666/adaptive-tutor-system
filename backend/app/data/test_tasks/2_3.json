@@ -1,0 +1,43 @@
+{
+  "topic_id":"2.3",
+  "title": "创建无序列表",
+  "description_md": "# 任务描述\n 请h3元素下方添加一个无序列表，并在其中添加三个项目：1.抓老鼠，2.晒太阳，3.玩毛绒球\n",
+  "start_code": {
+    "html": "<h3> 猫咪喜欢的活动 </h3>\n",
+    "css": "",
+    "js": ""
+  },
+  "checkpoints": [
+    {
+      "name": "无序列表ul元素位置检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('h3').getBoundingClientRect().top < document.querySelector('ul').getBoundingClientRect().top",
+      "feedback": "ul元素应该在h3元素下方。"
+    },
+    {
+      "name": "无序列表中li元素列表项数量检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ul').querySelectorAll('li').length == 3",
+      "feedback": "ul元素里应该包含3个li元素。"
+    },
+    {
+      "name": "无序列表中li元素第一个列表项内容检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ul li:nth-child(1)').textContent == '抓老鼠'",
+      "feedback": "无序列表中第一个li元素的内容应该是'抓老鼠'。"
+    },
+    {
+      "name": "无序列表中li元素第二个列表项内容检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ul li:nth-child(2)').textContent == '晒太阳'",
+      "feedback": "无序列表中第二个li元素的内容应该是'晒太阳'。"
+    },
+    {
+      "name": "无序列表中li元素第三个列表项内容检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('ul li:nth-child(3)').textContent == '玩毛绒球'",
+      "feedback": "无序列表中第三个li元素的内容应该是'玩毛绒球'。"
+    }
+  ]
+}
+

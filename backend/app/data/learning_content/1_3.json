@@ -1,0 +1,42 @@
+{
+    "topic_id": "1_3",
+    "title": "构建页面基本结构",
+    "levels": [
+        {
+            "level": 1,
+            "description": "HTML文档基础结构包括DOCTYPE声明、html根元素、head元数据区和body内容区。DOCTYPE声明指定HTML5标准，确保浏览器标准模式渲染。html元素包裹整个文档，lang属性定义语言。head包含meta、title等非可视元素，用于设置编码、视口和标题。body包含所有可见内容如文本、图像等。footer定义页面底部信息，提供语义化结构。"
+        },
+        {
+            "level": 2,
+            "description": "DOCTYPE语法为<!DOCTYPE html>，必须置于文档顶部。html元素需用lang属性指定语言，如中文用'zh'。head内：<meta charset=\"UTF-8\">定义字符编码；<meta name=\"viewport\">设置响应式布局，常用content=\"width=device-width, initial-scale=1.0\"控制宽度和缩放；<title>定义浏览器标签标题。body作为内容容器，可包含任意可见元素。footer位于body内，用于版权或导航链接，需正确闭合标签。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：创建个人简历页面时，基本结构可设计为：<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>个人简历</title>\n</head>\n<body>\n    <header>姓名和联系方式</header>\n    <main>教育和工作经历</main>\n    <footer>© 2023 版权所有</footer>\n</body>\n</html>。此示例展示了head元数据设置和body内footer的使用，确保移动端适配。"
+        },
+        {
+            "level": 4,
+            "description": "原理：DOCTYPE避免怪异模式，确保跨浏览器一致性；lang属性提升SEO和辅助功能；UTF-8编码支持多语言字符；viewport meta标签通过width=device-width匹配设备宽度，initial-scale=1.0禁用缩放。注意事项：省略DOCTYPE或错误lang值导致渲染问题；meta必须置于head顶部；title长度影响SEO；footer应仅用于底部内容，避免嵌套错误；所有标签需严格闭合以防止解析错误。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

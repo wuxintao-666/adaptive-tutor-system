@@ -1,0 +1,42 @@
+{
+    "topic_id": "3.3",
+    "title": "表单提交机制",
+    "levels": [
+        {
+            "level": 1,
+            "description": "表单提交机制是HTML表单的核心功能，用于将用户输入的数据发送到服务器或进行客户端处理。核心要点包括：<form>元素作为容器，定义数据收集范围；提交事件触发时执行自定义逻辑；onsubmit属性绑定JavaScript函数处理提交过程，事件对象event提供交互细节。"
+        },
+        {
+            "level": 2,
+            "description": "语法：<form onsubmit=\"return handleSubmit(event)\">，其中handleSubmit是自定义函数。基本用法：event参数包含事件信息，函数返回false可阻止默认提交。例如，使用method属性指定HTTP方法（GET/POST），action定义目标URL。关键元素包括提交按钮（<button type=\"submit\">）和输入控件（如<input>）。"
+        },
+        {
+            "level": 3,
+            "description": "实际应用：用户注册表单场景。示例代码：<form onsubmit=\"handleSubmit(event)\"><label>用户名：<input type=\"text\" name=\"username\"></label><label>邮箱：<input type=\"email\" name=\"email\"></label><button type=\"submit\">注册</button></form>。JavaScript函数handleSubmit(event) { event.preventDefault(); console.log('数据已处理'); } 用于拦截提交并输出日志。"
+        },
+        {
+            "level": 4,
+            "description": "原理：提交触发submit事件，事件冒泡允许捕获处理。event.preventDefault()阻止默认页面刷新，实现单页应用交互。注意事项：始终验证数据（如空值检查）防止无效提交；避免onsubmit内嵌复杂逻辑，保持代码可维护；考虑无障碍性，确保表单控件有明确标签。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

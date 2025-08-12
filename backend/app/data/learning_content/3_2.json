@@ -1,0 +1,42 @@
+{
+    "topic_id": "3.2",
+    "title": "复选框与单选框",
+    "levels": [
+        {
+            "level": 1,
+            "description": "复选框（Checkbox）允许用户从多个选项中选择一个或多个，常用于多选场景。单选框（Radio Button）要求用户从一组互斥选项中仅选一个，适用于单选场景。核心要点包括：HTML使用<input>元素创建，type属性区分类型（checkbox或radio），name属性定义分组，value属性存储选项值，label元素关联文本提高可访问性。"
+        },
+        {
+            "level": 2,
+            "description": "语法：复选框为<input type=\"checkbox\" name=\"groupName\" value=\"optionValue\">，单选框为<input type=\"radio\" name=\"groupName\" value=\"optionValue\">。基本用法：name相同表示同组单选框互斥；value指定表单提交的值；checked属性设置默认选中；label通过for属性绑定input的id或直接嵌套input。示例：<label for=\"fruit1\"><input type=\"checkbox\" id=\"fruit1\" name=\"fruits\" value=\"apple\">苹果</label>表示一个水果选项。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：复选框用于多选兴趣（如购物车商品），单选框用于单选分类（如支付方式）。示例代码：用户调查表单中，复选框选择爱好：<div><label><input type=\"checkbox\" name=\"hobby\" value=\"reading\">阅读</label></div><div><label><input type=\"checkbox\" name=\"hobby\" value=\"sports\">运动</label></div>；单选框选择会员类型：<div><label><input type=\"radio\" name=\"membership\" value=\"basic\">基础版</label></div><div><label><input type=\"radio\" name=\"membership\" value=\"premium\">高级版</label></div>。"
+        },
+        {
+            "level": 4,
+            "description": "原理分析：DOM中表示为HTMLInputElement对象，checked属性动态更新状态，事件如onchange处理用户交互。注意事项：单选框组需相同name实现互斥；label提升点击区域和可访问性；CSS样式覆盖默认外观；移动端适配触摸尺寸；避免嵌套复杂结构影响表单提交；使用fieldset和legend分组提升语义化。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

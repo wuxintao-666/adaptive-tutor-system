@@ -1,0 +1,42 @@
+{
+    "topic_id": "2_2",
+    "title": "创建有序与无序列表",
+    "levels": [
+        {
+            "level": 1,
+            "description": "有序列表（ol）用于表示顺序重要的项目集合，如步骤指南；无序列表（ul）表示顺序无关的项目集合，如购物清单。两者都使用li元素定义列表项，是HTML基础结构元素。"
+        },
+        {
+            "level": 2,
+            "description": "ol元素创建带自动编号的列表，ul元素创建带项目符号的列表。语法结构：<ol><li>项目1</li><li>项目2</li></ol>。li元素必须直接嵌套在ol/ul内，可包含文本或其他HTML元素。type属性可更改编号样式（如type='A'）。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：ol适合教程步骤（示例：<ol><li>烤箱预热</li><li>混合材料</li></ol>），ul适合功能列表（示例：<ul><li>响应式设计</li><li>暗黑模式</li></ul>）。嵌套列表可创建层级结构（如ul内嵌ol表示子步骤）。"
+        },
+        {
+            "level": 4,
+            "description": "原理：浏览器为ol生成计数器，为ul生成::marker伪元素实现符号。注意事项：1) 避免用列表替代表格数据；2) CSS可自定义符号样式；3) 屏幕阅读器通过ARIA角色识别列表结构；4) 复杂内容需语义化封装（如div包裹图文）。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

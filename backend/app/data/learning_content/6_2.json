@@ -1,0 +1,42 @@
+{
+    "topic_id": "6_2",
+    "title": "获取用户输入",
+    "levels": [
+        {
+            "level": 1,
+            "description": "获取用户输入是前端交互的基础，指通过JavaScript读取用户在HTML表单元素（如输入框）中输入的数据。核心要点包括：使用DOM方法定位元素（如getElementById），通过.value属性获取值，以及用alert()函数弹出提示信息。这适用于表单提交、搜索功能等场景，是动态网页的核心。"
+        },
+        {
+            "level": 2,
+            "description": "语法上，使用document.getElementById('元素ID')获取HTML元素引用，再通过.value属性读取或设置其值。基本用法包括在事件监听器（如按钮点击）中触发获取操作。例如，button.addEventListener('click', handler)绑定事件，handler函数内执行获取逻辑。alert()用于简单调试或提示，语法为alert(消息字符串)。"
+        },
+        {
+            "level": 3,
+            "description": "实际应用场景如用户注册表单：用户输入邮箱后点击提交按钮，弹出确认消息。示例代码：HTML添加<input type='email' id='emailInput'>和<button id='submitBtn'>提交</button>；JS添加document.getElementById('submitBtn').addEventListener('click', function() { var email = document.getElementById('emailInput').value; alert('邮箱已接收: ' + email); });。此代码演示了完整事件处理流程。"
+        },
+        {
+            "level": 4,
+            "description": "原理上，getElementById基于DOM树快速查找唯一ID元素，.value属性反映元素状态。注意事项：ID必须唯一否则出错；alert()会阻塞UI，生产环境改用console.log或自定义弹窗；用户输入需验证防XSS攻击；事件监听推荐addEventListener而非onclick以支持多处理。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}
