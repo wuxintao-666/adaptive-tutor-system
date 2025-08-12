@@ -89,7 +89,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             # 添加学习进度信息
             if hasattr(user_state, 'bkt_models') and user_state.bkt_models:
                 mastery_info = []
-                for topic_id, bkt_model in user_state.bkt_models.items():
+                for topic_key, bkt_model in user_state.bkt_models.items():
                     if isinstance(bkt_model, dict) and 'mastery_prob' in bkt_model:
                         mastery_prob = bkt_model['mastery_prob']
                     elif hasattr(bkt_model, 'mastery_prob'):
@@ -102,9 +102,9 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
                         mastery_level = "advanced"
                     elif mastery_prob > 0.5:
                         mastery_level = "intermediate"
-
-                    mastery_info.append(f"{topic_id}: {mastery_level} (mastery: {mastery_prob:.2f})")
-
+                    
+                    mastery_info.append(f"{topic_key}: {mastery_level} (mastery: {mastery_prob:.2f})")
+                
                 if mastery_info:
                     student_info_parts.append(f"LEARNING PROGRESS: Student's mastery levels - {', '.join(mastery_info)}")
 

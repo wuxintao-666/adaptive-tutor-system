@@ -80,7 +80,7 @@ class SelectElementInfo(BaseModel):
         select_element: 选择元素列表
     """
     topic_id: str = Field(..., min_length=1, description="主题ID")
-    select_element: List[str] = Field(..., min_items=1, description="选择元素列表")
+    select_element: List[str] = Field(..., min_length=1, description="选择元素列表")
 
 
 class LearningContent(BaseModel):
@@ -96,7 +96,7 @@ class LearningContent(BaseModel):
     """
     topic_id: str = Field(..., min_length=1, description="知识点ID")
     title: str = Field(..., min_length=1, description="学习内容标题")
-    levels: List[LevelInfo] = Field(..., min_items=1, description="等级信息列表")
+    levels: List[LevelInfo] = Field(..., min_length=1, description="等级信息列表")
     sc_all: List[SelectElementInfo] = Field(..., description="选择元素信息列表")
 
 
@@ -244,4 +244,4 @@ class TestTask(BaseModel):
     title: str = Field(..., min_length=1, description="测试任务标题")
     description_md: str = Field(..., min_length=1, description="任务描述")
     start_code: CodeContent = Field(..., description="初始代码")
-    checkpoints: List[Checkpoint] = Field(..., min_items=1, description="检查点列表")
+    checkpoints: List[Checkpoint] = Field(..., min_length=1, description="检查点列表")
