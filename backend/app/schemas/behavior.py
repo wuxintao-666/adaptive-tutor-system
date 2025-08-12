@@ -103,14 +103,7 @@ class BehaviorEvent(BaseModel):
     """
 
     # 与 TDD-II-07 对齐的事件类型枚举（若将来扩展只需在此添加）TODO：ceq可能添加热力图事件（heatmap_snapshot）
-    EventType = Literal[
-    "code_edit",
-    "ai_help_request",
-    "test_submission",
-    "dom_element_select",
-    "user_idle",
-    "page_focus_change"
-]
+    # 使用已定义的 EventType 枚举类
 
     participant_id: str = Field(..., description="参与者ID，用于标识特定用户")
     event_type: EventType = Field(..., description="事件类型")
