@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     """
     应用程序配置设置类，从环境变量或.env文件加载所有配置项。
     使用Pydantic进行数据验证和类型检查。
-    
+
     包含服务器配置、API密钥、模型设置、数据库连接、文件路径等配置项。
     在应用启动时会自动验证必需的配置项是否存在。
     """
@@ -18,19 +18,19 @@ class Settings(BaseSettings):
     TUTOR_OPENAI_API_BASE: str = "https://api.openai.com/v1"
 
     # Embedding API (can be different from OpenAI)
-    TUTOR_EMBEDDING_API_KEY: str = ""  # 可选，用于RAG服务
+    TUTOR_EMBEDDING_API_KEY: str
     TUTOR_EMBEDDING_API_BASE: str = "https://ms-fc-1d889e1e-d2ad.api-inference.modelscope.cn/v1"
     TUTOR_EMBEDDING_MODEL: str = "Qwen/Qwen3-Embedding-4B-GGUF"
-    
+
     # Translation API (can be different from OpenAI)
-    TUTOR_TRANSLATION_API_KEY: str = ""  # 可选，用于翻译服务
+    TUTOR_TRANSLATION_API_KEY: str
     TUTOR_TRANSLATION_API_BASE: str = "https://api.openai.com/v1"
     TUTOR_TRANSLATION_MODEL: str = "gpt-4-turbo"
 
     # Model configuration tells Pydantic where to find the .env file.
     model_config = SettingsConfigDict(
-        env_file=".env", 
-        env_file_encoding='utf-8', 
+        env_file=".env",
+        env_file_encoding='utf-8',
         extra='ignore',
         case_sensitive=True
     )
@@ -41,8 +41,8 @@ class Settings(BaseSettings):
     # TODO: 到时候可能需要约束，不能放所有都进来
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
-    DATABASE_URL: str = "sqlite:///./app/db/database.db"
-    
+    DATABASE_URL: str = "sqlite:///./backend/app/db/database.db"
+
     # File paths
     DATA_DIR: str = "./backend/app/data"
     DOCUMENTS_DIR: str = "./backend/app/data/documents"
@@ -53,10 +53,9 @@ class Settings(BaseSettings):
     # LLM Settings
     LLM_MAX_TOKENS: int = 65536
     LLM_TEMPERATURE: float = 0.7
-    
+
     # Module enable/disable flags
-    # TODO: 后续需要配置 TUTOR_EMBEDDING_API_KEY 来启用 RAG 服务
-    ENABLE_RAG_SERVICE: bool = False  # 暂时禁用，等待配置 API 密钥
+    ENABLE_RAG_SERVICE: bool = False
     ENABLE_SENTIMENT_ANALYSIS: bool = True
     ENABLE_TRANSLATION_SERVICE: bool = True
 

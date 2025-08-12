@@ -18,8 +18,8 @@ from datetime import datetime, UTC
 
 class DynamicController:
     """动态控制器 - 编排各个服务的核心逻辑"""
-    
-    def __init__(self, 
+
+    def __init__(self,
                  user_state_service: UserStateService,
                  sentiment_service: SentimentAnalysisService,
                  rag_service: RAGService,
@@ -27,7 +27,7 @@ class DynamicController:
                  llm_gateway: LLMGateway,):
         """
         初始化动态控制器
-        
+
         Args:
             user_state_service: 用户状态服务
             sentiment_service: 情感分析服务
@@ -40,28 +40,28 @@ class DynamicController:
         self.rag_service = rag_service
         self.prompt_generator = prompt_generator
         self.llm_gateway = llm_gateway
-    
+
     async def generate_adaptive_response(
-        self, 
-        request: ChatRequest, 
+        self,
+        request: ChatRequest,
         db: Session,
         background_tasks = None
     ) -> ChatResponse:
         """
         生成自适应AI回复的核心流程
-        
+
         Args:
             request: 聊天请求
             db: 数据库会话
             background_tasks: 后台任务处理器（可选）
-            
+
         Returns:
             ChatResponse: AI回复
         """
         try:
             # 步骤1: 获取或创建用户档案（使用UserStateService）
             profile, _ = self.user_state_service.get_or_create_profile(request.participant_id, db)
-            
+
             # 步骤2: 情感分析
             if self.sentiment_service:
                 sentiment_result = self.sentiment_service.analyze_sentiment(
@@ -78,7 +78,7 @@ class DynamicController:
 
             # 构建用户状态摘要（同时更新用户情感状态）
             user_state_summary = self._build_user_state_summary(profile, sentiment_result)
-            
+
             # 步骤5: RAG检索
             if self.rag_service:
                 try:
@@ -88,7 +88,7 @@ class DynamicController:
                     retrieved_knowledge = []
             else:
                 retrieved_knowledge = []  # RAG服务未配置
-            
+
             # 步骤6: 生成提示词
             # 将ConversationMessage转换为字典格式
             conversation_history_dicts = []
@@ -98,7 +98,7 @@ class DynamicController:
                         'role': msg.role,
                         'content': msg.content
                     })
-            
+
             system_prompt, messages = self.prompt_generator.create_prompts(
                 user_state=user_state_summary,
                 retrieved_context=retrieved_knowledge,
@@ -108,22 +108,21 @@ class DynamicController:
                 task_context=request.task_context,
                 topic_id=request.topic_id
             )
-            
+
             # 步骤7: 调用LLM
             ai_response = await self.llm_gateway.get_completion(
                 system_prompt=system_prompt,
                 messages=messages
             )
-            
+
             # 步骤8: 构建响应（只包含AI回复内容，符合TDD-II-10设计）
             response = ChatResponse(ai_response=ai_response)
 
-            # 步骤9: 记录AI交互（暂时跳过数据库日志，专注于LLM API问题）
-            # TODO: 后续修复数据库时间戳问题后重新启用
-            # DynamicController._log_ai_interaction(request, response, db, background_tasks, system_prompt)
-            
+            # 步骤9: 记录AI交互
+            DynamicController._log_ai_interaction(request, response, db, background_tasks, system_prompt)
+
             return response
-            
+
         except Exception as e:
             print(f"❌ CRITICAL ERROR in generate_adaptive_response: {e}")
             import traceback
@@ -133,30 +132,30 @@ class DynamicController:
             return ChatResponse(
                 ai_response="I'm sorry, but a critical error occurred on our end. Please notify the research staff."
             )
-    
+
     @staticmethod
     def _build_user_state_summary(
-        profile: Any, 
+        profile: Any,
         sentiment_result: SentimentAnalysisResult
     ) -> UserStateSummary:
         """构建用户状态摘要"""
         # StudentProfile 已经包含了所有需要的状态
         # 使用传入的sentiment_result来更新emotion_state
         emotion_state = profile.emotion_state if profile.emotion_state else {}
-        
+
         # 使用情感分析结果更新emotion_state
         emotion_state["current_sentiment"] = sentiment_result.label
         emotion_state["confidence"] = sentiment_result.confidence
         if sentiment_result.details:
             emotion_state["details"] = sentiment_result.details
-        
+
         # 更新传入的profile对象中的情感状态
         if hasattr(profile, 'emotion_state'):
             profile.emotion_state['current_sentiment'] = sentiment_result.label
             profile.emotion_state['confidence'] = sentiment_result.confidence
             if sentiment_result.details:
                 profile.emotion_state['details'] = sentiment_result.details
-        
+
         return UserStateSummary(
             participant_id=profile.participant_id,
             emotion_state=emotion_state,
@@ -164,11 +163,11 @@ class DynamicController:
             bkt_models=profile.bkt_model,
             is_new_user=profile.is_new_user,
         )
-    
+
     @staticmethod
     def _log_ai_interaction(
-        request: ChatRequest, 
-        response: ChatResponse, 
+        request: ChatRequest,
+        response: ChatResponse,
         db: Session,
         background_tasks: Optional[Any] = None,
         system_prompt: Optional[str] = None,
@@ -179,15 +178,13 @@ class DynamicController:
         2. 在 chat_history 中记录用户和AI的完整消息。
         """
         try:
-            # 确保时间戳是 datetime 对象
-            current_time = datetime.now(UTC)
             event = BehaviorEvent(
                 participant_id=request.participant_id,
                 event_type=EventType.AI_HELP_REQUEST,
                 event_data=AiHelpRequestData(message=request.user_message),
-                timestamp=current_time
+                timestamp=datetime.now(UTC)
             )
-            
+
             # 准备用户聊天记录
             user_chat = ChatHistoryCreate(
                 participant_id=request.participant_id,
