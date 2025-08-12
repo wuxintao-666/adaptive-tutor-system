@@ -169,8 +169,12 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         # 添加历史对话
         for msg in conversation_history:
             if isinstance(msg, dict) and 'role' in msg and 'content' in msg:
+                # 转换角色值：'ai' -> 'assistant'
+                role = msg['role']
+                if role == 'ai':
+                    role = 'assistant'
                 messages.append({
-                    "role": msg['role'],
+                    "role": role,
                     "content": msg['content']
                 })
         

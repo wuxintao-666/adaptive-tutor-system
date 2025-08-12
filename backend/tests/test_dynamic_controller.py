@@ -437,7 +437,7 @@ class TestDynamicController:
         # 验证AI消息记录
         ai_call = mock_crud_chat_history.create.call_args_list[1]
         ai_chat = ai_call[1]['obj_in']
-        assert ai_chat.role == "ai"
+        assert ai_chat.role == "assistant"
         assert ai_chat.message == "AI回复内容"
         assert ai_chat.raw_prompt_to_llm == system_prompt
 

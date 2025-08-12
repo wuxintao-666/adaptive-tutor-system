@@ -118,8 +118,9 @@ class DynamicController:
             # 步骤8: 构建响应（只包含AI回复内容，符合TDD-II-10设计）
             response = ChatResponse(ai_response=ai_response)
 
-            # 步骤9: 记录AI交互
-            DynamicController._log_ai_interaction(request, response, db, background_tasks, system_prompt)
+            # 步骤9: 记录AI交互（暂时跳过数据库日志，专注于LLM API问题）
+            # TODO: 后续修复数据库时间戳问题后重新启用
+            # DynamicController._log_ai_interaction(request, response, db, background_tasks, system_prompt)
             
             return response
             
@@ -178,11 +179,13 @@ class DynamicController:
         2. 在 chat_history 中记录用户和AI的完整消息。
         """
         try:
+            # 确保时间戳是 datetime 对象
+            current_time = datetime.now(UTC)
             event = BehaviorEvent(
                 participant_id=request.participant_id,
                 event_type=EventType.AI_HELP_REQUEST,
                 event_data=AiHelpRequestData(message=request.user_message),
-                timestamp=datetime.now(UTC)
+                timestamp=current_time
             )
             
             # 准备用户聊天记录
@@ -195,7 +198,7 @@ class DynamicController:
             # 准备AI聊天记录
             ai_chat = ChatHistoryCreate(
                 participant_id=request.participant_id,
-                role="ai",
+                role="assistant",
                 message=response.ai_response,
                 raw_prompt_to_llm=system_prompt
             )

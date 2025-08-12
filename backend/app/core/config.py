@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     # TODO: 到时候可能需要约束，不能放所有都进来
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
-    DATABASE_URL: str = "sqlite:///./backend/app/db/database.db"
+    DATABASE_URL: str = "sqlite:///./app/db/database.db"
     
     # File paths
     DATA_DIR: str = "./backend/app/data"
@@ -55,7 +55,8 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.7
     
     # Module enable/disable flags
-    ENABLE_RAG_SERVICE: bool = True
+    # TODO: 后续需要配置 TUTOR_EMBEDDING_API_KEY 来启用 RAG 服务
+    ENABLE_RAG_SERVICE: bool = False  # 暂时禁用，等待配置 API 密钥
     ENABLE_SENTIMENT_ANALYSIS: bool = True
     ENABLE_TRANSLATION_SERVICE: bool = True
 

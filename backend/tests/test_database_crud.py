@@ -21,10 +21,16 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # 在导入项目模块前设置测试环境
 os.environ["APP_ENV"] = "testing"
-os.environ["DATABASE_URL"] = "sqlite:///./backend/app/db/database.db"  # 使用实际的数据库文件
-os.environ["TUTOR_OPENAI_API_KEY"] = "test-key"
-os.environ["TUTOR_EMBEDDING_API_KEY"] = "test-key"
-os.environ["TUTOR_TRANSLATION_API_KEY"] = "test-key"
+
+#Aeolyn:我是在backend目录下运行的联合测试所以改了下路径
+os.environ["DATABASE_URL"] = "sqlite:///./app/db/database.db"  
+
+#Aeolyn:原本的设置会覆盖我的环境，所以我把这些注掉了，后续有必要可以取消
+# os.environ["DATABASE_URL"] = "sqlite:///./backend/app/db/database.db"  # 使用实际的数据库文件
+# os.environ["TUTOR_OPENAI_API_KEY"] = "test-key"
+# os.environ["TUTOR_EMBEDDING_API_KEY"] = "test-key"
+# os.environ["TUTOR_TRANSLATION_API_KEY"] = "test-key"
+
 
 # 导入项目模块
 from app.db.base_class import Base
