@@ -102,6 +102,9 @@ class BehaviorEvent(BaseModel):
         timestamp: 事件发生的时间戳，可选字段，默认为当前时间
     """
 
+    # 与 TDD-II-07 对齐的事件类型枚举（若将来扩展只需在此添加）TODO：ceq可能添加热力图事件（heatmap_snapshot）
+    # 使用已定义的 EventType 枚举类
+
     participant_id: str = Field(..., description="参与者ID，用于标识特定用户")
     event_type: EventType = Field(..., description="事件类型")
     event_data: EventDataType = Field(..., description="事件数据，根据事件类型有不同的结构")

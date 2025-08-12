@@ -219,8 +219,8 @@ img:nth-of-type(2) {
 ```
 
 ```html
-<img src="pencil.jpg" alt="Original image is sharp" />
-<img src="pencil.jpg" alt="The image and border are blurred and muted" />
+<img src="pencil.jpg" alt="Original image is sharp"/>
+<img src="pencil.jpg" alt="The image and border are blurred and muted"/>
 ```
 
 {{EmbedLiveSample('Applying_filter_functions','100%','229px')}}
