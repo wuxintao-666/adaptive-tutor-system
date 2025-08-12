@@ -9,6 +9,7 @@ sys.path.insert(0, backend_path)
 
 from app.services.user_state_service import UserStateService, StudentProfile
 from app.schemas.participant import ParticipantCreate
+from app.schemas.behavior import BehaviorEvent, EventType
 
 # --- 模拟依赖 ---
 
@@ -264,3 +265,109 @@ class TestUserStateService:
         mock_bkt_model_class.assert_called_once()
         # 确保 update 方法被调用了两次
         assert mock_bkt_instance.update.call_count == 2
+
+    @patch('app.services.behavior_interpreter_service.BehaviorInterpreterService', MagicMock())
+    def test_handle_event(self, mock_db_session):
+        """
+        测试 handle_event 方法，验证事件处理和快照创建流程。
+        """
+        # 1. 准备
+        service = UserStateService()
+        participant_id = "test_user_123"
+        
+        # 创建一个测试提交事件
+        event = BehaviorEvent(
+            participant_id=participant_id,
+            event_type=EventType.TEST_SUBMISSION,
+            event_data={"topic_id": "loops", "code": {"html": "", "css": "", "js": ""}}
+        )
+        
+        # 2. 执行
+        with patch('app.services.behavior_interpreter_service.behavior_interpreter_service') as mock_behavior_interpreter_service:
+            service.handle_event(event, db=mock_db_session)
+        
+        # 3. 断言
+        # 验证行为解释器被调用
+        mock_behavior_interpreter_service.interpret_event.assert_called_once()
+        
+        # 验证快照检查被调用
+        # 注意：这里我们不直接测试 _maybe_create_snapshot 的内部逻辑，
+        # 而是验证 handle_event 的整体行为
+
+    @patch('app.services.user_state_service.crud_event')
+    @patch('app.services.behavior_interpreter_service.BehaviorInterpreterService', MagicMock())
+    def test_maybe_create_snapshot_and_cleanup(self, mock_crud_event, mock_db_session):
+        """
+        测试快照创建和清理功能。
+        """
+        # 1. 准备
+        service = UserStateService()
+        participant_id = "snapshot_user_456"
+        
+        # 在缓存中创建一个用户档案
+        profile = StudentProfile(participant_id, is_new_user=False)
+        service._state_cache[participant_id] = profile
+        
+        # 配置模拟对象的返回值
+        mock_crud_event.get_latest_snapshot.return_value = None
+        mock_crud_event.get_count_by_participant.return_value = 5  # 超过阈值
+        
+        # 2. 执行
+        service.maybe_create_snapshot(participant_id, db=mock_db_session)
+        
+        # 3. 断言
+        # 验证创建快照的方法被调用
+        mock_crud_event.create_from_behavior.assert_called_once()
+        
+        # 验证清理旧快照的方法被调用
+        mock_crud_event.get_all_snapshots.assert_called_once()
+
+    @patch('app.services.user_state_service.crud_event')
+    @patch('app.services.behavior_interpreter_service.BehaviorInterpreterService', MagicMock())
+    def test_recovery_edge_cases(self, mock_crud_event, mock_db_session):
+        """
+        测试状态恢复的边界情况。
+        """
+        # 1. 准备
+        service = UserStateService()
+        participant_id = "edge_case_user"
+        
+        # 测试从零开始恢复但没有历史事件的情况
+        mock_crud_event.get_latest_snapshot.return_value = None
+        mock_crud_event.get_by_participant.return_value = []  # 没有历史事件
+        
+        # 2. 执行
+        service._recover_from_history_with_snapshot(participant_id, db=mock_db_session)
+        
+        # 3. 断言
+        # 验证创建了新的用户档案
+        assert participant_id in service._state_cache
+        assert service._state_cache[participant_id].is_new_user is True
+
+    def test_bkt_model_serialization(self):
+        """
+        测试 BKT 模型的序列化和反序列化。
+        """
+        # 1. 准备
+        participant_id = "serialization_user"
+        profile = StudentProfile(participant_id)
+        
+        # 添加一个 BKT 模型
+        from app.models.bkt import BKTModel
+        bkt_model = BKTModel()
+        bkt_model.update(True)  # 更新模型状态
+        profile.bkt_model["topic1"] = bkt_model
+        
+        # 2. 执行
+        # 序列化
+        serialized = profile.to_dict()
+        
+        # 反序列化
+        deserialized_profile = StudentProfile.from_dict(serialized)
+        
+        # 3. 断言
+        assert deserialized_profile.participant_id == participant_id
+        assert "topic1" in deserialized_profile.bkt_model
+        assert isinstance(deserialized_profile.bkt_model["topic1"], BKTModel)
+        # 验证掌握概率被正确恢复
+        assert deserialized_profile.bkt_model["topic1"].get_mastery_prob() == bkt_model.get_mastery_prob()

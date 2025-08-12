@@ -228,7 +228,12 @@ class UserStateService:
             # 2a. 如果找到快照，从快照恢复
             logger.info(f"Found snapshot for {participant_id}. Restoring from snapshot...")
             # 反序列化快照数据
-            profile_data = latest_snapshot.event_data
+            # 检查 event_data 是否是 StateSnapshotData 实例或字典
+            if hasattr(latest_snapshot.event_data, 'profile_data'):
+                profile_data = latest_snapshot.event_data.profile_data
+            else:
+                # 兼容旧的快照数据结构
+                profile_data = latest_snapshot.event_data
             temp_profile = StudentProfile.from_dict(profile_data)
             self._state_cache[participant_id] = temp_profile
             
@@ -311,7 +316,7 @@ class UserStateService:
             event_count_since_snapshot = crud_event.get_count_by_participant(db, participant_id=participant_id)
             
         # 检查是否满足快照创建条件
-        time_since_last_snapshot = datetime.now(UTC) - (latest_snapshot.timestamp if latest_snapshot else datetime.min)
+        time_since_last_snapshot = datetime.now(UTC) - (latest_snapshot.timestamp if latest_snapshot else datetime.min.replace(tzinfo=UTC))
         
         if (event_count_since_snapshot >= self.SNAPSHOT_EVENT_INTERVAL or 
             time_since_last_snapshot >= self.SNAPSHOT_TIME_INTERVAL):
@@ -319,11 +324,11 @@ class UserStateService:
             logger.info(f"Creating snapshot for {participant_id}...")
             
             # 创建快照事件
-            from ..schemas.behavior import EventType
+            from ..schemas.behavior import EventType, StateSnapshotData
             snapshot_event = BehaviorEvent(
                 participant_id=participant_id,
                 event_type=EventType.STATE_SNAPSHOT,
-                event_data=profile.to_dict(),
+                event_data=StateSnapshotData(profile_data=profile.to_dict()),
                 timestamp=datetime.now(UTC)
             )
             

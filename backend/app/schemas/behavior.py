@@ -79,13 +79,23 @@ class PageFocusChangeData(BaseModel):
     status: Literal["focus", "blur"] = Field(..., description="焦点状态")
 
 
+class StateSnapshotData(BaseModel):
+    """状态快照数据
+    
+    Attributes:
+        profile_data: 用户档案数据
+    """
+    profile_data: Dict[str, Any] = Field(..., description="用户档案数据")
+
+
 EventDataType = Union[
     CodeEditData,
     AiHelpRequestData,
     TestSubmissionData,
     DomElementSelectData,
     UserIdleData,
-    PageFocusChangeData
+    PageFocusChangeData,
+    StateSnapshotData
 ]
 
 
