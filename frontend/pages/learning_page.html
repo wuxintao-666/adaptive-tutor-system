@@ -37,8 +37,24 @@
                 </div>
                 <div class="info-content" id="code-content">
                     <h2>选中元素代码</h2>
-                    <pre id="selectedElementCode" style="background:#f7f7f7;border-radius:6px;padding:10px;min-height:60px;border:1px solid #e0e0e0;"></pre>
-                    <button id="showSourceBtn" style="margin-top:12px;padding:6px 16px;font-size:1rem;border-radius:6px;border:1px solid #2196f3;background:#fff;color:#2196f3;cursor:pointer;">返回源代码</button>
+                    <pre id="selectedElementCode"></pre>
+                </div>
+                <!-- 代码展示面板底部的选择器控制区域 -->
+                <div class="code-panel-footer">
+                    <div class="selector-controls">
+                        <button id="startSelector" class="btn btn-select">选取元素</button>
+                        <button id="stopSelector" class="btn btn-select btn-stop-selector">停止选择</button>
+                    </div>
+                    <!-- 选择范围开关 -->
+                    <div class="selector-toggle-container">
+                        <label class="toggle-label">
+                            <input type="checkbox" id="cumulativeToggle">
+                            <span>包含之前章节的元素</span>
+                        </label>
+                        <div class="toggle-description">
+                            开启后可选择当前及之前所有章节的元素，关闭时仅可选择当前章节元素
+                        </div>
+                    </div>
                 </div>
               </div>
             </div>
@@ -90,7 +106,7 @@
                   <div class="ai-content">
                     <div class="markdown-content">
                             当然可以！作为 HTML 初学者，学习"表格（Table）"是非常实用的一步。它能帮助你做网页中最常见的数据结构，比如成绩单、产品价格表等。<br><br><b>HTML 表格的基本结构</b><br>HTML 使用 <code>&lt;table&gt;</code> 标签来创建表格，基本结构如下：<br>
-                            <pre style="background:#f9f9f9;padding:8px;border-radius:4px;">&lt;table&gt;
+                            <pre class="code-example">&lt;table&gt;
                                 &lt;tr&gt;
                                   &lt;th&gt;标题1&lt;/th&gt;
                                   &lt;th&gt;标题2&lt;/th&gt;
@@ -108,28 +124,15 @@
             <div class="ai-chat-input">
               <!-- 聊天输入主区域 -->
               <div class="chat-input-main">
-                <button id="startSelector" class="btn btn-select">选取元素</button>
-                <button id="stopSelector" class="btn btn-select btn-stop-selector">停止选择</button>
                 <textarea id="user-message" placeholder="请输入信息"></textarea>
                 <button type="button" id="send-message" class="btn btn-primary"
                   onclick="directSendMessage()">发送信息</button>
               </div>
-              
-              <!-- 选择范围开关 -->
-              <div class="selector-toggle-container">
-                <label class="toggle-label">
-                    <input type="checkbox" id="cumulativeToggle">
-                    <span>包含之前章节的元素</span>
-                </label>
-                <div class="toggle-description">
-                    开启后可选择当前及之前所有章节的元素，关闭时仅可选择当前章节元素
-                </div>
-              </div>
             </div>
-            <div style="padding: 0 32px 12px 32px;">
-              <span id="statusBadge" style="display:none;font-size:13px;margin-right:12px;"></span>
+            <div class="status-container">
+              <span id="statusBadge"></span>
             </div>
-            <div style="padding: 0 32px 12px 32px;">
+            <div class="status-container">
             </div>
           </div>
         </div>

@@ -15,7 +15,8 @@ let docsModuleState = {
     basicTimer: 0,
     advancedTimer: 0,
     basicInterval: null,
-    advancedInterval: null
+    advancedInterval: null,
+    currentTopicData: null  // 存储当前主题的完整数据
 };
 
 // API客户端
@@ -94,7 +95,86 @@ async function loadDocumentForTag(tagName) {
     }
 }
 
-// 渲染文档内容
+// 加载主题内容（新函数）
+async function loadTopicContent(topicId) {
+    try {
+        // 使用后端API获取主题内容
+        const response = await ApiClient.get(`/learning-content/${topicId}`);
+        
+        if (response.code !== 200) {
+            throw new Error(response.message || '未找到主题内容');
+        }
+        
+        const topicData = response.data;
+        docsModuleState.currentTopicData = topicData;
+        docsModuleState.currentTag = { id: topicId, title: topicData.title || `主题 ${topicId}` };
+        
+        // 直接渲染四个等级的内容
+        renderTopicContent();
+        startTimer();
+        
+    } catch (e) {
+        console.warn('无法从后端获取主题内容，使用默认内容:', e.message);
+        
+        // 使用默认内容
+        docsModuleState.currentTag = { id: topicId, title: `主题 ${topicId}` };
+        docsModuleState.currentTopicData = {
+            title: `主题 ${topicId}`,
+            levels: [
+                { level: 1, description: "基础概念：适合零基础入门，掌握核心概念与基本语法。" },
+                { level: 2, description: "详细解析：理解常见场景与组合用法，提升实践能力。" },
+                { level: 3, description: "实际应用：深入机制与性能优化，形成系统化认知。" },
+                { level: 4, description: "原理分析：综合实战与拓展题，检验与突破现有水平。" }
+            ]
+        };
+        
+        renderTopicContent();
+        startTimer();
+    }
+}
+
+// 渲染主题内容（新函数）
+function renderTopicContent() {
+    const knowledgeContent = document.getElementById('knowledge-content');
+    if (!knowledgeContent || !docsModuleState.currentTopicData) return;
+    
+    const topicData = docsModuleState.currentTopicData;
+    const levels = topicData.levels || [];
+    
+    // 构建四个等级的内容
+    const levelCards = levels.map((level, index) => {
+        const levelLabels = ['基础', '进阶', '高级', '挑战'];
+        const levelLabel = levelLabels[index] || `Level ${level.level}`;
+        
+        return `
+            <div class="level-card">
+                <h3>Level ${level.level} · ${levelLabel}</h3>
+                <p class="content-text">${level.description || '暂无内容'}</p>
+            </div>
+        `;
+    }).join('');
+    
+    // 添加箭头分隔符
+    const arrows = Array(levels.length - 1).fill('<div class="arrow" aria-hidden="true">➜</div>').join('');
+    
+    knowledgeContent.innerHTML = `
+        <div class="levels-flow">
+            ${levelCards}
+            ${arrows}
+        </div>
+    `;
+    
+    // 更新页面标题
+    const headerTitle = document.querySelector('.header-title');
+    if (headerTitle && topicData.title) {
+        headerTitle.textContent = topicData.title;
+    }
+    
+    startTimer();
+    updateTimeDisplay();
+}
+
+// 渲染文档内容（保持原有功能，用于兼容性）
 function renderDocContent() {
     const tagTitle = document.getElementById('tag-title');
     const tagContent = document.getElementById('tag-content');
@@ -230,15 +310,26 @@ function initKnowledgeContent() {
     if (!knowledgeContent) return;
     
     knowledgeContent.innerHTML = `
-        <div class="card-container">
-            <div id="card-content" class="card">
-                <h2 id="tag-title" class="card-title">请选择组件</h2>
-                <div id="tag-content"></div>
+        <div class="levels-flow">
+            <div class="level-card">
+                <h3>Level 1 · 基础</h3>
+                <p class="content-text">适合零基础入门，掌握核心概念与基本语法。</p>
             </div>
-        </div>
-        <div class="timer-display">
-            <div class="timer-item"><span class="timer-label">基础内容：</span><span id="basic-time">00:00</span></div>
-            <div class="timer-item"><span class="timer-label">进阶内容：</span><span id="advanced-time">00:00</span></div>
+            <div class="arrow" aria-hidden="true">➜</div>
+            <div class="level-card">
+                <h3>Level 2 · 进阶</h3>
+                <p class="content-text">理解常见场景与组合用法，提升实践能力。</p>
+            </div>
+            <div class="arrow" aria-hidden="true">➜</div>
+            <div class="level-card">
+                <h3>Level 3 · 高级</h3>
+                <p class="content-text">深入机制与性能优化，形成系统化认知。</p>
+            </div>
+            <div class="arrow" aria-hidden="true">➜</div>
+            <div class="level-card">
+                <h3>Level 4 · 挑战</h3>
+                <p class="content-text">综合实战与拓展题，检验与突破现有水平。</p>
+            </div>
         </div>
     `;
 }
@@ -246,7 +337,9 @@ function initKnowledgeContent() {
 // 导出模块
 window.DocsModule = {
     loadDocumentForTag,
+    loadTopicContent,  // 新增函数
     renderDocContent,
+    renderTopicContent,  // 新增函数
     startTimer,
     stopTimer,
     updateTimeDisplay,

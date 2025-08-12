@@ -87,6 +87,8 @@ class ElementSelector {
         this.highlightEl = null;
         this.lastHoveredElement = null;
         this.isActive = false;
+        this.currentElements = options.currentElements || [];  // 当前章节元素
+        this.cumulativeElements = options.cumulativeElements || [];  // 累积元素
         
         this.handleMouseMove = (event) => {
             requestAnimationFrame(() => {
@@ -287,12 +289,38 @@ class ElementSelector {
         if (!this.highlightEl || !element) return;
         
         const rect = element.getBoundingClientRect();
+        const tagName = element.tagName.toLowerCase();
+        
+        // 判断元素类型并设置相应的颜色
+        let borderColor, backgroundColor;
+        
+        // 检查是否是当前章节的元素
+        const isCurrentElement = this.currentElements.includes(tagName);
+        // 检查是否是之前章节的元素
+        const isPreviousElement = this.cumulativeElements.includes(tagName) && !isCurrentElement;
+        
+        if (isCurrentElement) {
+            // 当前章节元素 - 蓝色
+            borderColor = '#0079d3';
+            backgroundColor = 'rgba(0, 121, 211, 0.1)';
+        } else if (isPreviousElement) {
+            // 之前章节元素 - 红色
+            borderColor = '#dc3545';
+            backgroundColor = 'rgba(220, 53, 69, 0.1)';
+        } else {
+            // 默认颜色
+            borderColor = '#0079d3';
+            backgroundColor = 'rgba(0, 121, 211, 0.1)';
+        }
+        
         Object.assign(this.highlightEl.style, {
             display: 'block',
             left: `${rect.left}px`,
             top: `${rect.top}px`,
             width: `${rect.width}px`,
-            height: `${rect.height}px`
+            height: `${rect.height}px`,
+            border: `2px solid ${borderColor}`,
+            backgroundColor: backgroundColor
         });
     }
     
@@ -412,10 +440,26 @@ function initIframeSelector(options = {}) {
                     selector.stop();
                 }
                 const startMessage = message;
+                // 解析allowedElements，区分当前章节和累积章节的元素
+                const allowedElements = startMessage.allowedElements || [];
+                let currentElements = [];
+                let cumulativeElements = [];
+                
+                // 如果allowedElements是对象格式（包含current和cumulative）
+                if (typeof allowedElements === 'object' && !Array.isArray(allowedElements)) {
+                    currentElements = allowedElements.current || [];
+                    cumulativeElements = allowedElements.cumulative || [];
+                } else {
+                    // 如果allowedElements是数组格式，全部作为累积元素
+                    cumulativeElements = allowedElements;
+                }
+                
                 selector = new ElementSelector({
                     ignoreSelectors: startMessage.ignore,
                     allowedTags: startMessage.allowedTags || allowedTags,
-                    allowedElements: startMessage.allowedElements || [],
+                    allowedElements: cumulativeElements, // 使用累积元素作为允许的元素
+                    currentElements: currentElements, // 当前章节元素
+                    cumulativeElements: cumulativeElements, // 累积元素
                     onElementSelected: (element, info) => {
                         window.parent.postMessage({
                             type: MESSAGE_TYPES.CHOSEN,
@@ -466,11 +510,25 @@ function createSelectorBridge(options) {
     return {
         start(allowedTags = [], allowedElements = []) {
             try {
+                // 确保传递正确的元素信息
+                let elementsToSend = allowedElements;
+                
+                // 如果allowedElements是对象格式，直接传递
+                if (typeof allowedElements === 'object' && !Array.isArray(allowedElements)) {
+                    elementsToSend = allowedElements;
+                } else {
+                    // 如果是数组格式，转换为对象格式
+                    elementsToSend = {
+                        current: allowedElements,
+                        cumulative: allowedElements
+                    };
+                }
+                
                 iframeWindow.postMessage({
                     type: MESSAGE_TYPES.START,
                     ignore: ignoreSelectors,
                     allowedTags,
-                    allowedElements
+                    allowedElements: elementsToSend
                 }, targetOrigin);
             } catch (error) {
                 if (onError) {

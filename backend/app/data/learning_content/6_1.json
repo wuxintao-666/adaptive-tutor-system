@@ -1,0 +1,42 @@
+{
+    "topic_id": "6_1",
+    "title": "按钮点击事件",
+    "levels": [
+        {
+            "level": 1,
+            "description": "按钮点击事件是用户与网页交互的基础方式。当用户点击按钮时触发特定操作，核心包括事件类型（如click）、事件目标（按钮元素）和事件处理函数。通过事件处理可实现数据提交、内容展示等交互功能。"
+        },
+        {
+            "level": 2,
+            "description": "两种主要实现方式：1) HTML的onclick属性直接绑定函数：<button onclick='handleClick()'>；2) JavaScript的addEventListener动态绑定：button.addEventListener('click', callback)。后者更灵活，支持多个监听器。获取表单值常用document.getElementById()和value属性。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景示例：登录表单验证。HTML结构：<input id='username'> <button id='loginBtn'>登录</button>。JavaScript实现：\n\nconst btn = document.getElementById('loginBtn');\nbtn.addEventListener('click', () => {\n  const name = document.getElementById('username').value;\n  alert(`欢迎, ${name}!`);\n});\n此代码在点击时获取输入值并弹出个性化欢迎语。"
+        },
+        {
+            "level": 4,
+            "description": "原理：事件触发后经历捕获-目标-冒泡三阶段。注意事项：1) 避免在HTML中写大量JS逻辑；2) addEventListener可添加多个回调，onclick会覆盖；3) 事件委托优化性能；4) 使用event.preventDefault()阻止默认行为；5) 移动端需考虑touch事件兼容性。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

@@ -208,6 +208,28 @@ body {
         background: var(--content-background);
     }
 
+    /* 代码展示面板底部区域 */
+    .code-panel-footer {
+        margin-top: auto;
+        padding: 16px 32px;
+        background: var(--content-background);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .selector-controls {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        justify-content: flex-end;
+    }
+
+    .selector-controls .btn {
+        flex: 0 0 auto;
+        min-width: 100px;
+    }
+
     /* 聊天面板样式 */
     .chat-panel {
         width: 30%;
@@ -1109,9 +1131,13 @@ body {
 
 /* 选择器开关样式 */
 .selector-toggle-container {
-    margin: 5px 0 0 0;
-    padding-top: 8px;
-    border-top: 1px solid #f0f0f0;
+    margin: 0;
+    padding-top: 0;
+    border-top: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    position: relative;
 }
 
 .toggle-label {
@@ -1125,11 +1151,43 @@ body {
     margin-right: 5px;
 }
 
-.toggle-description {
+.selector-toggle-container .toggle-description {
     font-size: 0.75em;
     color: #666;
     margin-top: 1px;
     line-height: 1.3;
+    position: fixed;
+    top: auto;
+    bottom: auto;
+    right: auto;
+    left: auto;
+    background: #333;
+    color: white !important;
+    padding: 8px 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 9999 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    transform: translateY(-100%);
+}
+
+.toggle-description::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 10px;
+    border: 5px solid transparent;
+    border-top-color: #333;
+}
+
+.selector-toggle-container .toggle-label:hover + .toggle-description {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
 }
 
 /* 聊天输入区域布局 */
@@ -1150,5 +1208,32 @@ body {
 .chat-input-main textarea {
     flex: 1;
     margin-right: 0;
+}
+
+/* 代码展示区域的样式 */
+#selectedElementCode {
+    background: #f7f7f7;
+    border-radius: 6px;
+    padding: 10px;
+    min-height: 60px;
+    border: 1px solid #e0e0e0;
+}
+
+/* 代码示例样式 */
+.code-example {
+    background: #f9f9f9;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+/* 状态区域样式 */
+.status-container {
+    padding: 0 32px 12px 32px;
+}
+
+#statusBadge {
+    display: none;
+    font-size: 13px;
+    margin-right: 12px;
 }
 

@@ -1,0 +1,63 @@
+{
+  "topic_id":"3.1",
+  "title": "文本框与按钮的使用",
+  "description_md": "# 文本框与按钮的使用\n##任务一：请创建一个文本框，提示文本是：搜索猫咪名称。\n##任务二：\n在文本框下方创建一个按钮，按钮的文本是：搜索。",
+  "start_code": {
+    "html": "",
+    "css": "",
+    "js": ""
+  },
+  "checkpoints": [
+    {
+      "name": "input表单元素检查",
+      "type": "assert_attribute",
+      "selector": "input",
+      "attribute": "",
+      "assertion_type": "exists",
+      "value": "",
+      "feedback": "请检查input元素是否存在。"
+    },
+    {
+        "name" : "input表单元素类型检查",
+        "type" : "assert_attribute",
+        "selector" : "input",
+        "attribute" : "type",
+        "assertion_type" : "matches",
+        "value" : "text",
+        "feedback" : "请检查input元素type属性为text."
+    },
+    {
+      "name": "input表单提示文本检查",
+      "type": "assert_attribute",
+      "selector": "input",
+      "attribute": "placeholder",
+      "assertion_type": "matches",
+      "value": "搜索猫咪名称",
+      "feedback": "请检查input元素的placeholder属性是否与要求不同。"
+    },
+    {
+      "name": "button按钮元素检查",
+      "type": "assert_element",
+      "selector": "button",
+      "assertion_type": "exists",
+      "value": "搜索",
+      "feedback": "请检查button元素是否存在。"
+    },
+    {
+      "name": "button按钮元素位置检查",
+      "type": "custom_script",
+      "script": "return document.querySelector('input').getBoundingClientRect().top < document.querySelector('button).getBoundingClientRect().top",
+      "feedback": "button元素应该在input元素下方。"
+    },
+    {
+      "name": "button按钮文本检查",
+      "type": "assert_attribute",
+      "selector": "button",
+      "attribute": "textContent",
+      "assertion_type": "matches",
+      "value": "搜索",
+      "feedback": "请检查button按钮文本是否为搜索。"
+    }
+  ]
+}
+

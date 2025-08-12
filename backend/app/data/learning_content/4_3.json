@@ -1,0 +1,42 @@
+{
+    "topic_id": "4_3",
+    "title": "使用 Flex 进行布局",
+    "levels": [
+        {
+            "level": 1,
+            "description": "Flexbox 是 CSS3 的现代布局模型，用于创建弹性容器，使子元素能自动调整大小和位置。核心概念包括主轴（main axis）和交叉轴（cross axis），通过设置容器属性控制子元素排列方式，特别适合响应式布局和复杂对齐需求。"
+        },
+        {
+            "level": 2,
+            "description": "关键属性：容器设置 `display: flex` 启用布局；`justify-content` 控制主轴对齐（如 space-between 两端对齐）；`align-items` 管理交叉轴对齐；`flex-wrap` 允许换行；`gap` 设置子元素间距。子元素可用 `flex` 属性定义伸缩比例。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：导航栏布局。示例：HTML 创建导航容器 `<nav><a>首页</a><a>产品</a><a>联系</a></nav>`，CSS 设置 `nav { display: flex; justify-content: space-around; gap: 20px; }` 实现等间距导航。卡片布局使用 `flex-wrap: wrap` 和 `justify-content: center` 实现自动换行居中对齐。"
+        },
+        {
+            "level": 4,
+            "description": "原理：Flex 布局不依赖浮动或定位，通过计算容器剩余空间动态分配子元素尺寸。注意事项：旧浏览器需前缀（如 `-webkit-flex`）；避免过度嵌套导致性能问题；`gap` 属性不兼容 IE。使用 `min-width` 防止内容挤压，移动端优先考虑弹性单位（rem/em）。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}

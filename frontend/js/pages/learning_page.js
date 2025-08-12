@@ -20,9 +20,11 @@ function initMainApp() {
         return;
     }
     
-    // 初始化知识点内容
+    // 初始化知识点内容并加载当前主题
     if (window.DocsModule && window.DocsModule.initKnowledgeContent) {
         window.DocsModule.initKnowledgeContent();
+        // 加载当前主题的内容
+        loadCurrentTopicContent();
     }
     
     // 初始化
@@ -149,23 +151,6 @@ function initMainApp() {
     if (window.DocsModule) {
         window.DocsModule.initKnowledgeContent();
     }
-    
-    // 返回源代码按钮
-    const showSourceBtn = document.getElementById('showSourceBtn');
-    if (showSourceBtn) {
-        showSourceBtn.addEventListener('click', function() {
-            try {
-                const doc = iframe.contentDocument || iframe.contentWindow.document;
-                const html = doc.documentElement.outerHTML;
-                const codeElement = document.getElementById('selectedElementCode');
-                if (codeElement) codeElement.textContent = html;
-                if (tabCode) tabCode.click();
-            } catch (e) {
-                const codeElement = document.getElementById('selectedElementCode');
-                if (codeElement) codeElement.textContent = '无法获取iframe页面源码';
-            }
-        });
-    }
 }
 
 // 元素被选中的处理函数
@@ -226,6 +211,18 @@ function showStatus(type, message) {
     }
 }
 
+// 加载当前主题内容
+async function loadCurrentTopicContent() {
+    try {
+        console.log('开始加载主题内容:', currentTopicId);
+        await window.DocsModule.loadTopicContent(currentTopicId);
+        console.log('主题内容加载完成');
+    } catch (error) {
+        console.error('加载主题内容失败:', error);
+        showStatus('error', `加载主题内容失败: ${error.message}`);
+    }
+}
+
 // 更新主题ID并重新加载元素数据
 async function updateTopicId(newTopicId) {
     currentTopicId = newTopicId;
@@ -243,6 +240,9 @@ async function updateTopicId(newTopicId) {
             toggleDescription.textContent = 
                 `开启后可选择当前及之前所有章节的元素 (${cumulativeCount}个)，关闭时仅可选择当前章节元素 (${currentCount}个)`;
         }
+        
+        // 重新加载主题内容
+        await loadCurrentTopicContent();
         
         showStatus('success', `已切换到主题 ${newTopicId}`);
     } catch (error) {

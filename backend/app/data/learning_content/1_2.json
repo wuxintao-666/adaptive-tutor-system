@@ -1,0 +1,42 @@
+{
+    "topic_id": "1_2",
+    "title": "应用文本格式（加粗、斜体）",
+    "levels": [
+        {
+            "level": 1,
+            "description": "font-weight属性控制文本粗细程度，核心值包括normal（默认）、bold（粗体）等。font-style属性控制文本倾斜样式，核心值包括normal（默认）、italic（斜体）等。两者都是CSS文本样式基础属性，通过改变字体外观增强信息层次感。"
+        },
+        {
+            "level": 2,
+            "description": "font-weight语法：font-weight: normal|bold|bolder|lighter|100-900; 数值越大越粗。font-style语法：font-style: normal|italic|oblique; italic使用字体斜体版本，oblique强制倾斜。可通过类选择器或元素选择器应用，如.bold-text { font-weight: bold; }。"
+        },
+        {
+            "level": 3,
+            "description": "应用场景：新闻摘要中关键信息加粗，技术术语用斜体表示。示例：HTML：<p>这是<span class='emphasis'>重要通知</span>，请<i>立即处理</i>。</p> CSS：.emphasis { font-weight: 700; } i { font-style: italic; }。注意避免过度使用，保持页面可读性。"
+        },
+        {
+            "level": 4,
+            "description": "原理：font-weight通过字体文件的多字重版本实现，数值对应OpenType的weight值。font-style中italic调用字体设计的斜体字形。注意事项：1) 确保字体支持对应字重 2) 数值粗细需字体文件支持 3) 斜体与倾斜体(oblique)渲染差异 4) 移动端考虑字体加载性能。"
+        }
+    ],
+    "sc_all": [
+        {"topic_id": "1_1", "select_element": ["h1", "h2", "h3", "h4", "h5", "h6", "p"]},
+        {"topic_id": "1_2", "select_element": []},
+        {"topic_id": "1_3", "select_element": ["<!DOCTYPE>", "html", "head", "body","meta", "title","footer"]},
+        {"topic_id": "2_1", "select_element": ["div"]},
+        {"topic_id": "2_2", "select_element": ["ol","li"]},
+        {"topic_id": "2_3", "select_element": ["ul"]},
+        {"topic_id": "3_1", "select_element": ["input", "button"]},
+        {"topic_id": "3_2", "select_element": ["label"]},
+        {"topic_id": "3_3", "select_element": ["form"]},
+        {"topic_id": "4_1", "select_element": []},
+        {"topic_id": "4_2", "select_element": []},
+        {"topic_id": "4_3", "select_element": []},
+        {"topic_id": "5_1", "select_element": ["img"]},
+        {"topic_id": "5_2", "select_element": ["audio","source"]},
+        {"topic_id": "5_3", "select_element": ["video"]},
+        {"topic_id": "6_1", "select_element": []},
+        {"topic_id": "6_2", "select_element": []},
+        {"topic_id": "6_3", "select_element": []}
+    ]
+}
