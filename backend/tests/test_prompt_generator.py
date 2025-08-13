@@ -68,7 +68,7 @@ def test_build_system_prompt_new_user_no_context():
         user_state=user_state,
         retrieved_context=[],
         task_context=None,
-        topic_id=None,
+        topic_title=None,
     )
 
     # 含基础系统提示
@@ -99,7 +99,7 @@ def test_build_system_prompt_existing_user_with_progress_behavior_and_context():
         user_state=user_state,
         retrieved_context=retrieved,
         task_context="Implement stack",
-        topic_id="loops",
+        topic_title="loops",
     )
 
     # 既有学生提示
@@ -133,7 +133,7 @@ def test_create_prompts_integration():
         user_message="Explain closures",
         code_content=code,
         task_context="Practice functions",
-        topic_id="javascript",
+        topic_title="javascript",
     )
 
     # 系统提示含期待关键字

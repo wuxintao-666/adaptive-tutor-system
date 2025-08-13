@@ -30,7 +30,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         user_message: str,
         code_content: CodeContent = None,
         task_context: str = None,
-        topic_id: str = None  # TODO: 改成title
+        topic_title: str = None  # 使用topic_title而不是topic_id
     ) -> Tuple[str, List[Dict[str, str]]]:
         """
         创建完整的提示词和消息列表
@@ -42,7 +42,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             user_message: 用户当前消息
             code_content: 代码上下文
             task_context: 任务上下文
-            topic_id: 主题ID
+            topic_title: 主题标题
 
         Returns:
             Tuple[str, List[Dict[str, str]]]: (system_prompt, messages)
@@ -52,7 +52,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             user_state=user_state,
             retrieved_context=retrieved_context,
             task_context=task_context,
-            topic_id=topic_id
+            topic_title=topic_title
         )
 
         # 构建消息列表
@@ -69,7 +69,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         user_state: UserStateSummary,
         retrieved_context: List[str],
         task_context: str = None,
-        topic_id: str = None
+        topic_title: str = None
     ) -> str:
         """构建系统提示词"""
         prompt_parts = [self.base_system_prompt]
@@ -140,8 +140,8 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             prompt_parts.append(f"TASK CONTEXT: The student is currently working on: '{task_context}'. Frame your explanations within this context.")
 
         # 添加主题信息
-        if topic_id:
-            prompt_parts.append(f"TOPIC: The current learning topic is '{topic_id}'. Focus your explanations on this specific topic.")
+        if topic_title:
+            prompt_parts.append(f"TOPIC: The current learning topic is '{topic_title}'. Focus your explanations on this specific topic.")
 
         return "\n\n".join(prompt_parts)
 
