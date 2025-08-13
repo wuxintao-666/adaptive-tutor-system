@@ -3,7 +3,7 @@ import os
 import asyncio
 from typing import List, Dict, Any, Optional
 from openai import OpenAI
-from ..core.config import settings
+from app.core.config import settings
 
 
 class LLMGateway:
