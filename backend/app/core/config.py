@@ -43,12 +43,12 @@ class Settings(BaseSettings):
     # TODO: 到时候可能需要约束，不能放所有都进来
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
 
-    DATABASE_URL: str = "sqlite:///./backend/app/db/database.db"
+    DATABASE_URL: str = "sqlite:///./app/db/database.db"
 
     # File paths
-    DATA_DIR: str = "./backend/app/data"
-    DOCUMENTS_DIR: str = "./backend/app/data/documents"
-    VECTOR_STORE_DIR: str = "./backend/app/data/vector_store"
+    DATA_DIR: str = "./app/data"
+    DOCUMENTS_DIR: str = "./app/data/documents"
+    VECTOR_STORE_DIR: str = "./app/data/vector_store"
     KB_ANN_FILENAME: str = "kb.ann"
     KB_CHUNKS_FILENAME: str = "kb_chunks.json"
 
