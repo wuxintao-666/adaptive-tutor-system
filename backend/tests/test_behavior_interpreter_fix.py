@@ -207,7 +207,7 @@ class TestBehaviorInterpreterRefactor:
     def test_handle_test_submission_bkt_update_failure(self, interpreter, mock_user_state_service):
         """测试9: 验证 _handle_test_submission 中 BKT 更新失败的处理"""
         participant_id = "bkt_failure_user"
-        event_data = TestSubmissionData(topic_id="t1", code={"js": ""})
+        event_data = SubmissionData(topic_id="t1", code={"js": ""})
         
         # 模拟 update_bkt_on_submission 抛出异常
         mock_user_state_service.update_bkt_on_submission.side_effect = Exception("BKT update failed")
