@@ -117,7 +117,7 @@ class DynamicController:
                 user_message=request.user_message,
                 code_content=request.code_context,
                 task_context=request.task_context,
-                topic_id=request.topic_id
+                topic_title=request.topic_title  # 使用topic_title参数
             )
 
             # 步骤5: 调用LLM

@@ -30,14 +30,14 @@ class ChatRequest(BaseModel):
         conversation_history: 对话历史，包含之前的所有对话消息
         code_context: 代码上下文，用户当前正在编辑的代码内容
         task_context: 任务上下文，用户当前正在进行的测试任务
-        topic_id: 知识点ID，标识当前讨论的知识点
+        topic_title: 知识点标题，标识当前讨论的知识点
     """
     participant_id: str
     user_message: str
     conversation_history: Optional[List[ConversationMessage]] = []
     code_context: Optional[CodeContent] = None
     task_context: Optional[TestTask] = None
-    topic_id: Optional[str] = None
+    topic_title: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
