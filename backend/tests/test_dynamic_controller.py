@@ -144,7 +144,7 @@ def sample_chat_request():
         ],
         code_context=None,  # 暂时设为None，避免CodeContent验证问题
         task_context=None,  # 暂时设为None，避免TestTask验证问题
-        topic_id="css_selectors"
+        topic_title="css_selectors"
     )
 
 @pytest.fixture
@@ -561,7 +561,7 @@ class TestDynamicController:
             conversation_history=[],
             code_context=None,
             task_context=None,
-            topic_id=""
+            topic_title=""
         )
         
         # 执行
@@ -596,7 +596,7 @@ class TestDynamicController:
             conversation_history=[],
             code_context=None,  # 暂时设为None，避免CodeContent验证问题
             task_context=None,  # 暂时设为None，避免TestTask验证问题
-            topic_id="css_layout"
+            topic_title="css_layout"
         )
         
         # 执行
@@ -614,7 +614,7 @@ class TestDynamicController:
         call_args = mock_create_prompts.call_args
         assert call_args.kwargs['code_content'] == request.code_context
         assert call_args.kwargs['task_context'] == request.task_context
-        assert call_args.kwargs['topic_id'] == "css_layout"
+        assert call_args.kwargs['topic_title'] == "css_layout"
 
     def test_build_user_state_summary_with_dict_like_profile(self):
         """测试处理字典样式的profile"""
@@ -665,7 +665,7 @@ class TestDynamicController:
             conversation_history=[],
             code_context=None,
             task_context=None,
-            topic_id=""
+            topic_title=""
         )
         
         # 执行
@@ -696,7 +696,7 @@ class TestDynamicController:
                 conversation_history=[],
                 code_context=None,
                 task_context=None,
-                topic_id=""
+                topic_title=""
             )
             requests.append(request)
         
@@ -759,7 +759,7 @@ class TestDynamicController:
             conversation_history=large_history,
             code_context=None,
             task_context=None,
-            topic_id=""
+            topic_title=""
         )
         
         # 执行
@@ -913,7 +913,7 @@ class TestDynamicController:
             ],
             code_context=None,  # 避免验证问题
             task_context=None,  # 避免验证问题
-            topic_id="responsive_design"
+            topic_title="responsive_design"
         )
         
         # 设置服务返回值
@@ -983,7 +983,7 @@ class TestDynamicController:
         assert call_kwargs['user_message'] == "如何实现响应式布局？"
         assert call_kwargs['code_content'] is None
         assert call_kwargs['task_context'] is None
-        assert call_kwargs['topic_id'] == "responsive_design"
+        assert call_kwargs['topic_title'] == "responsive_design"
 
     # === 错误处理和边界情况测试 ===
     
@@ -1089,7 +1089,7 @@ class TestDynamicController:
                 conversation_history=[],
                 code_context=None,
                 task_context=None,
-                topic_id=""
+                topic_title=""
             )
             requests.append(request)
         
@@ -1165,7 +1165,7 @@ class TestDynamicController:
             conversation_history=[],
             code_context=None,
             task_context=None,
-            topic_id=""
+            topic_title=""
         )
         
         response = await dynamic_controller.generate_adaptive_response(request, db_session)
@@ -1190,7 +1190,7 @@ class TestDynamicController:
             conversation_history=[],
             code_context=None,
             task_context=None,
-            topic_id=""
+            topic_title=""
         )
         
         response = await dynamic_controller.generate_adaptive_response(request, db_session)
@@ -1358,7 +1358,7 @@ class TestDynamicController:
             conversation_history=None,  # None历史
             code_context=None,
             task_context=None,
-            topic_id=""
+            topic_title=""
         )
         
         response = await dynamic_controller.generate_adaptive_response(request, db_session)
@@ -1428,7 +1428,7 @@ class TestDynamicController:
                 conversation_history=[],
                 code_context=None,
                 task_context=None,
-                topic_id=""
+                topic_title=""
             )
             requests.append(request)
         
