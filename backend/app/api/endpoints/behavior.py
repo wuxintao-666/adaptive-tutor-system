@@ -20,8 +20,11 @@ router = APIRouter()
 @router.post("/log", status_code=status.HTTP_202_ACCEPTED, summary="记录行为事件")
 def log_behavior(
     event_in: BehaviorEvent,
+
+    # Aeolyn: 修复语法错误 ，该对象由框架维护不需要depend()包装
+    background_tasks: BackgroundTasks,
+     
     db: Session = Depends(get_db),
-    background_tasks: BackgroundTasks = Depends(),
     user_state_service: UserStateService = Depends(get_user_state_service)
 ):
     """
