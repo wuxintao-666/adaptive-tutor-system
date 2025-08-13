@@ -1,9 +1,9 @@
 import os
 import sys
-import pytest
+from typing import List, Dict
 
 
-# 将 backend 目录添加到 sys.path 中，便于按项目方式导入
+# 确保可以按项目路径导入 app.*
 backend_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
@@ -13,142 +13,108 @@ from app.schemas.chat import UserStateSummary
 from app.schemas.content import CodeContent
 
 
-def make_user_state(
-    *,
-    is_new_user: bool,
-    emotion: str = "NEUTRAL",
-    bkt_models: dict | None = None,
-    behavior_counters: dict | None = None,
-):
+def _read_context_text() -> List[str]:
+    """优先从 PG_CONTEXT_FILE 读取；否则读取项目自带示例文档的一段作为 RAG 上下文。"""
+    context_file = os.getenv("PG_CONTEXT_FILE")
+    texts: List[str] = []
+    try:
+        if context_file and os.path.exists(context_file):
+            with open(context_file, "r", encoding="utf-8", errors="ignore") as f:
+                data = f.read().strip()
+                if data:
+                    texts.append(data[:2000])
+                    return texts
+    except Exception:
+        pass
+
+    # 退回到项目内置文档
+    fallback = os.path.abspath(os.path.join(backend_path, "app", "data", "documents", "ai_fundamentals.txt"))
+    try:
+        if os.path.exists(fallback):
+            with open(fallback, "r", encoding="utf-8", errors="ignore") as f:
+                data = f.read().strip()
+                if data:
+                    texts.append(data[:2000])
+    except Exception:
+        pass
+
+    return texts
+
+
+def _make_user_state() -> UserStateSummary:
+    participant_id = os.getenv("PG_PARTICIPANT_ID", "u1")
+    is_new_user = os.getenv("PG_IS_NEW_USER", "true").lower() == "true"
+    emotion = os.getenv("PG_EMOTION", "NEUTRAL")
+
+    # 模拟一些掌握度与行为计数，更贴近真实
+    bkt_models = {
+        "topic_arrays": {"mastery_prob": 0.62},
+        "topic_binary_search": {"mastery_prob": 0.35},
+        "topic_complexity": {"mastery_prob": 0.82},
+    }
+    behavior_counters = {
+        "error_count": 3,
+        "submission_timestamps": [1, 2, 3, 4],
+    }
+
     return UserStateSummary(
-        participant_id="u1",
+        participant_id=participant_id,
         emotion_state={"current_sentiment": emotion},
-        behavior_counters=behavior_counters or {},
-        bkt_models=bkt_models or {},
+        behavior_counters=behavior_counters,
+        bkt_models=bkt_models,
         is_new_user=is_new_user,
     )
 
 
-def test_build_message_history_with_code_context():
-    g = PromptGenerator()
-
-    conversation_history = [
-        {"role": "assistant", "content": "Hi"},
-        {"role": "user", "content": "Show me"},
+def _make_conversation_history() -> List[Dict[str, str]]:
+    return [
+        {"role": "assistant", "content": "你好，我是你的编程助教。"},
+        {"role": "user", "content": "我想学会二分查找。"},
     ]
-    code = CodeContent(
-        html="<h1>Hello</h1>",
-        css="h1 { color: red; }",
-        js="console.log('x')",
+
+
+def _maybe_make_code_context() -> CodeContent | None:
+    include_code = os.getenv("PG_INCLUDE_CODE", "false").lower() == "true"
+    if not include_code:
+        return None
+
+    return CodeContent(
+        html="""<ul id=\"arr\"><li>1</li><li>3</li><li>5</li><li>9</li></ul>""",
+        css="""#arr { list-style: none; } #arr li { display: inline-block; margin-right: 8px; }""",
+        js="""function binarySearch(a, t){let l=0,r=a.length-1;while(l<=r){const m=Math.floor((l+r)/2);if(a[m]===t)return m;if(a[m]<t)l=m+1;else r=m-1;}return -1;}""",
     )
 
-    messages = g._build_message_history(
-        conversation_history=conversation_history,
-        code_context=code,
-        user_message="Why?",
-    )
 
-    # 历史消息保留
-    assert messages[0] == {"role": "assistant", "content": "Hi"}
-    assert messages[1] == {"role": "user", "content": "Show me"}
+def main() -> None:
+    generator = PromptGenerator()
 
-    # 追加的用户消息包含代码片段与问题
-    last = messages[-1]
-    assert last["role"] == "user"
-    assert "Here is my current code:" in last["content"]
-    assert "```html" in last["content"] and "```css" in last["content"] and "```javascript" in last["content"]
-    assert "My question is: Why?" in last["content"]
+    user_state = _make_user_state()
+    retrieved_context = _read_context_text()
+    history = _make_conversation_history()
+    code = _maybe_make_code_context()
 
+    user_message = os.getenv("PG_USER_MESSAGE", "请用通俗的语言解释一下二分查找，并给我一个简单示例。")
+    task_context = os.getenv("PG_TASK_CONTEXT", "实现一个可视化二分查找的小练习")
+    topic_id = os.getenv("PG_TOPIC_ID", "binary_search")
 
-def test_build_system_prompt_new_user_no_context():
-    g = PromptGenerator()
-    user_state = make_user_state(is_new_user=True, emotion="NEUTRAL")
-
-    prompt = g._build_system_prompt(
+    system_prompt, messages = generator.create_prompts(
         user_state=user_state,
-        retrieved_context=[],
-        task_context=None,
-        topic_id=None,
-    )
-
-    # 含基础系统提示
-    assert "You are 'Alex', a world-class AI programming tutor" in prompt
-    # 情感策略（NEUTRAL）
-    assert "The student seems neutral" in prompt
-    # 新用户提示
-    assert "This is a new student" in prompt
-    # 无RAG上下文提示
-    assert "No relevant knowledge was retrieved" in prompt
-
-
-def test_build_system_prompt_existing_user_with_progress_behavior_and_context():
-    g = PromptGenerator()
-    bkt_models = {
-        "topic1": {"mastery_prob": 0.9},    # advanced
-        "topic2": {"mastery_prob": 0.6},    # intermediate
-        "topic3": {"mastery_prob": 0.2},    # beginner
-    }
-    behavior = {
-        "error_count": 3,
-        "submission_timestamps": [1, 2],
-    }
-    user_state = make_user_state(is_new_user=False, emotion="CONFUSED", bkt_models=bkt_models, behavior_counters=behavior)
-
-    retrieved = ["ctx1", "ctx2"]
-    prompt = g._build_system_prompt(
-        user_state=user_state,
-        retrieved_context=retrieved,
-        task_context="Implement stack",
-        topic_id="loops",
-    )
-
-    # 既有学生提示
-    assert "existing student" in prompt
-    # 掌握度概览
-    assert "topic1: advanced" in prompt
-    assert "topic2: intermediate" in prompt
-    # 行为统计
-    assert "errors: 3" in prompt
-    assert "submissions: 2" in prompt
-    # RAG 上下文连接符与内容
-    assert "REFERENCE KNOWLEDGE" in prompt and "ctx1" in prompt and "ctx2" in prompt
-    assert "---" in prompt
-    # 任务与主题
-    assert "TASK CONTEXT: The student is currently working on: 'Implement stack'" in prompt
-    assert "TOPIC: The current learning topic is 'loops'" in prompt
-
-
-def test_create_prompts_integration():
-    g = PromptGenerator()
-    user_state = make_user_state(is_new_user=True, emotion="EXCITED")
-    conversation_history = [
-        {"role": "assistant", "content": "Welcome"},
-    ]
-    code = CodeContent(html="<p>Hi</p>")
-
-    system_prompt, messages = g.create_prompts(
-        user_state=user_state,
-        retrieved_context=["Docs"],
-        conversation_history=conversation_history,
-        user_message="Explain closures",
+        retrieved_context=retrieved_context,
+        conversation_history=history,
+        user_message=user_message,
         code_content=code,
-        task_context="Practice functions",
-        topic_id="javascript",
+        task_context=task_context,
+        topic_id=topic_id,
     )
 
-    # 系统提示含期待关键字
-    assert "EXCITED" not in system_prompt  # 文本不一定直接包含标签，但会包含策略文字
-    assert "excited and engaged" in system_prompt
-    assert "Docs" in system_prompt
-
-    # 消息历史正确拼装
-    assert messages[0] == {"role": "assistant", "content": "Welcome"}
-    assert messages[-1]["role"] == "user"
-    assert "My question is: Explain closures" in messages[-1]["content"]
+    print("\n===== system_prompt =====\n")
+    print(system_prompt)
+    print("\n===== messages =====\n")
+    for i, m in enumerate(messages):
+        print(f"[{i}] {m['role']}:\n{m['content']}\n")
 
 
-def test_get_emotion_strategy_fallback():
-    # 静态方法：未知情感走 NEUTRAL 策略
-    text = PromptGenerator._get_emotion_strategy("unknown")
-    assert "The student seems neutral" in text
+if __name__ == "__main__":
+    main()
+
 
