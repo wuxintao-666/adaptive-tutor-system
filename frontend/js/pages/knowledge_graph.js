@@ -15,27 +15,27 @@ document.addEventListener('DOMContentLoaded',async () => {
     } */
 
     // 并行获取图谱数据和用户进度
-    const [graphResponse] = await Promise.all([
+/*     const [graphResponse, progressResponse] = await Promise.all([
       // 请求知识图谱数据
       fetch('/api/v1/knowledge-graph'),
       // 请求进度数据
-      /* fetch(`/api/v1/participants/${participantId}/progress`) */
+      fetch(`/api/v1/participants/${participantId}/progress`)
     ]);
 
     // 检查响应状态
-    if (!graphResponse.ok) {
+    if (!graphResponse.ok || !progressResponse.ok) {
       throw new Error('获取数据失败');
     }
 
     // 解析JSON数据
-    const [graphResult] = await Promise.all([
+    const [graphResult, progressResult] = await Promise.all([
       graphResponse.json(),
-      /* progressResponse.json() */
+      progressResponse.json()
     ]);
     // 查看后端返回数据格式
-    console('知识图谱数据:', graphResult);
+    console('初始化状态失败:', graphResult);
     // 查看后端返回数据格式
-    /* console('初始化状态失败:', progressResult); */
+    console('初始化状态失败:', progressResult); */
     // 处理数据
  /*    const graphData = graphResult.data;
     const learnedNodes = progressResult.data.completed_topics || []; */
