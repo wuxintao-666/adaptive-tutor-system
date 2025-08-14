@@ -52,9 +52,9 @@ export class GraphRenderer {
       ],
       layout: { name: 'preset' }
     });
-    
     this.graphState = graphState;
     this.layoutParams = LAYOUT_PARAMS;
+    this.debounceTimer = null; // 初始化防抖计时器
   }
 
   // 添加元素到图谱
@@ -107,6 +107,26 @@ export class GraphRenderer {
       this.graphState.fixedPositions[id] = { x, y: targetY };
     });
   }
+// ========== 新增：绑定布局事件 ==========
+  bindLayoutEvents() {
+    // 窗口大小改变时重新布局
+    window.addEventListener('resize', () => {
+      this.debounceCenterAndZoom();
+    });
+
+    // 节点位置变化时重新调整
+    this.cy.on('position', 'node', () => {
+      this.debounceCenterAndZoom();
+    });
+  }
+
+  // ========== 新增：防抖函数避免频繁调用 ==========
+  debounceCenterAndZoom() {
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => {
+      this.centerAndZoomGraph();
+    }, 100);
+  }
 
   // 展开章节
   expandChapter(chapterId) {
@@ -125,6 +145,7 @@ export class GraphRenderer {
     this.updateEdgesVisibility();
     this.graphState.expandedSet.add(chapterId);
     this.updateNodeColors();
+    this.debounceCenterAndZoom(); // 新增：展开后调整布局
   }
 
   // 收起章节
@@ -138,6 +159,7 @@ export class GraphRenderer {
     this.updateEdgesVisibility();
     this.graphState.expandedSet.delete(chapterId);
     this.updateNodeColors();
+    this.debounceCenterAndZoom(); // 新增：收起后调整布局
   }
 
   // 更新边可见性

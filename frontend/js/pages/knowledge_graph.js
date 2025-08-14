@@ -118,10 +118,6 @@ document.addEventListener('DOMContentLoaded',async () => {
     // 初始居中
     setTimeout(() => graphRenderer.centerAndZoomGraph(), 100);
 
-    // 设置窗口大小变化监听
-    window.addEventListener('resize', () => {
-      setTimeout(() => graphRenderer.centerAndZoomGraph(), 100);
-    });
     // 窗口点击事件处理
     window.onclick = (event) => {
       const modal = document.getElementById('knowledgeModal');
@@ -199,6 +195,10 @@ document.addEventListener('DOMContentLoaded',async () => {
           clickState.lastId = null;
         }, DBL_DELAY);
       }
+      // 当节点位置变化时，重新调整显示
+        setTimeout(() => {
+          centerAndZoomGraph();
+        }, 50);
     });
         // 单击处理
     function handleSingleClick(node) {
