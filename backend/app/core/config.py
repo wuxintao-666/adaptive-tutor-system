@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """
     # Server
     BACKEND_PORT: int = 8000
-
+    APP_ENV: str = "production"
     # OpenAI (for chat completions)
     TUTOR_OPENAI_API_KEY: str = "ms-9ab1cd11-fc6c-4163-9813-d3d0b51bc9e8"
     TUTOR_OPENAI_MODEL: str = "Qwen/Qwen3-Coder-480B-A35B-Instruct"
