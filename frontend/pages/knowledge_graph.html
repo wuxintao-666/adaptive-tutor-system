@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>模块集成模板 - AI HTML学习平台</title>
+  <script src="../js/modules/cytoscape.min.js"></script>
   <link rel="stylesheet" href="../css/styles.css">
   <!-- 在此处添加您的自定义样式 -->
 </head>
@@ -24,16 +25,27 @@
             <div class="index-header">
               <h1>学习情况 </h1>
             </div>
-            <div class="group" id="graph">
+            <div class="group" id="cy">
+              <!-- 知识点详情弹窗 -->
+              <div id="knowledgeModal" class="modal">
+                <div class="modal-content">
+                  <h2 id="modalTitle"></h2>
+                  <p id="modalStatus"></p>
+                  <div class="modal-actions">
+                    <button id="learnBtn">学习</button>
+                    <button id="testBtn">测试</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
   </div>
   <!-- Cytoscape -->
-<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 
 <!-- 加载知识图谱模块逻辑 -->
-<script src="../js/pages/knowledge_graph.js"></script>
+<script type="module" src="../js/pages/knowledge_graph.js"></script>
+
 
 </body>
 </html>
