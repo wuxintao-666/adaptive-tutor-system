@@ -1,111 +1,251 @@
-import { NODE_STATUS } from './graph_logic';
+/* ============================
+   graph_renderer.js
+   功能：
+   - 初始化 Cytoscape
+   - 固定章节位置
+   - 布局知识点
+   - 随窗口调整中心和缩放
+   ============================ */
+// graphRenderer.js - 图谱渲染与布局
 
-export function renderGraph(nodes, edges) {
-  const graph = cytoscape({
-    container: document.getElementById('graph'),
-    elements: {
-      nodes,
-      edges
-    },
-    style: [
-      {
-        selector: 'node',
-        style: {
-          'label': 'data(label)',
-          'text-valign': 'center',
-          'text-halign': 'center',
-          'background-color': ele => {
-            const status = ele.data('status');
-            return getColorByStatus(status);
-          },
-          'color': '#fff',
-          'width': 40,
-          'height': 40,
-          'font-size': 8,
-          'text-wrap': 'wrap',
-          'text-max-width': 60
+import { LAYOUT_PARAMS } from './graph_data.js';
+
+// 图谱渲染类
+export class GraphRenderer {
+  constructor(containerId, graphState) {
+    this.cy = cytoscape({
+      container: document.getElementById(containerId),
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'label': 'data(label)',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'color': '#000',
+            'background-color': '#ddd',
+            'width': 120,
+            'height': 120,
+            'font-size': 14,
+            'text-wrap': 'wrap',
+            'text-max-width': '100px',
+            'shape': 'ellipse'
+          }
+        },
+        {
+          selector: 'node[type="chapter"]',
+          style: {
+            'shape': 'roundrectangle',
+            'font-weight': 'bold'
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'width': 2,
+            'line-color': '#bbb',
+            'target-arrow-shape': 'triangle',
+            'target-arrow-color': '#bbb',
+            'curve-style': 'bezier'
+          }
         }
-      },
-      {
-        selector: 'edge',
-        style: {
-          'width': 2,
-          'line-color': '#ccc',
-          'target-arrow-shape': 'triangle',
-          'target-arrow-color': '#ccc',
-          'curve-style': 'bezier'
+      ],
+      layout: { name: 'preset' }
+    });
+    this.graphState = graphState;
+    this.layoutParams = LAYOUT_PARAMS;
+    this.debounceTimer = null; // 初始化防抖计时器
+  }
+
+  // 添加元素到图谱
+  addElements(elements) {
+    this.cy.add(elements);
+  }
+
+  // 设置章节固定位置
+  setFixedChapterPositions() {
+    const chapters = this.cy.nodes().filter(n => n.data('type') === 'chapter')
+      .sort((a, b) => {
+        const ai = parseInt(a.id().replace('chapter', '')) || 0;
+        const bi = parseInt(b.id().replace('chapter', '')) || 0;
+        return ai - bi;
+      });
+
+    chapters.forEach((node, idx) => {
+      const x = this.layoutParams.CHAPTER_START_X + idx * this.layoutParams.CHAPTER_GAP_X;
+      const y = (idx % 2 === 0) ? this.layoutParams.TOP_ROW_Y : (this.layoutParams.TOP_ROW_Y + this.layoutParams.ROW_DELTA_Y);
+      node.position({ x, y });
+      node.lock();
+      this.graphState.fixedPositions[node.id()] = { x, y };
+    });
+  }
+
+  // 确保知识点位置
+  ensurePositionsForChapterKnowledge(chapterId) {
+    const sampleKids = this.graphState.collectKnowledgeDescendantsForDisplay(chapterId);
+    if (!sampleKids || sampleKids.length === 0) return;
+    
+    const anySet = sampleKids.some(id => this.graphState.fixedPositions[id]);
+    if (anySet) return;
+
+    const chapterPos = this.graphState.fixedPositions[chapterId] || this.cy.getElementById(chapterId).position();
+    const chapterY = chapterPos.y;
+    const isChapterTop = (Math.abs(chapterY - this.layoutParams.KNOWLEDGE_TOP_ROW_Y) < 
+                         Math.abs(chapterY - (this.layoutParams.KNOWLEDGE_TOP_ROW_Y + this.layoutParams.KNOWLEDGE_ROW_DELTA_Y)));
+    
+    const targetY = isChapterTop ? 
+      (this.layoutParams.KNOWLEDGE_TOP_ROW_Y + this.layoutParams.KNOWLEDGE_ROW_DELTA_Y) : 
+      this.layoutParams.KNOWLEDGE_TOP_ROW_Y;
+
+    const kids = this.graphState.collectKnowledgeDescendantsForDisplay(chapterId);
+    const cx = chapterPos.x;
+    const n = kids.length;
+    const half = (n - 1) / 2;
+    
+    kids.forEach((id, i) => {
+      const x = cx + (i - half) * this.layoutParams.KNOWLEDGE_GAP_X;
+      this.graphState.fixedPositions[id] = { x, y: targetY };
+    });
+  }
+// ========== 新增：绑定布局事件 ==========
+  bindLayoutEvents() {
+    // 窗口大小改变时重新布局
+    window.addEventListener('resize', () => {
+      this.debounceCenterAndZoom();
+    });
+
+    // 节点位置变化时重新调整
+    this.cy.on('position', 'node', () => {
+      this.debounceCenterAndZoom();
+    });
+  }
+
+  // ========== 新增：防抖函数避免频繁调用 ==========
+  debounceCenterAndZoom() {
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
+    this.debounceTimer = setTimeout(() => {
+      this.centerAndZoomGraph();
+    }, 100);
+  }
+
+  // 展开章节
+  expandChapter(chapterId) {
+    this.ensurePositionsForChapterKnowledge(chapterId);
+    const kids = this.graphState.collectKnowledgeDescendantsForDisplay(chapterId);
+    
+    kids.forEach(id => {
+      const node = this.cy.getElementById(id);
+      if (node && node.length) {
+        const pos = this.graphState.fixedPositions[id];
+        if (pos) node.position(pos);
+        node.show();
+      }
+    });
+
+    this.updateEdgesVisibility();
+    this.graphState.expandedSet.add(chapterId);
+    this.updateNodeColors();
+    this.debounceCenterAndZoom(); // 新增：展开后调整布局
+  }
+
+  // 收起章节
+  collapseChapter(chapterId) {
+    const kids = this.graphState.collectKnowledgeDescendantsForDisplay(chapterId);
+    kids.forEach(id => {
+      const node = this.cy.getElementById(id);
+      if (node && node.length) node.hide();
+    });
+    
+    this.updateEdgesVisibility();
+    this.graphState.expandedSet.delete(chapterId);
+    this.updateNodeColors();
+    this.debounceCenterAndZoom(); // 新增：收起后调整布局
+  }
+
+  // 更新边可见性
+  updateEdgesVisibility() {
+    this.cy.edges().forEach(e => {
+      const s = e.data('source'), t = e.data('target');
+      const sn = this.cy.getElementById(s), tn = this.cy.getElementById(t);
+      if (sn && tn && sn.length && tn.length && sn.visible() && tn.visible()) e.show();
+      else e.hide();
+    });
+  }
+
+  // 更新节点颜色
+  updateNodeColors() {
+    this.cy.nodes().forEach(n => {
+      const id = n.id();
+      const type = n.data('type');
+
+      if (type === 'chapter') {
+        if (this.graphState.currentLearningChapter === id) {
+          n.style('background-color', '#f1c40f'); // 黄色 - 正在学习
+        } else if (this.graphState.isChapterCompleted(id)) {
+          n.style('background-color', '#2ecc71'); // 绿色 - 已完成
+        } else if (this.graphState.canLearnChapter(id)) {
+          n.style('background-color', '#3498db'); // 蓝色 - 可学习
+        } else {
+          n.style('background-color', '#ddd'); // 灰色 - 未解锁
+        }
+      } else {
+        if (this.graphState.learnedNodes.includes(id)) {
+          n.style('background-color', '#2ecc71'); // 绿色 - 已完成
+        } else if (this.graphState.isKnowledgeUnlocked(id)) {
+          n.style('background-color', '#3498db'); // 蓝色 - 可学习
+        } else {
+          n.style('background-color', '#ddd'); // 灰色 - 未解锁
         }
       }
-    ],
-    layout: {
-      name: 'breadthfirst',
-      directed: true,
-      padding: 10,
-      spacingFactor: 1.2,
-      animate: false
-    }
-  });
-
-  return graph;
-}
-
-export function setupGraphInteractions(graphInstance, dependencies, completedTopics) {
-  graphInstance.on('tap', 'node', function (evt) {
-    const node = evt.target;
-    const id = node.id();
-    const status = node.data('status');
-    // 根据节点状态和用户选择跳转到学习或测试页面
-    if (status === NODE_STATUS.COMPLETED || status === NODE_STATUS.UNLOCKED) {
-      showJumpDialog(`当前节点为「${node.data('label')}」，请选择操作：`, id);
-    } else {
-      alert(`「${node.data('label')}」尚未解锁，请先完成前置知识点。`);
-    }
-  });
-}
-
-function getColorByStatus(status) {
-  switch (status) {
-    case NODE_STATUS.COMPLETED:
-      return '#4caf50'; // 绿色
-    case NODE_STATUS.UNLOCKED:
-      return '#2196f3'; // 蓝色
-    case NODE_STATUS.LOCKED:
-    default:
-      return '#aaa';     // 灰色
+    });
   }
-}
 
-// 显示跳转对话框
-function showJumpDialog(message, id) {
-  if (document.getElementById("jump-dialog")) return;
+  // 隐藏所有知识点
+  hideAllKnowledgeNodes() {
+    this.cy.nodes().forEach(n => {
+      if (n.data('type') === 'knowledge') n.hide();
+    });
+    this.updateEdgesVisibility();
+  }
 
-  const dialog = document.createElement("div");
-  dialog.id = "jump-dialog";
-  dialog.style.position = "fixed";
-  dialog.style.top = "50%";
-  dialog.style.left = "50%";
-  dialog.style.transform = "translate(-50%, -50%)";
-  dialog.style.backgroundColor = "#fff";
-  dialog.style.border = "1px solid #ccc";
-  dialog.style.borderRadius = "8px";
-  dialog.style.padding = "20px";
-  dialog.style.boxShadow = "0 2px 10px rgba(0,0,0,0.2)";
-  dialog.style.zIndex = 9999;
-  dialog.innerHTML = `
-    <p style="margin-bottom: 12px;">${message}</p>
-    <button id="learn-btn" style="margin-right: 10px;">学习页面</button>
-    <button id="test-btn">测试页面</button>
-    <button id="cancel-btn" style="margin-left: 10px; float: right;">取消</button>
-  `;
-  document.body.appendChild(dialog);
-
-  document.getElementById("learn-btn").onclick = function () {
-    window.location.href = `/pages/learning_page.html?topic=${id}`;
-  };
-  document.getElementById("test-btn").onclick = function () {
-    window.location.href = `/pages/test_page.html?topic=${id}`;
-  };
-  document.getElementById("cancel-btn").onclick = function () {
-    dialog.remove();
-  };
+  // 居中缩放图谱
+  centerAndZoomGraph() {
+    const nodes = this.cy.nodes().filter(node => node.visible());
+    if (nodes.length === 0) return;
+    
+    let minX = Infinity, maxX = -Infinity;
+    let minY = Infinity, maxY = -Infinity;
+    
+    nodes.forEach(node => {
+      const pos = node.position();
+      minX = Math.min(minX, pos.x);
+      maxX = Math.max(maxX, pos.x);
+      minY = Math.min(minY, pos.y);
+      maxY = Math.max(maxY, pos.y);
+    });
+    
+    const margin = 100;
+    minX -= margin;
+    maxX += margin;
+    minY -= margin;
+    maxY += margin;
+    
+    const centerX = (minX + maxX) / 2;
+    const centerY = (minY + maxY) / 2;
+    const width = maxX - minX;
+    const height = maxY - minY;
+    
+    const containerWidth = this.cy.container().clientWidth;
+    const containerHeight = this.cy.container().clientHeight;
+    
+    const scaleX = containerWidth / width;
+    const scaleY = containerHeight / height;
+    const scale = Math.min(scaleX, scaleY) * 0.9;
+    
+    const panX = -centerX * scale + containerWidth / 2;
+    const panY = -centerY * scale + containerHeight / 2;
+    
+    this.cy.zoom(scale);
+    this.cy.pan({ x: panX, y: panY });
+  }
 }
