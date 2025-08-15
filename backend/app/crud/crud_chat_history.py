@@ -23,5 +23,13 @@ class CRUDChatHistory:
     @staticmethod
     def create(db: Session, *, obj_in: ChatHistoryCreate) -> ChatHistory:
         return create_chat_history(db, obj_in=obj_in)
+    
+
+
+    # Aeolyn: 仅新增，无改动，为端到端集成测试提供支持根据participant_id查询聊天历史的功能
+    @staticmethod
+    def get_by_participant(db: Session, *, participant_id: str):
+        """根据参与者ID获取聊天历史记录"""
+        return db.query(ChatHistory).filter(ChatHistory.participant_id == participant_id).all()
 
 chat_history = CRUDChatHistory()
