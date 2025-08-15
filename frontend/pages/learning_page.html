@@ -100,7 +100,6 @@
     </div>
 
     <!-- 引入配置模块 -->
-    <script src="../js/config.js"></script>
     <script type="module" src="../js/modules/config.js"></script>
     <!-- 引入选择模块 -->
     <script src="../js/modules/select_modules.js"></script>
@@ -165,8 +164,8 @@
                 // 添加用户消息到聊天界面
                 addMessageToChat('user', message);
                 
-                                        // 发送消息到后端API
-                        const response = await fetch(`${window.FrontendConfig.getApiBaseUrl()}/chat/ai/chat`, {
+                // 发送消息到后端API
+                const response = await fetch(`${window.buildBackendUrl('/chat/ai/chat')}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
