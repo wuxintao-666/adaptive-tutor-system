@@ -1,3 +1,5 @@
+import asyncio
+import sys
 from playwright.sync_api import sync_playwright, Page, Error
 from typing import Dict, Any, List, Protocol, Tuple
 
@@ -19,6 +21,14 @@ class PlaywrightContextManager(Protocol):
 # 默认的 Playwright 实现
 class DefaultPlaywrightManager:
     def __enter__(self):
+        # 在 Windows 上设置正确的事件循环策略以避免 NotImplementedError
+        if sys.platform == "win32":
+            try:
+                asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+            except Exception:
+                # 如果设置失败，尝试使用默认策略
+                pass
+        
         self._playwright_context = sync_playwright()
         self._playwright = self._playwright_context.__enter__()
         return self._playwright
@@ -81,11 +91,11 @@ class SandboxService:
                     if not passed:
                         passed_all = False
                         # 如果检查点有自定义反馈，使用它，否则用默认的
-                        feedback = cp.get("feedback", detail)
+                        feedback = cp.feedback if hasattr(cp, 'feedback') and cp.feedback else detail
                         results.append(f"检查点 {i + 1} 失败: {feedback}")
 
         except Error as e:
-            error_result = {"passed": False, "message": "评测服务发生内部错误。", "details": [str(e)]}
+            return {"passed": False, "message": "评测服务发生内部错误。", "details": [str(e)]}
         finally:
             # 确保资源被正确释放
             if browser:
@@ -94,32 +104,28 @@ class SandboxService:
                 except Error:
                     # 浏览器可能已经关闭，忽略错误
                     pass
-
-        # 如果有异常，返回错误结果，否则返回正常结果
-        if 'error_result' in locals():
-            return error_result
         
         message = "恭喜！所有测试点都通过了！" if passed_all else "很遗憾，部分测试点未通过。"
         return {"passed": passed_all, "message": message, "details": results}
 
-    def _evaluate_checkpoint(self, page: Page, checkpoint: Dict[str, Any]) -> Tuple[bool, str]:
+    def _evaluate_checkpoint(self, page: Page, checkpoint) -> Tuple[bool, str]:
         """
         评估单个检查点
 
         Args:
             page: Playwright 页面对象
-            checkpoint: 检查点配置
+            checkpoint: 检查点配置（Pydantic模型）
 
         Returns:
             (是否通过, 详细信息) 的元组
         """
-        cp_type = checkpoint.get("type")
+        cp_type = checkpoint.type
         try:
             # 执行交互 (如果需要)
             if cp_type == "interaction_and_assert":
-                action_type = checkpoint.get("action_type")
-                action_selector = checkpoint.get("action_selector")
-                action_value = checkpoint.get("action_value")
+                action_type = checkpoint.action_type
+                action_selector = checkpoint.action_selector
+                action_value = checkpoint.action_value
                 
                 try:
                     # 根据不同的动作类型执行相应的操作
@@ -155,7 +161,7 @@ class SandboxService:
                     return False, f"执行动作 '{action_type}' 时发生错误: {e}"
 
                 # 交互后，对嵌套的断言进行评估
-                return self._evaluate_assertion(page, checkpoint.get("assertion"))
+                return self._evaluate_assertion(page, checkpoint.assertion)
             else:
                 # 如果不是交互式检查点，直接评估断言
                 return self._evaluate_assertion(page, checkpoint)
@@ -163,18 +169,21 @@ class SandboxService:
         except Exception as e:
             return False, f"执行检查点时发生错误: {e}"
 
-    def _evaluate_assertion(self, page: Page, assertion: Dict[str, Any]) -> Tuple[bool, str]:
+    def _evaluate_assertion(self, page: Page, assertion) -> Tuple[bool, str]:
         """
         专门处理各种非交互的断言的私有方法
         """
-        assertion_type = assertion.get("type")
-        selector = assertion.get("selector")
+        if assertion is None:
+            return True, "通过"
+            
+        assertion_type = assertion.type
+        selector = assertion.selector
 
         try:
             if assertion_type == "assert_style":
-                css_property = assertion.get("css_property")
-                assertion_op = assertion.get("assertion_type")
-                expected_value = assertion.get("value")
+                css_property = assertion.css_property
+                assertion_op = assertion.assertion_type
+                expected_value = assertion.value
                 
                 # 获取元素的实际样式值
                 actual_value = page.locator(selector).evaluate(
@@ -191,8 +200,8 @@ class SandboxService:
 
             elif assertion_type == "assert_text_content":
                 locator = page.locator(selector)
-                assertion_op = assertion.get("assertion_type")
-                expected_value = assertion.get("value")
+                assertion_op = assertion.assertion_type
+                expected_value = assertion.value
                 
                 try:
                     actual_text = locator.text_content(timeout=5000)
@@ -213,9 +222,9 @@ class SandboxService:
                     return False, f"不支持的文本断言类型: '{assertion_op}'"
 
             elif assertion_type == "assert_attribute":
-                attribute = assertion.get("attribute")
-                assertion_op = assertion.get("assertion_type")
-                expected_value = assertion.get("value", "")
+                attribute = assertion.attribute
+                assertion_op = assertion.assertion_type
+                expected_value = assertion.value
                 
                 # 检查元素是否存在
                 locator = page.locator(selector)
@@ -285,8 +294,41 @@ class SandboxService:
                         except re.error as e:
                             return False, f"正则表达式 '{expected_value}' 错误: {e}"
 
+            elif assertion_type == "assert_element":
+                assertion_op = assertion.assertion_type
+                expected_value = assertion.value
+                
+                # 检查元素是否存在
+                locator = page.locator(selector)
+                count = locator.count()
+                
+                if assertion_op == "exists":
+                    if count == 0:
+                        return False, f"找不到匹配选择器 '{selector}' 的元素"
+                elif assertion_op == "not_exists":
+                    if count > 0:
+                        return False, f"不应该存在匹配选择器 '{selector}' 的元素，但找到了 {count} 个"
+                else:
+                    # 其他操作需要获取元素的文本内容进行比较
+                    if count == 0:
+                        return False, f"找不到匹配选择器 '{selector}' 的元素"
+                    
+                    try:
+                        actual_text = locator.text_content(timeout=5000)
+                    except Exception:
+                        return False, f"无法获取选择器 '{selector}' 的文本内容"
+                    
+                    if assertion_op == "equals":
+                        if actual_text != expected_value:
+                            return False, f"元素 '{selector}' 的文本为 '{actual_text}'，不等于期望的 '{expected_value}'"
+                    elif assertion_op == "contains":
+                        if expected_value not in actual_text:
+                            return False, f"元素 '{selector}' 的文本 '{actual_text}' 不包含 '{expected_value}'"
+                    else:
+                        return False, f"不支持的元素断言类型: '{assertion_op}'"
+
             elif assertion_type == "custom_script":
-                script = assertion.get("script")
+                script = assertion.script
                 try:
                     # 执行自定义脚本
                     result = page.evaluate(script)

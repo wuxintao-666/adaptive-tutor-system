@@ -3,6 +3,7 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import asc, desc
+from sqlalchemy.sql.elements import BinaryExpression
 
 # 导入SQLAlchemy模型基类
 from app.db.base_class import Base
@@ -14,13 +15,11 @@ UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
 
 # 定义排序方向枚举
 from enum import Enum
-
 class SortDirection(str, Enum):
     ASC = "asc"
     DESC = "desc"
 
-
-class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+class CRUDBaseImproved(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     def __init__(self, model: Type[ModelType]):
         """
         具有默认创建、读取、更新、删除（CRUD）操作的CRUD对象。
@@ -63,8 +62,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db: 数据库会话
             skip: 跳过的记录数，默认为0
             limit: 返回的记录数限制，默认为100
-            filter_conditions: 筛选条件字典，例如 {"participant_id": "user123"}
-            sort_by: 排序字段，可以是单个字段名字符串或字段-方向元组列表
+            filter_conditions: 筛选条件字典，键为字段名，值为筛选值
+            sort_by: 排序字段，可以是单个字段名字符串，或(字段名, 排序方向)元组列表
             
         Returns:
             List[ModelType]: 记录列表
@@ -75,8 +74,28 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if filter_conditions:
             for field, value in filter_conditions.items():
                 if hasattr(self.model, field):
-                    # 简单相等筛选
-                    query = query.filter(getattr(self.model, field) == value)
+                    # 处理不同类型的筛选条件
+                    if isinstance(value, dict):
+                        # 处理特殊操作符，如 {"gt": 10}, {"like": "%test%"}
+                        for op, op_value in value.items():
+                            column = getattr(self.model, field)
+                            if op == "gt":
+                                query = query.filter(column > op_value)
+                            elif op == "gte":
+                                query = query.filter(column >= op_value)
+                            elif op == "lt":
+                                query = query.filter(column < op_value)
+                            elif op == "lte":
+                                query = query.filter(column <= op_value)
+                            elif op == "ne":
+                                query = query.filter(column != op_value)
+                            elif op == "like":
+                                query = query.filter(column.like(op_value))
+                            elif op == "in":
+                                query = query.filter(column.in_(op_value))
+                    else:
+                        # 简单相等筛选
+                        query = query.filter(getattr(self.model, field) == value)
         
         # 应用排序
         if sort_by:
@@ -107,7 +126,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         
         Args:
             db: 数据库会话
-            filter_conditions: 筛选条件字典，例如 {"participant_id": "user123"}
+            filter_conditions: 筛选条件字典，键为字段名，值为筛选值
             
         Returns:
             int: 符合条件的记录总数
@@ -118,8 +137,27 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         if filter_conditions:
             for field, value in filter_conditions.items():
                 if hasattr(self.model, field):
-                    # 简单相等筛选
-                    query = query.filter(getattr(self.model, field) == value)
+                    if isinstance(value, dict):
+                        # 处理特殊操作符
+                        for op, op_value in value.items():
+                            column = getattr(self.model, field)
+                            if op == "gt":
+                                query = query.filter(column > op_value)
+                            elif op == "gte":
+                                query = query.filter(column >= op_value)
+                            elif op == "lt":
+                                query = query.filter(column < op_value)
+                            elif op == "lte":
+                                query = query.filter(column <= op_value)
+                            elif op == "ne":
+                                query = query.filter(column != op_value)
+                            elif op == "like":
+                                query = query.filter(column.like(op_value))
+                            elif op == "in":
+                                query = query.filter(column.in_(op_value))
+                    else:
+                        # 简单相等筛选
+                        query = query.filter(getattr(self.model, field) == value)
         
         return query.count()
 
@@ -192,3 +230,20 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             db.delete(obj)
             db.commit()
         return obj
+
+    # 保持向后兼容性的方法
+    def get_multi_simple(
+        self, db: Session, *, skip: int = 0, limit: int = 100
+    ) -> List[ModelType]:
+        """
+        保持向后兼容性的简单分页方法。
+        
+        Args:
+            db: 数据库会话
+            skip: 跳过的记录数，默认为0
+            limit: 返回的记录数限制，默认为100
+            
+        Returns:
+            List[ModelType]: 记录列表
+        """
+        return db.query(self.model).offset(skip).limit(limit).all()

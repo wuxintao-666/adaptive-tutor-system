@@ -26,7 +26,7 @@ def submit_test(
     # 1. 加载测试内容
     try:
         test_task_data = load_json_content("test_tasks", submission_in.topic_id)
-        checkpoints = test_task_data.get("checkpoints", [])
+        checkpoints = test_task_data.checkpoints
     except HTTPException as e:
         if e.status_code == 404:
             raise HTTPException(status_code=404, detail=f"Topic '{submission_in.topic_id}' not found.")
