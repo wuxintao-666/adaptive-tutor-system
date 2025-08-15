@@ -360,6 +360,23 @@ body {
     color: #c53030;
 }
 
+/* 新增测试结果通过/失败样式 */
+.test-result-passed {
+    background-color: rgba(164, 252, 149, 0.2);
+    border: 1px solid #a4fc95;
+    border-radius: 4px;
+    padding: 10px;
+    white-space: pre-wrap;
+}
+
+.test-result-failed {
+    background-color: rgba(255, 99, 71, 0.2);
+    border: 1px solid tomato;
+    border-radius: 4px;
+    padding: 10px;
+    white-space: pre-wrap;
+}
+
 /* 修改建议区域 */
 .suggestions-container {
     flex: 1 1 auto;
@@ -923,6 +940,17 @@ body {
 .btn-small:hover { 
     font-size: 0.9rem;
     background-color: rgb(246, 213, 105);
+}
+
+/* 添加按钮焦点样式 */
+.btn:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.btn-primary:focus {
+    outline: 2px solid white;
+    outline-offset: 2px;
 }
 
 .btn-select {

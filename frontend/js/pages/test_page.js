@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (submitButton) {
         submitButton.addEventListener('click', async () => {
             // 禁用按钮并显示加载状态
+            const originalText = submitButton.textContent;
             submitButton.disabled = true;
             submitButton.textContent = '批改中...';
             
@@ -52,10 +53,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('提交测试时出错:', error);
                 alert('提交测试时出错: ' + (error.message || '未知错误'));
             } finally {
-                // 恢复按钮状态
+                // 确保按钮状态完全恢复
                 submitButton.disabled = false;
-                submitButton.textContent = '提交';
-
+                submitButton.textContent = originalText;
             }
         });
     }
@@ -72,7 +72,15 @@ function displayTestResult(result) {
             message += '\n\n详细信息:\n' + result.details.join('\n');
         }
         
-        testResultsContent.innerHTML = `<pre>${message}</pre>`;
+        // 使用textContent而不是innerHTML以防止XSS攻击
+        testResultsContent.textContent = message;
+        
+        // 添加适当的样式类
+        if (result.passed) {
+            testResultsContent.className = 'test-result-passed';
+        } else {
+            testResultsContent.className = 'test-result-failed';
+        }
     } else {
         // 如果找不到测试结果区域，使用alert显示
         let message = result.passed ? '✅ 恭喜！所有测试点都通过了！' : '❌ 很遗憾，部分测试点未通过。';
