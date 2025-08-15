@@ -1,5 +1,5 @@
 // ==================== 文档模块 ====================
-import { AppConfig } from './config.js';
+import { AppConfig, buildBackendUrl } from './config.js';
 
 const DIFFICULTY = [
     { key: 'basic', label: '基础介绍', category: 'basic' },
@@ -23,7 +23,7 @@ const ApiClient = {
     async get(endpoint) {
         try {
             // 使用配置中的API基础URL
-            const response = await fetch(`${window.FrontendConfig.getApiBaseUrl()}${endpoint}`);
+            const response = await fetch(buildBackendUrl(endpoint));
             if (!response.ok) throw new Error(`API错误: ${response.status}`);
             return await response.json();
         } catch (error) {
@@ -35,7 +35,7 @@ const ApiClient = {
     async post(endpoint, data) {
         try {
             // 使用配置中的API基础URL
-            const response = await fetch(`${window.FrontendConfig.getApiBaseUrl()}${endpoint}`, {
+            const response = await fetch(buildBackendUrl(endpoint), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

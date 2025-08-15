@@ -57,3 +57,6 @@ export function buildBackendUrl(endpoint = '') {
     return path;
   }
 }
+
+// 将函数添加到全局window对象，以便在非模块脚本中使用
+window.buildBackendUrl = buildBackendUrl;
