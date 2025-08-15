@@ -7,6 +7,7 @@ import { createLivePreview } from '../modules/live_preview.js';
 async function initializePage() {
     // 获取URL参数
     const urlParams = new URLSearchParams(window.location.search);
+    
     // 先尝试获取topic参数，如果没有则检查是否直接在查询字符串中（如?1_1）
     let topicId = urlParams.get('topic');
     
@@ -29,8 +30,6 @@ async function initializePage() {
         alert('错误：无效的测试链接。');
         return;
     }
-    
-    console.log('获取到的topicId:', topicId); // 添加调试日志
 
     try {
         // 使用不带认证的get方法获取测试任务数据
@@ -56,7 +55,9 @@ async function initializePage() {
 function updateUIWithTaskData(task) {
     const headerTitle = document.querySelector('.header-title');
     const requirementsContent = document.getElementById('test-requirements-content');
-    if (headerTitle) headerTitle.textContent = task.title || '编程测试';
+    if (headerTitle) {
+        headerTitle.textContent = task.title || '编程测试';
+    }
     if (requirementsContent) {
         requirementsContent.innerHTML = marked(task.description_md || '');
     }
@@ -99,17 +100,19 @@ function initializeEditors(startCode) {
 
 // 设置聊天功能
 function setupChat(topicId) {
-    const buildChatContext = () => {
-        return {
-            code_context: {
-                html: window.editorState.html?.getValue() || '',
-                css: window.editorState.css?.getValue() || '',
-                js: window.editorState.js?.getValue() || ''
-            },
-            task_context: `test:${topicId}` // 关键区别
-        };
-    };
-    initializeChat(buildChatContext);
+    // TODO: 实现聊天功能
+    console.log('聊天功能尚未实现，topicId:', topicId);
+    // const buildChatContext = () => {
+    //     return {
+    //         code_context: {
+    //             html: window.editorState.html?.getValue() || '',
+    //             css: window.editorState.css?.getValue() || '',
+    //             js: window.editorState.js?.getValue() || ''
+    //         },
+    //         task_context: `test:${topicId}` // 关键区别
+    //     };
+    // };
+    // initializeChat(buildChatContext);
 }
 
 // 提交逻辑
