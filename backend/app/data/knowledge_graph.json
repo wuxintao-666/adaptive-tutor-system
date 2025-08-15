@@ -1,34 +1,34 @@
 {
   "nodes": [
-    { "data": { "id": "chapter1", "label": "模块一:文本与页面结构基础" } },
-    { "data": { "id": "text_paragraph", "label": "使用h元素和p元素体验标题与段落" } },
-    { "data": { "id": "text_format", "label": "应用文本格式(加粗、斜体)" } },
-    { "data": { "id": "structure_header", "label": "构建页面头部结构" } },
+    { "data": { "id": "chapter1", "label": "模块一:文本与页面结构基础", "type": "chapter" } },
+    { "data": { "id": "text_paragraph", "label": "使用h元素和p元素体验标题与段落", "type": "knowledge" } },
+    { "data": { "id": "text_format", "label": "应用文本格式(加粗、斜体)", "type": "knowledge" } },
+    { "data": { "id": "structure_header", "label": "构建页面头部结构", "type": "knowledge" } },
 
-    { "data": { "id": "chapter2", "label": "模块二:盒子与列表使用" } },
-    { "data": { "id": "structure_div", "label": "使用盒子元素进行内容划分" } },
-    { "data": { "id": "text_list_ol", "label": "创建有序列表" } },
-    { "data": { "id": "text_list_ul", "label": "创建无序列表" } },
+    { "data": { "id": "chapter2", "label": "模块二:盒子与列表使用", "type": "chapter" } },
+    { "data": { "id": "structure_div", "label": "使用盒子元素进行内容划分", "type": "knowledge" } },
+    { "data": { "id": "text_list_ol", "label": "创建有序列表", "type": "knowledge" } },
+    { "data": { "id": "text_list_ul", "label": "创建无序列表", "type": "knowledge" } },
 
-    { "data": { "id": "chapter3", "label": "模块三:表单与交互控件" } },
-    { "data": { "id": "form_input", "label": "文本框与按钮的使用" } },
-    { "data": { "id": "form_checkbox", "label": "复选框与单选框" } },
-    { "data": { "id": "form_submit", "label": "表单提交机制" } },
+    { "data": { "id": "chapter3", "label": "模块三:表单与交互控件", "type": "chapter" } },
+    { "data": { "id": "form_input", "label": "文本框与按钮的使用", "type": "knowledge" } },
+    { "data": { "id": "form_checkbox", "label": "复选框与单选框", "type": "knowledge" } },
+    { "data": { "id": "form_submit", "label": "表单提交机制", "type": "knowledge" } },
     
-    { "data": { "id": "chapter4", "label": "模块四：样式与布局" } },
-    { "data": { "id": "style_basic", "label": "设置颜色与字体" } },
-    { "data": { "id": "style_box", "label": "理解盒模型" } },
-    { "data": { "id": "style_flex", "label": "使用 Flex 进行布局" } },
+    { "data": { "id": "chapter4", "label": "模块四：样式与布局", "type": "chapter" } },
+    { "data": { "id": "style_basic", "label": "设置颜色与字体", "type": "knowledge" } },
+    { "data": { "id": "style_box", "label": "理解盒模型", "type": "knowledge" } },
+    { "data": { "id": "style_flex", "label": "使用 Flex 进行布局", "type": "knowledge" } },
 
-    { "data": { "id": "chapter5", "label": "模块五：媒体与资源管理" } },
-    { "data": { "id": "media_image", "label": "插入与管理图片" } },
-    { "data": { "id": "media_audio", "label": "引入音频文件" } },
-    { "data": { "id": "media_video", "label": "嵌入视频内容" } },
+    { "data": { "id": "chapter5", "label": "模块五：媒体与资源管理", "type": "chapter" } },
+    { "data": { "id": "media_image", "label": "插入与管理图片", "type": "knowledge" } },
+    { "data": { "id": "media_audio", "label": "引入音频文件", "type": "knowledge" } },
+    { "data": { "id": "media_video", "label": "嵌入视频内容", "type": "knowledge" } },
 
-    { "data": { "id": "chapter6", "label": "模块六：基础交互逻辑" } },
-    { "data": { "id": "js_click", "label": "按钮点击事件" } },
-    { "data": { "id": "js_input", "label": "获取用户输入" } },
-    { "data": { "id": "js_dom", "label": "修改页面元素（DOM 操作）" } }
+    { "data": { "id": "chapter6", "label": "模块六：基础交互逻辑", "type": "chapter" } },
+    { "data": { "id": "js_click", "label": "按钮点击事件", "type": "knowledge" } },
+    { "data": { "id": "js_input", "label": "获取用户输入", "type": "knowledge" } },
+    { "data": { "id": "js_dom", "label": "修改页面元素（DOM 操作）", "type": "knowledge" } }
   ],
   "edges": [
 
