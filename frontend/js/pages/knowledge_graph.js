@@ -2,6 +2,7 @@
 import { getParticipantId } from '../modules/session.js';
 import { GraphState } from '../modules/graph_data.js';
 import { GraphRenderer } from '../modules/graph_renderer.js';
+import { buildBackendUrl } from '../modules/config.js';  // 新增导入
 
 
 // 初始化应用
@@ -17,11 +18,8 @@ document.addEventListener('DOMContentLoaded',async () => {
     // 并行获取图谱数据和用户进度
     const [graphResponse, progressResponse] = await Promise.all([
       // 请求知识图谱数据
-      fetch('http://localhost:8000/api/v1/knowledge-graph'),
-      /* fetch('/api/v1/knowledge-graph'), */
-      // 请求进度数据
-      fetch('http://localhost:8000/api/v1/progress/participants/${participantId}/progress')
-      /* fetch(`/api/v1/progress/participants/${participantId}/progress`) */
+      fetch(buildBackendUrl('/knowledge-graph')),
+      fetch(buildBackendUrl(`/progress/participants/${participantId}/progress`))
     ]);
 
     // 检查响应状态
