@@ -332,12 +332,75 @@ body {
         flex-direction: column;
         gap: 8px;
         min-height: 120px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .level-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .level-card.collapsed {
+        min-height: 80px;
+        padding: 12px 16px;
+    }
+
+    .level-card.expanded {
+        min-height: 200px;
+        z-index: 10;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .level-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
+
+    .level-content {
+        opacity: 1;
+        max-height: 200px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .level-card.collapsed .level-content {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+    }
+
+    .level-card.expanded .level-content {
+        opacity: 1;
+        max-height: 200px;
+        margin-top: 12px;
     }
 
     .level-card h3 {
         margin: 0;
         font-size: 16px;
         color: #2c3e50;
+    }
+
+    .click-hint {
+        font-size: 12px;
+        color: var(--primary-color);
+        text-align: center;
+        margin-top: 8px;
+        opacity: 0.8;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .level-card.collapsed .click-hint {
+        opacity: 1;
+    }
+
+    .level-card.expanded .click-hint {
+        opacity: 0;
     }
 
     .start-button {
@@ -1237,3 +1300,46 @@ body {
     margin-right: 12px;
 }
 
+/* 展开时的特殊样式 */
+.knowledge-panel.expanded {
+    position: relative;
+    z-index: 100;
+}
+
+.knowledge-panel.expanded .info-content {
+    padding: 30px;
+    min-height: 200px;
+}
+
+.knowledge-panel.expanded .levels-flow {
+    flex-direction: column;
+    gap: 20px;
+}
+
+.knowledge-panel.expanded .level-card {
+    width: 100%;
+    max-width: none;
+}
+
+.knowledge-panel.expanded .arrow {
+    transform: rotate(90deg);
+}
+
+/* 隐藏其他等级卡片 */
+.knowledge-panel.expanded .level-card:not(.expanded) {
+    display: none;
+}
+
+.knowledge-panel.expanded .arrow {
+    display: none;
+}
+
+/* 展开时调整内容区域 */
+.knowledge-panel.expanded .level-content {
+    max-height: none;
+    margin-top: 20px;
+}
+
+.knowledge-panel.expanded .level-card.expanded {
+    min-height: 300px;
+}
