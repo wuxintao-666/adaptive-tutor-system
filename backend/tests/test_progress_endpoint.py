@@ -14,8 +14,6 @@ from sqlalchemy.orm import Session
 import uuid
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app.core.config import settings
-# 在导入项目模块前设置测试环境
-os.environ["APP_ENV"] = settings.APP_ENV
 
 current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 db_path = os.path.join(current_dir, "app", "db", "database.db")
