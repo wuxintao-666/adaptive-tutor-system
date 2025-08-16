@@ -11,13 +11,13 @@ class KnowledgeGraphNodeData(BaseModel):
     Attributes:
         id: 节点唯一标识符
         label: 节点显示标签
-        node_type: 节点类型（可选）
+        type: 节点类型（可选）
         description: 节点描述（可选）
         difficulty: 难度等级（可选）
     """
     id: str = Field(..., description="节点唯一标识符")
     label: str = Field(..., min_length=1, max_length=100, description="节点显示标签")
-    node_type: Optional[str] = Field(None, description="节点类型")
+    type: Optional[str] = Field(None, description="节点类型")
     description: Optional[str] = Field(None, max_length=500, description="节点描述")
     difficulty: Optional[int] = Field(None, ge=1, le=5, description="难度等级(1-5)")
     
