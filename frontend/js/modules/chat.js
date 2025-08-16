@@ -91,6 +91,14 @@ class ChatModule {
         content_id: contentId
       };
 
+      // 如果是测试模式，添加测试结果
+      if (mode === 'test') {
+        const testResults = this._getTestResults();
+        if (testResults) {
+          requestBody.test_results = testResults;
+        }
+      }
+
       // 使用封装的 apiClient 发送请求
       const data = await window.apiClient.post('/chat/ai/chat', requestBody);
 
@@ -183,14 +191,102 @@ class ChatModule {
   }
 
   /**
+   * 获取测试结果
+   * @returns {Array|null} 测试结果数组或null
+   * @private
+   */
+  /**
+   * 获取测试结果
+   * @returns {Array|null} 测试结果数组或null
+   * @private
+   */
+  _getTestResults() {
+    const resultsContainer = document.getElementById('test-results-content');
+    if (!resultsContainer || !resultsContainer.innerHTML.trim()) {
+      return null;
+    }
+
+    const results = [];
+    const overallStatus = resultsContainer.classList.contains('test-result-passed') ? 'success' : 'error';
+
+    // 提取主标题和副标题
+    const mainHeader = resultsContainer.querySelector('h4');
+    const subMessage = resultsContainer.querySelector('p');
+
+    if (mainHeader) {
+      results.push({
+        status: overallStatus,
+        message: mainHeader.textContent.trim()
+      });
+    }
+
+    if (subMessage && subMessage.textContent.trim()) {
+      results.push({
+        status: 'info',
+        message: subMessage.textContent.trim()
+      });
+    }
+
+    // 提取详细信息
+    const detailItems = resultsContainer.querySelectorAll('ul > li');
+    detailItems.forEach(item => {
+      results.push({
+        status: overallStatus === 'success' ? 'info' : 'error', // 细节项跟随总体状态
+        message: item.textContent.trim()
+      });
+    });
+
+    return results.length > 0 ? results : null;
+  }
+
+  /**
    * 获取对话历史
    * @returns {Array} 对话历史数组
    */
   getConversationHistory() {
-    // TODO: 实现获取对话历史的逻辑
-    // 这里可以遍历消息容器中的消息，构建对话历史数组
-    // 为了简化，我们暂时返回空数组
-    return [];
+    if (!this.messagesContainer) {
+      console.warn('[ChatModule] 消息容器未找到，无法获取对话历史');
+      return [];
+    }
+
+    const history = [];
+    // 获取所有消息元素（用户消息和AI消息，但不包括加载指示器）
+    const messageElements = this.messagesContainer.querySelectorAll('.user-message, .ai-message:not(#ai-loading)');
+
+    messageElements.forEach(element => {
+      const isUserMessage = element.classList.contains('user-message');
+      const isAiMessage = element.classList.contains('ai-message');
+
+      if (isUserMessage || isAiMessage) {
+        // 提取消息文本内容
+        let textContent = '';
+        const markdownContent = element.querySelector('.markdown-content');
+        
+        if (markdownContent) {
+          // 如果是AI消息，markdownContent包含HTML，需要提取纯文本
+          // 如果是用户消息，markdownContent是纯文本节点
+          if (isAiMessage) {
+            textContent = markdownContent.textContent || markdownContent.innerText || '';
+          } else {
+            textContent = markdownContent.textContent || markdownContent.innerText || '';
+          }
+        } else {
+          // 作为后备方案，尝试从其他内容元素获取文本
+          const contentElement = element.querySelector('.user-content, .ai-content');
+          if (contentElement) {
+            textContent = contentElement.textContent || contentElement.innerText || '';
+          }
+        }
+
+        // 添加到历史记录中
+        history.push({
+          role: isUserMessage ? 'user' : 'assistant',
+          content: textContent.trim()
+        });
+      }
+    });
+
+    return history;
   }
 
   /**

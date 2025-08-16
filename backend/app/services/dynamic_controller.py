@@ -145,7 +145,8 @@ class DynamicController:
                 code_content=request.code_context,
                 mode=request.mode,
                 content_title=content_title,
-                content_json=loaded_content_json  # 传递加载的内容JSON
+                content_json=loaded_content_json,  # 传递加载的内容JSON
+                test_results=request.test_results  # 传递测试结果
             )
 
             # 步骤6: 调用LLM

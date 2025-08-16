@@ -1,4 +1,5 @@
 # backend/app/services/prompt_generator.py
+import json
 from typing import List, Dict, Any, Tuple
 from ..schemas.chat import UserStateSummary, SentimentAnalysisResult
 from ..schemas.content import CodeContent
@@ -31,7 +32,8 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         code_content: CodeContent = None,
         mode: str = None,
         content_title: str = None,
-        content_json: str = None
+        content_json: str = None,
+        test_results: List[Dict[str, Any]] = None
     ) -> Tuple[str, List[Dict[str, str]]]:
         """
         创建完整的提示词和消息列表
@@ -55,7 +57,8 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             retrieved_context=retrieved_context,
             mode=mode,
             content_title=content_title,
-            content_json=content_json
+            content_json=content_json,
+            test_results=test_results
         )
 
         # 构建消息列表
@@ -73,7 +76,8 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         retrieved_context: List[str],
         mode: str = None,
         content_title: str = None,
-        content_json: str = None
+        content_json: str = None,
+        test_results: List[Dict[str, Any]] = None
     ) -> str:
         """构建系统提示词"""
         prompt_parts = [self.base_system_prompt]
@@ -161,6 +165,12 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         # 添加内容JSON（如果提供）
         if content_json:
             prompt_parts.append(f"CONTENT DATA: Here is the detailed content data for the current topic. Use this to provide more specific and accurate guidance.\n{content_json}")
+            
+        # 添加测试结果（如果提供且在测试模式下）
+        if mode == "test" and test_results:
+            # 将测试结果转换为格式化的字符串
+            test_results_str = json.dumps(test_results, indent=2, ensure_ascii=False)
+            prompt_parts.append(f"TEST RESULTS: Here are the test results for the student's current code. Use this information to help diagnose problems and provide targeted guidance.\n{test_results_str}")
 
         return "\n\n".join(prompt_parts)
 

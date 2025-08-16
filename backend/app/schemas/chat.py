@@ -38,6 +38,7 @@ class ChatRequest(BaseModel):
     code_context: Optional[CodeContent] = None
     mode: Optional[str] = None  # "learning" 或 "test"
     content_id: Optional[str] = None
+    test_results: Optional[List[Dict[str, Any]]] = None
 
 
 class ChatResponse(BaseModel):
