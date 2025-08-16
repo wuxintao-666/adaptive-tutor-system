@@ -29,15 +29,16 @@ class ChatRequest(BaseModel):
         user_message: 用户消息内容，当前发送的消息文本
         conversation_history: 对话历史，包含之前的所有对话消息
         code_context: 代码上下文，用户当前正在编辑的代码内容
-        task_context: 任务上下文，用户当前正在进行的测试任务
-        topic_title: 知识点标题，标识当前讨论的知识点
+        mode: 模式，标识当前是学习模式还是测试模式 ('learning' 或 'test')
+        content_id: 内容ID，学习内容或测试任务的ID
     """
     participant_id: str
     user_message: str
     conversation_history: Optional[List[ConversationMessage]] = []
     code_context: Optional[CodeContent] = None
-    task_context: Optional[TestTask] = None
-    topic_title: Optional[str] = None
+    mode: Optional[str] = None  # "learning" 或 "test"
+    content_id: Optional[str] = None
+    test_results: Optional[List[Dict[str, Any]]] = None
 
 
 class ChatResponse(BaseModel):

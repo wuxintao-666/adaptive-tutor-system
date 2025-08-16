@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI HTML学习平台 - 代码编辑器</title>
     <link rel="stylesheet" href="../css/styles.css">
     <!-- Monaco Editor CSS -->
@@ -19,8 +19,8 @@
         <header class="top-header">
             <h1 class="header-title">标题</h1>
             <div class="user-profile">
-                <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjRTVFNkU3Ii8+CjxjaXJjbGUgY3g9IjIwIiBjeT0iMTUiIHI9IjUiIGZpbGw9IiM4ODg4ODgiLz4KPHBhdGggZD0iTTIwIDI1QzE1IDI1IDEyIDI3IDEyIDMwTDI4IDMwQzI4IDI3IDI1IDI1IDIwIDI1WiIgZmlsbD0iIzg4ODg4OCIvPgo8L3N2Zz4K"
-                    alt="用户头像" class="user-avatar">
+                <p>hello👋：</p>
+                <P id="participant_id"></P>
             </div>
         </header>
 
@@ -32,7 +32,6 @@
                 <div class="test-requirements-container">
                     <div class="panel-header">
                         <h2>测试要求</h2>
-                        <button id="toggle-requirements" class="btn btn-small">查看提示</button>
                     </div>
                     <div class="panel-content" id="test-requirements-content">
                         <!-- 测试要求内容 -->
@@ -46,7 +45,6 @@
                 <div class="test-results-container">
                     <div class="panel-header">
                         <h2>测试结果</h2>
-                        <button id="toggle-results" class="btn btn-small">查看提示</button>
                     </div>
                     <div class="panel-content" id="test-results-content">
                         <!-- 测试结果内容，初始为空 -->
@@ -83,8 +81,7 @@
                         </div>
                         <div class="ai-chat-input">
                             <textarea id="user-message" placeholder="在这里输入你的问题..."></textarea>
-                            <button type="button" id="send-message" class="btn btn-primary"
-                                onclick="directSendMessage()">提问</button>
+                            <button type="button" id="send-message" class="btn btn-primary">提问</button>
                         </div>
                     </div>
                 </div>
@@ -122,9 +119,6 @@
 
                     <!-- 预览区域 -->
                     <div class="editor-container" id="editor-preview" style="display: none;">
-                        <div class="preview-header">
-                            <button id="refresh-preview" class="btn btn-small">刷新</button>
-                        </div>
                         <div class="preview-frame-container">
                             <iframe id="preview-frame" sandbox="allow-scripts" class="preview-frame"></iframe>
                         </div>
@@ -149,6 +143,8 @@
     </script>
     <!-- 编辑器主文件 -->
     <script type="module" src="../js/modules/editor.js"></script>
+    <!-- 主配置文件 -->
+    <script type="module" src="../main.js"></script>
     <!-- 测试页面逻辑 -->
     <script type="module" src="../js/pages/test_page.js"></script>
 </body>

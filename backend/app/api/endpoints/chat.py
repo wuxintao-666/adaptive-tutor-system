@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.config.dependency_injection import get_db, get_dynamic_controller
@@ -12,6 +12,7 @@ router = APIRouter()
 @router.post("/ai/chat", response_model=StandardResponse[ChatResponse])
 async def chat_with_ai(
     request: ChatRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     controller: DynamicController = Depends(get_dynamic_controller)
 ) -> StandardResponse[ChatResponse]:
@@ -20,6 +21,7 @@ async def chat_with_ai(
     
     Args:
         request: 聊天请求
+        background_tasks: 后台任务处理器
         db: 数据库会话
         controller: 动态控制器
         
@@ -37,7 +39,8 @@ async def chat_with_ai(
         # 调用生成回复
         response = await controller.generate_adaptive_response(
             request=request,
-            db=db
+            db=db,
+            background_tasks=background_tasks
         )
         
         return StandardResponse(
