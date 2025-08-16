@@ -111,16 +111,31 @@ class BehaviorTracker {
 
   // -------------------- AI 求助（聊天） --------------------
   // sendButtonId: 提问按钮 id；inputSelector: 文本输入选择器
-  initChat(sendButtonId, inputSelector) {
+  // mode: 模式 ('learning' 或 'test')；contentId: 内容ID
+  initChat(sendButtonId, inputSelector, mode = 'learning', contentId = null) {
     const btn = document.getElementById(sendButtonId);
     const input = document.querySelector(inputSelector);
     if (!btn || !input) return;
-    btn.addEventListener('click', () => {
+    
+    const sendMessage = () => {
       const message = input.value || '';
       if (!message.trim()) return;
-      this.logEvent('ai_help_request', { message: message.substring(0, 2000) });
+      this.logEvent('ai_help_request', { 
+        message: message.substring(0, 2000),
+        mode: mode,
+        content_id: contentId
+      });
+    };
+    
+    btn.addEventListener('click', sendMessage);
+    
+    // 支持 Enter 提交
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
     });
-    // TODO: 如果希望支持 Enter 提交，可在此处绑定 keydown 事件
   }
 
   // -------------------- 测试/提交（包含 code） --------------------

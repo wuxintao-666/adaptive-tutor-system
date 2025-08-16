@@ -45,7 +45,6 @@ class StudentProfile:
                 serialized_bkt_models[topic_id] = bkt_model
         
         return {
-            'participant_id': self.participant_id,
             'is_new_user': self.is_new_user,
             'bkt_model': serialized_bkt_models,
             'emotion_state': self.emotion_state,
@@ -53,10 +52,10 @@ class StudentProfile:
         }
     
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'StudentProfile':
+    def from_dict(cls, participant_id: str, data: Dict[str, Any]) -> 'StudentProfile':
         """从字典反序列化创建StudentProfile"""
         # 注意：从数据库恢复的用户不是新用户
-        profile = cls(data['participant_id'], is_new_user=data.get('is_new_user', False))
+        profile = cls(participant_id, is_new_user=data.get('is_new_user', False))
         
         # 反序列化BKT模型
         bkt_models = data.get('bkt_model', {})
@@ -120,12 +119,13 @@ class UserStateService:
         except Exception as e:
             logger.error(f"UserStateService: 处理挫败事件时发生错误: {e}")
 
-    def handle_ai_help_request(self, participant_id: str):
+    def handle_ai_help_request(self, participant_id: str, content_title: str = None):
         """
         处理AI求助请求事件
         
         Args:
             participant_id: 参与者ID
+            content_title: 内容标题
         """
         try:
             # 获取用户档案
@@ -134,6 +134,12 @@ class UserStateService:
             # 增加求助计数
             profile.behavior_counters.setdefault("help_requests", 0)
             profile.behavior_counters["help_requests"] += 1
+
+            # 增加特定内容的提问计数
+            if content_title:
+                counter_key = f"question_count_{content_title}"
+                profile.behavior_counters.setdefault(counter_key, 0)
+                profile.behavior_counters[counter_key] += 1
             
             logger.info(f"UserStateService: 增加用户 {participant_id} 的求助计数")
         except Exception as e:
@@ -229,12 +235,12 @@ class UserStateService:
             logger.info(f"Found snapshot for {participant_id}. Restoring from snapshot...")
             # 反序列化快照数据
             # 检查 event_data 是否是 StateSnapshotData 实例或字典
-            if hasattr(latest_snapshot.event_data, 'profile_data'):
-                profile_data = latest_snapshot.event_data.profile_data
+            if isinstance(latest_snapshot.event_data, dict) and 'profile_data' in latest_snapshot.event_data:
+                profile_data = latest_snapshot.event_data['profile_data']
             else:
                 # 兼容旧的快照数据结构
                 profile_data = latest_snapshot.event_data
-            temp_profile = StudentProfile.from_dict(profile_data)
+            temp_profile = StudentProfile.from_dict(participant_id, profile_data)
             self._state_cache[participant_id] = temp_profile
             
             # 3a. 获取快照之后的事件
@@ -279,7 +285,18 @@ class UserStateService:
                 event_schema = event
             else:
                 try:
-                    event_schema = BehaviorEvent.model_validate(event)
+                    # 如果event是EventLog对象（来自数据库），需要手动构造字典
+                    if hasattr(event, '__dict__'):
+                        # 从EventLog对象创建字典
+                        event_dict = {
+                            'participant_id': event.participant_id,
+                            'event_type': event.event_type,
+                            'event_data': event.event_data,
+                            'timestamp': event.timestamp
+                        }
+                        event_schema = BehaviorEvent.model_validate(event_dict)
+                    else:
+                        event_schema = BehaviorEvent.model_validate(event)
                 except Exception:
                     # 如果验证失败（例如在测试中使用mock对象），则跳过该事件
                     logger.warning(f"Failed to validate event {event}. Skipping.")

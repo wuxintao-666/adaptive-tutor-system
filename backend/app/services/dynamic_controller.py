@@ -1,4 +1,5 @@
 # backend/app/services/dynamic_controller.py
+import json
 from typing import Any, Optional
 from sqlalchemy.orm import Session
 from app.schemas.chat import ChatRequest, ChatResponse, UserStateSummary, SentimentAnalysisResult
@@ -7,6 +8,7 @@ from app.services.user_state_service import UserStateService
 from app.services.rag_service import RAGService
 from app.services.prompt_generator import PromptGenerator
 from app.services.llm_gateway import LLMGateway
+from app.services.content_loader import load_json_content  # 导入content_loader
 from app.crud.crud_event import event as crud_event
 from app.crud.crud_chat_history import chat_history as crud_chat_history
 from app.schemas.chat import ChatHistoryCreate
@@ -96,7 +98,32 @@ class DynamicController:
                     print(f"⚠️ RAG检索失败，使用空知识内容: {e}")
                     retrieved_knowledge = []
 
-            # 步骤4: 生成提示词
+            # 步骤4: 加载内容（学习内容或测试任务）
+            content_title = None
+            loaded_content_json = None
+            if request.mode and request.content_id:
+                try:
+                    content_type = "learning_content" if request.mode == "learning" else "test_tasks"
+                    loaded_content = load_json_content(content_type, request.content_id)
+                    content_title = getattr(loaded_content, 'title', None) or getattr(loaded_content, 'topic_id', None)
+                    
+                    # 根据模式处理内容
+                    if request.mode == "test":
+                        loaded_content_json = loaded_content.model_dump_json()
+                    elif request.mode == "learning":
+                        # 移除sc_all字段
+                        learning_content_dict = loaded_content.model_dump()
+                        learning_content_dict.pop('sc_all', None)
+                        loaded_content_json = json.dumps(learning_content_dict)
+
+                except Exception as e:
+                    print(f"⚠️ 内容加载失败: {e}")
+                    loaded_content = None
+                    content_title = None
+            else:
+                loaded_content = None
+
+            # 步骤5: 生成提示词
             # 将ConversationMessage转换为字典格式
             conversation_history_dicts = []
             if request.conversation_history:
@@ -116,21 +143,22 @@ class DynamicController:
                 conversation_history=conversation_history_dicts,
                 user_message=request.user_message,
                 code_content=request.code_context,
-                task_context=request.task_context,
-                topic_title=request.topic_title  # 使用topic_title参数
+                mode=request.mode,
+                content_title=content_title,
+                content_json=loaded_content_json  # 传递加载的内容JSON
             )
 
-            # 步骤5: 调用LLM
+            # 步骤6: 调用LLM
             ai_response = await self.llm_gateway.get_completion(
                 system_prompt=system_prompt,
                 messages=messages
             )
 
-            # 步骤6: 构建响应（只包含AI回复内容，符合TDD-II-10设计）
+            # 步骤7: 构建响应（只包含AI回复内容，符合TDD-II-10设计）
             response = ChatResponse(ai_response=ai_response)
 
-            # 步骤7: 记录AI交互
-            DynamicController._log_ai_interaction(request, response, db, background_tasks, system_prompt)
+            # 步骤8: 记录AI交互
+            self._log_ai_interaction(request, response, db, background_tasks, system_prompt, content_title)
 
             return response
 
@@ -178,20 +206,25 @@ class DynamicController:
             is_new_user=profile.is_new_user,
         )
 
-    @staticmethod
     def _log_ai_interaction(
+        self,
         request: ChatRequest,
         response: ChatResponse,
         db: Session,
         background_tasks: Optional[Any] = None,
         system_prompt: Optional[str] = None,
+        content_title: Optional[str] = None
     ):
         """
         根据TDD-I规范，异步记录AI交互。
         1. 在 event_logs 中记录一个 "ai_chat" 事件。
         2. 在 chat_history 中记录用户和AI的完整消息。
+        3. 更新用户状态中的提问计数器。
         """
         try:
+            # 更新用户状态
+            self.user_state_service.handle_ai_help_request(request.participant_id, content_title)
+
             event = BehaviorEvent(
                 participant_id=request.participant_id,
                 event_type=EventType.AI_HELP_REQUEST,

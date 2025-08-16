@@ -29,8 +29,9 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         conversation_history: List[Dict[str, str]],
         user_message: str,
         code_content: CodeContent = None,
-        task_context: str = None,
-        topic_title: str = None  # 使用topic_title而不是topic_id
+        mode: str = None,
+        content_title: str = None,
+        content_json: str = None
     ) -> Tuple[str, List[Dict[str, str]]]:
         """
         创建完整的提示词和消息列表
@@ -41,8 +42,9 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             conversation_history: 对话历史
             user_message: 用户当前消息
             code_content: 代码上下文
-            task_context: 任务上下文
-            topic_title: 主题标题
+            mode: 模式 ("learning" 或 "test")
+            content_title: 内容标题
+            content_json: 内容的JSON字符串
 
         Returns:
             Tuple[str, List[Dict[str, str]]]: (system_prompt, messages)
@@ -51,8 +53,9 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         system_prompt = self._build_system_prompt(
             user_state=user_state,
             retrieved_context=retrieved_context,
-            task_context=task_context,
-            topic_title=topic_title
+            mode=mode,
+            content_title=content_title,
+            content_json=content_json
         )
 
         # 构建消息列表
@@ -68,8 +71,9 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         self,
         user_state: UserStateSummary,
         retrieved_context: List[str],
-        task_context: str = None,
-        topic_title: str = None
+        mode: str = None,
+        content_title: str = None,
+        content_json: str = None
     ) -> str:
         """构建系统提示词"""
         prompt_parts = [self.base_system_prompt]
@@ -134,14 +138,29 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         else:
             prompt_parts.append("REFERENCE KNOWLEDGE: No relevant knowledge was retrieved from the knowledge base. Answer based on your general knowledge.")
 
-
-        # 添加任务上下文
-        if task_context:
-            prompt_parts.append(f"TASK CONTEXT: The student is currently working on: '{task_context}'. Frame your explanations within this context.")
-
-        # 添加主题信息
-        if topic_title:
-            prompt_parts.append(f"TOPIC: The current learning topic is '{topic_title}'. Focus your explanations on this specific topic.")
+        # 添加任务上下文和分阶段debug逻辑
+        if mode == "learning":
+            prompt_parts.append("MODE: The student is in learning mode. Provide detailed explanations and examples to help them understand the concepts.")
+        elif mode == "test":
+            prompt_parts.append("MODE: The student is in test mode. Guide them to find the answer themselves. Do not give the answer directly.")
+            # 分阶段debug逻辑
+            question_count = user_state.behavior_counters.get(f"question_count_{content_title}", 0)
+            if question_count == 0:
+                prompt_parts.append("DEBUGGING STRATEGY: This is the first time the student is asking about this. Provide a small hint.")
+            elif question_count == 1:
+                prompt_parts.append("DEBUGGING STRATEGY: The student is asking again. Provide a more specific hint or a guiding question.")
+            elif question_count == 2:
+                prompt_parts.append("DEBUGGING STRATEGY: The student is still stuck. Provide a code snippet with a small modification, but not the complete answer.")
+            else:
+                prompt_parts.append("DEBUGGING STRATEGY: The student is asking multiple times. It's time to provide the correct answer, but also explain why it is correct.")
+        
+        # 添加内容标题
+        if content_title:
+            prompt_parts.append(f"TOPIC: The current topic is '{content_title}'. Focus your explanations on this specific topic.")
+            
+        # 添加内容JSON（如果提供）
+        if content_json:
+            prompt_parts.append(f"CONTENT DATA: Here is the detailed content data for the current topic. Use this to provide more specific and accurate guidance.\n{content_json}")
 
         return "\n\n".join(prompt_parts)
 

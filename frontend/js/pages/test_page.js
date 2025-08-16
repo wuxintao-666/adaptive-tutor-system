@@ -1,7 +1,7 @@
 // 导入模块
 import { getParticipantId } from '../modules/session.js';
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
-import { createLivePreview } from '../modules/live_preview.js';
+import tracker from '../modules/behavior_tracker.js';
 
 // 初始化函数
 async function initializePage() {
@@ -47,8 +47,7 @@ async function initializePage() {
             updateUIWithTaskData(task);
             // 初始化编辑器
             initializeEditors(task.start_code);
-            // 设置聊天功能
-            setupChat(topicId); 
+ 
         } else {
             throw new Error(response.message || '获取测试任务失败');
         }
@@ -101,22 +100,6 @@ function initializeEditors(startCode) {
     }, 100);
 }
 
-// 设置聊天功能
-function setupChat(topicId) {
-    // TODO: 实现聊天功能
-    console.log('聊天功能尚未实现，topicId:', topicId);
-    // const buildChatContext = () => {
-    //     return {
-    //         code_context: {
-    //             html: window.editorState.htmlEditor?.getValue() || '',
-    //             css: window.editorState.cssEditor?.getValue() || '',
-    //             js: window.editorState.jsEditor?.getValue() || ''
-    //         },
-    //         task_context: `test:${topicId}` // 关键区别
-    //     };
-    // };
-    // initializeChat(buildChatContext);
-}
 
 // 提交逻辑
 function setupSubmitLogic() {
@@ -190,5 +173,16 @@ document.addEventListener('DOMContentLoaded', function() {
     require(['vs/editor/editor.main'], function () {
         initializePage();
         setupSubmitLogic();
+        
+        // 初始化AI聊天功能
+        // 从URL获取topicId作为contentId
+        const urlParams = new URLSearchParams(window.location.search);
+        const contentId = urlParams.get('topic');
+        if (contentId) {
+            // 延迟初始化，确保DOM元素已加载
+            setTimeout(() => {
+                tracker.initChat('send-message', '#user-message', 'test', contentId);
+            }, 1000);
+        }
     });
 });

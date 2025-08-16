@@ -90,7 +90,10 @@ function initMainApp() {
             }
 
             if (typeof tracker.initChat === 'function') {
-                tracker.initChat('send-message', '#user-message');
+                // 从URL获取topicId作为contentId
+                const urlParams = new URLSearchParams(window.location.search);
+                const contentId = urlParams.get('topic');
+                tracker.initChat('send-message', '#user-message', 'learning', contentId);
             }
 
             if (typeof tracker.initIdleAndFocus === 'function') {
