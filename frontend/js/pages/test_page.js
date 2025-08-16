@@ -65,37 +65,33 @@ function updateUIWithTaskData(task) {
 
 // 初始化Monaco编辑器并设置实时预览
 function initializeEditors(startCode) {
-    if (window.monaco) {
-        window.editorState = window.editorState || {};
-
-        const editors = {
-            html: monaco.editor.create(document.getElementById('monaco-editor'), {
-                value: startCode?.html || '', language: 'html', theme: 'vs-dark'
-            }),
-            css: monaco.editor.create(document.getElementById('monaco-editor-css'), {
-                value: startCode?.css || '', language: 'css', theme: 'vs-dark'
-            }),
-            js: monaco.editor.create(document.getElementById('monaco-editor-js'), {
-                value: startCode?.js || '', language: 'javascript', theme: 'vs-dark'
-            })
-        };
-        
-        window.editorState.html = editors.html;
-        window.editorState.css = editors.css;
-        window.editorState.js = editors.js;
-
-        // 设置实时预览
-        const iframe = document.getElementById('preview-frame');
-        if (iframe) {
-            const livePreviewManager = createLivePreview({ html: editors.html, css: editors.css, js: editors.js }, iframe);
-            livePreviewManager.triggerUpdate(); // 初始渲染
-        } else {
-            console.error("未找到预览iframe。");
-        }
-
-    } else {
-        console.error("Monaco Editor 未加载。");
+    // 设置初始代码
+    if (typeof window.setInitialCode === 'function') {
+        window.setInitialCode(startCode);
     }
+    
+    // 延迟初始化编辑器，确保editor.js中的require已经执行
+    setTimeout(() => {
+        if (window.monaco && window.editorState) {
+            // 更新已经创建的编辑器实例的内容
+            if (window.editorState.html && window.editorState.html.setValue) {
+                window.editorState.html.setValue(window.editorState.htmlValue || '');
+            }
+            if (window.editorState.css && window.editorState.css.setValue) {
+                window.editorState.css.setValue(window.editorState.cssValue || '');
+            }
+            if (window.editorState.js && window.editorState.js.setValue) {
+                window.editorState.js.setValue(window.editorState.jsValue || '');
+            }
+            
+            // 触发预览更新
+            if (typeof updateLocalPreview === 'function') {
+                updateLocalPreview();
+            }
+        } else {
+            console.error("Monaco Editor 或 editorState 未正确初始化。");
+        }
+    }, 100);
 }
 
 // 设置聊天功能
@@ -127,11 +123,9 @@ function setupSubmitLogic() {
         
         try {
             const topicId = new URLSearchParams(window.location.search).get('topic');
-            const participant_id = getParticipantId();
-            if (!participant_id || !topicId) throw new Error("用户或主题ID无效。");
+            if (!topicId) throw new Error("主题ID无效。");
             
             const submissionData = {
-                participant_id: participant_id,
                 topic_id: topicId,
                 code: {
                     html: window.editorState.html?.getValue() || '',
@@ -147,6 +141,10 @@ function setupSubmitLogic() {
                 if (result.data.passed) {
                     alert("测试完成！即将跳转回到知识图谱界面");
                     setTimeout(() => { window.location.href = '/pages/knowledge_graph.html'; }, 3000);
+                } else {
+                    // TODO: 可以考虑直接在这里主动触发AI
+                    // 测试未通过，给用户一些鼓励和建议
+                    alert("测试未通过，请查看详细结果并继续改进代码。");
                 }
             } else {
                 throw new Error(result.message || '提交失败');

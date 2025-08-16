@@ -31,6 +31,15 @@ window.editorState = {
     }
 };
 
+// 添加一个函数来设置初始代码
+window.setInitialCode = function(startCode) {
+    if (startCode && typeof startCode === 'object') {
+        window.editorState.htmlValue = startCode.html !== undefined ? startCode.html : defaultHTML;
+        window.editorState.cssValue = startCode.css !== undefined ? startCode.css : defaultCSS;
+        window.editorState.jsValue = startCode.js !== undefined ? startCode.js : defaultJS;
+    }
+};
+
     // 编辑器实例
     let editor = null;
     let editorCSS = null;
@@ -96,7 +105,7 @@ window.editorState = {
         // 创建各个编辑器实例
         // HTML 编辑器
         editor = monaco.editor.create(document.getElementById('monaco-editor'), {
-            value: editorState.html,
+            value: editorState.htmlValue || defaultHTML,
             language: 'html',
             theme: 'myCustomTheme',
             automaticLayout: true,
@@ -124,7 +133,7 @@ window.editorState = {
         
         // CSS 编辑器
         editorCSS = monaco.editor.create(document.getElementById('monaco-editor-css'), {
-            value: editorState.css,
+            value: editorState.cssValue || defaultCSS,
             language: 'css',
             theme: 'myCustomTheme',
             automaticLayout: true,
@@ -152,7 +161,7 @@ window.editorState = {
         
         // JavaScript 编辑器
         editorJS = monaco.editor.create(document.getElementById('monaco-editor-js'), {
-            value: editorState.js,
+            value: editorState.jsValue || defaultJS,
             language: 'javascript',
             theme: 'myCustomTheme',
             automaticLayout: true,
@@ -211,6 +220,11 @@ window.editorState = {
                 performStaticCheck();
             }, 1000); // 1秒后执行静态检查
         });
+
+        // 将编辑器实例存储在editorState中，供其他模块使用
+        editorState.html = editor;
+        editorState.css = editorCSS;
+        editorState.js = editorJS;
 
         // 初始化编辑器标签切换
         initEditorTabs();
@@ -306,6 +320,30 @@ window.editorState = {
                 }
             });
         }
+    }
+    
+    // 更新编辑器内容的函数
+    function updateEditorContent(startCode) {
+        // 更新编辑器状态
+        if (startCode && typeof startCode === 'object') {
+            editorState.html = startCode.html || '';
+            editorState.css = startCode.css || '';
+            editorState.js = startCode.js || '';
+        }
+        
+        // 更新编辑器显示
+        if (editor) {
+            editor.setValue(editorState.html);
+        }
+        if (editorCSS) {
+            editorCSS.setValue(editorState.css);
+        }
+        if (editorJS) {
+            editorJS.setValue(editorState.js);
+        }
+        
+        // 更新预览
+        updateLocalPreview();
     }
 
     // 本地预览更新（仅用于快速刷新和初始化）
