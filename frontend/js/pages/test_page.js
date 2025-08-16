@@ -5,6 +5,13 @@ import { createLivePreview } from '../modules/live_preview.js';
 
 // 初始化函数
 async function initializePage() {
+    const participantId = getParticipantId();
+    if (participantId) {
+        const participantElement = document.getElementById('participant_id');
+        if (participantElement) {
+            participantElement.textContent = participantId;
+        }
+    }
     // 获取URL参数
     const urlParams = new URLSearchParams(window.location.search);
     
