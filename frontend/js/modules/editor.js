@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 从本地存储中获取现有会话ID（如果有）
     const savedSessionId = localStorage.getItem('editorSessionId');
-    console.log(savedSessionId ? `从本地存储中恢复会话ID: ${savedSessionId}` : '未找到本地存储的会话ID');
     
     // 默认代码内容
     const defaultHTML = `<!DOCTYPE html>\n<html>\n<head>\n    <title>示例页面</title>\n</head>\n<body>\n    <h1>欢迎使用代码编辑器</h1>\n    <p>在这里编写你的HTML代码</p>\n    <button id="demo-button">点击我</button>\n    \n    <script src="script.js"></script>\n</body>\n</html>`;
@@ -34,9 +33,9 @@ window.editorState = {
 // 添加一个函数来设置初始代码
 window.setInitialCode = function(startCode) {
     if (startCode && typeof startCode === 'object') {
-        window.editorState.htmlValue = startCode.html !== undefined ? startCode.html : defaultHTML;
-        window.editorState.cssValue = startCode.css !== undefined ? startCode.css : defaultCSS;
-        window.editorState.jsValue = startCode.js !== undefined ? startCode.js : defaultJS;
+        editorState.html = startCode.html !== undefined ? startCode.html : defaultHTML;
+        editorState.css = startCode.css !== undefined ? startCode.css : defaultCSS;
+        editorState.js = startCode.js !== undefined ? startCode.js : defaultJS;
     }
 };
 
@@ -104,9 +103,8 @@ window.setInitialCode = function(startCode) {
 
         // 创建各个编辑器实例
         // HTML 编辑器
-        editor = monaco.editor.create(document.getElementById('monaco-editor'), {
-            value: editorState.htmlValue || defaultHTML,
-            language: 'html',
+        // 创建编辑器的通用配置
+        const editorConfig = {
             theme: 'myCustomTheme',
             automaticLayout: true,
             minimap: { enabled: false },
@@ -129,97 +127,57 @@ window.setInitialCode = function(startCode) {
             fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
             fontLigatures: true,
             cursorBlinking: 'smooth'
+        };
+        
+        // HTML 编辑器
+        editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+            value: editorState.html,
+            language: 'html',
+            ...editorConfig
         });
         
         // CSS 编辑器
         editorCSS = monaco.editor.create(document.getElementById('monaco-editor-css'), {
-            value: editorState.cssValue || defaultCSS,
+            value: editorState.css,
             language: 'css',
-            theme: 'myCustomTheme',
-            automaticLayout: true,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            renderLineHighlight: 'all',
-            renderWhitespace: 'none',
-            lineNumbers: 'on',
-            tabSize: 2,
-            formatOnPaste: true,
-            formatOnType: true,
-            autoIndent: 'full',
-            semanticHighlighting: true,
-            suggestOnTriggerCharacters: true,
-            acceptSuggestionOnCommitCharacter: true,
-            wordBasedSuggestions: true,
-            parameterHints: { enabled: true },
-            folding: true,
-            renderValidationDecorations: 'on',
-            fontSize: 14,
-            fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
-            fontLigatures: true,
-            cursorBlinking: 'smooth'
+            ...editorConfig
         });
         
         // JavaScript 编辑器
         editorJS = monaco.editor.create(document.getElementById('monaco-editor-js'), {
-            value: editorState.jsValue || defaultJS,
+            value: editorState.js,
             language: 'javascript',
-            theme: 'myCustomTheme',
-            automaticLayout: true,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            renderLineHighlight: 'all',
-            renderWhitespace: 'none',
-            lineNumbers: 'on',
-            tabSize: 2,
-            formatOnPaste: true,
-            formatOnType: true,
-            autoIndent: 'full',
-            semanticHighlighting: true,
-            suggestOnTriggerCharacters: true,
-            acceptSuggestionOnCommitCharacter: true,
-            wordBasedSuggestions: true,
-            parameterHints: { enabled: true },
-            folding: true,
-            renderValidationDecorations: 'on',
-            fontSize: 14,
-            fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
-            fontLigatures: true,
-            cursorBlinking: 'smooth'
+            ...editorConfig
         });
 
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
         // 监听编辑器内容变化
-        editor.onDidChangeModelContent(function(e) {
+        editor.onDidChangeModelContent(debounce(function(e) {
             // 保存当前编辑器内容到状态
             editorState.html = editor.getValue();
-            
-            // 添加防抖，避免频繁更新
-            clearTimeout(window.editorUpdateTimer);
-            window.editorUpdateTimer = setTimeout(function() {
-                // 不再调用后端静态检查
-            }, 1000);
-        });
+        }, 1000));
         
-        editorCSS.onDidChangeModelContent(function(e) {
+        editorCSS.onDidChangeModelContent(debounce(function(e) {
             // 保存当前编辑器内容到状态
             editorState.css = editorCSS.getValue();
-            
-            // 添加防抖，避免频繁更新
-            clearTimeout(window.editorUpdateTimer);
-            window.editorUpdateTimer = setTimeout(function() {
-                // 不再调用后端静态检查
-            }, 1000);
-        });
+        }, 1000));
         
-        editorJS.onDidChangeModelContent(function(e) {
+        editorJS.onDidChangeModelContent(debounce(function(e) {
             // 保存当前编辑器内容到状态
             editorState.js = editorJS.getValue();
-            
-            // 添加防抖，避免频繁更新
-            clearTimeout(window.editorUpdateTimer);
-            window.editorUpdateTimer = setTimeout(function() {
-                // 不再调用后端静态检查
-            }, 1000);
-        });
+        }, 1000));
 
         // 将编辑器实例存储在editorState中，供其他模块使用
         editorState.htmlEditor = editor;
@@ -228,7 +186,6 @@ window.setInitialCode = function(startCode) {
 
         // 初始化编辑器标签切换
         initEditorTabs();
-
         // 初始化按钮事件
         initButtons();
     });
@@ -244,7 +201,6 @@ window.setInitialCode = function(startCode) {
         tabButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const tab = this.getAttribute('data-tab');
-                console.log('切换到标签：', tab);
                 
                 // 更新标签按钮状态
                 tabButtons.forEach(btn => btn.classList.remove('active'));
@@ -268,9 +224,6 @@ window.setInitialCode = function(startCode) {
                 const editorContainer = document.getElementById('editor-' + tab);
                 if (editorContainer) {
                     editorContainer.style.display = 'block';
-                    console.log('显示编辑器容器：', 'editor-' + tab);
-                } else {
-                    console.error('找不到编辑器容器：', 'editor-' + tab);
                 }
                 
                 // 将当前标签页保存到状态
@@ -293,7 +246,17 @@ window.setInitialCode = function(startCode) {
         const runButton = document.getElementById('run-button');
         if (runButton) {
             runButton.addEventListener('click', function() {
-                runCodeOnBackend();
+                // 更新本地预览
+                updateLocalPreview();
+                
+                // 切换到预览标签页
+                const previewTabButton = document.querySelector('.tab-button[data-tab="preview"]');
+                if (previewTabButton) {
+                    previewTabButton.click();
+                }
+
+                // 提示用户
+                showNotification('本地预览已更新', 'info');
             });
         }
 
@@ -482,45 +445,15 @@ window.setInitialCode = function(startCode) {
                 URL.revokeObjectURL(url);
             };
             
-            // 改进的心跳检测机制
-            if (!window.hasHeartbeatListener) {
-                // 使用自定义事件来接收心跳
-                document.addEventListener('preview-heartbeat', function() {
-                    window.lastPreviewHeartbeatTime = Date.now();
-                    // 收到心跳，预览正常
-                    console.log('预览心跳正常');
-                });
-                window.hasHeartbeatListener = true;
-            }
-            
-            // 初始化心跳时间
-            window.lastPreviewHeartbeatTime = Date.now();
-            
-            // 添加预览框架心跳检测
+            // 初始化预览框架心跳检测
             if (window.localPreviewHeartbeatInterval) {
                 clearInterval(window.localPreviewHeartbeatInterval);
             }
             
             window.localPreviewHeartbeatInterval = setInterval(() => {
-                const currentTime = Date.now();
-                const heartbeatTimeout = 8000; // 心跳超时时间，单位毫秒
-                
-                // 如果超过超时时间没有心跳，则重新加载预览
-                if (currentTime - window.lastPreviewHeartbeatTime > heartbeatTimeout) {
-                    console.log('预览心跳超时，尝试重新加载');
-                    
-                    // 尝试保持当前页面的段落和滚动位置
-                    try {
-                        // 更新预览
-                        updateLocalPreview();
-                        
-                        // 重置心跳时间为当前时间
-                        window.lastPreviewHeartbeatTime = currentTime;
-                    } catch (e) {
-                        console.error('重新加载预览出错:', e);
-                    }
-                }
-            }, 2000); // 每2秒检查一次
+                // 每10秒重新加载一次预览，确保预览保持连接
+                updateLocalPreview();
+            }, 10000); // 每10秒检查一次
         } catch (error) {
             console.error('生成预览出错:', error);
             showNotification('预览生成错误', 'error');
@@ -552,11 +485,8 @@ window.setInitialCode = function(startCode) {
         if (!editorState.sessionId) {
             // 如果没有会话ID，创建一个新的
             editorState.sessionId = generateUUID();
-            console.log(`运行代码: 创建新的会话ID: ${editorState.sessionId}`);
             // 将会话ID保存到本地存储，即使页面刷新也能保持会话ID
             localStorage.setItem('editorSessionId', editorState.sessionId);
-        } else {
-            console.log(`运行代码: 使用现有会话ID: ${editorState.sessionId}`);
         }
         
         // 准备代码提交数据
@@ -605,7 +535,6 @@ window.setInitialCode = function(startCode) {
             }
         })
         .catch(error => {
-            console.error('运行代码出错:', error);
             showNotification(`沙箱环境连接错误，使用本地预览模式`, 'info');
             // 注意：不再调用本地预览，因为我们已经在开始时调用过了
         })
@@ -630,7 +559,7 @@ window.setInitialCode = function(startCode) {
         const previewFrame = document.getElementById('preview-frame');
         previewFrame.src = url;
         
-        // 添加30秒的心跳检查，确保预览保持连接
+        // 添加预览检查，确保预览保持连接
         if (window.previewHeartbeatInterval) {
             clearInterval(window.previewHeartbeatInterval);
         }
@@ -640,12 +569,10 @@ window.setInitialCode = function(startCode) {
             try {
                 if (!previewFrame.contentWindow || previewFrame.contentWindow.closed) {
                     // 预览窗口不可访问，尝试重新加载
-                    console.log('预览窗口不可访问，尝试重新加载');
                     previewFrame.src = url;
                 }
             } catch (e) {
                 // 跨域错误或其他错误，尝试重新加载
-                console.log('预览窗口出错，尝试重新加载');
                 previewFrame.src = url;
             }
         }, 5000); // 每5秒检查一次
@@ -682,22 +609,20 @@ window.setInitialCode = function(startCode) {
         // 清理后端会话
         if (editorState.sessionId) {
             const oldSessionId = editorState.sessionId;
-            console.log(`重置编辑器：清理会话ID ${oldSessionId}`);
             fetch(`${editorState.backendUrl}/cleanup/${oldSessionId}`, {
                 method: 'POST'
             })
             .then(response => {
                 if (response.ok) {
-                    console.log(`会话 ${oldSessionId} 已成功清理`);
                     // 重置会话ID，确保下次会创建新容器
                     editorState.sessionId = null;
                     // 同时清除本地存储的会话ID
                     localStorage.removeItem('editorSessionId');
-                } else {
-                    console.error(`清理会话失败: ${response.status}`);
                 }
             })
-            .catch(error => console.error('清理会话失败:', error));
+            .catch(error => {
+                // 忽略清理错误，不影响主要功能
+            });
         }
     }
 
