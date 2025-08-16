@@ -183,29 +183,37 @@ body {
     }
 
 /* lean页面布局样式 */
-    /* 预览界面面板样式 */
-    .preview-panel {
-        flex: 2 1 0;
-        min-width: 300px;
-        margin: 0;
-        border-radius: 4px;
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        box-sizing: border-box;
-        border: 1px solid var(--border-color);
-        background: transparent;
-    }
-    
-    /* 代码展示（中列上方，与预览同高） */
-    .code-panel {
+    /* 合并的预览和代码展示面板样式 */
+    .preview-code-panel {
         flex: 1 1 0;
         display: flex;
-        flex-direction: column;
         border-radius: 4px;
         border: 1px solid var(--border-color);
         overflow: hidden;
         background: var(--content-background);
+        min-height: 240px;
+    }
+    
+    /* 预览区域样式 */
+    .preview-section {
+        flex: 2 1 0;
+        min-width: 300px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        box-sizing: border-box;
+        background: transparent;
+        border-right: 1px solid var(--border-color);
+    }
+    
+    /* 代码展示区域样式 */
+    .code-section {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--content-background);
+        min-width: 250px;
     }
 
     /* 代码展示面板底部区域 */
@@ -239,24 +247,67 @@ body {
         border: 1px solid var(--border-color);
         flex-direction: column;
         overflow: hidden;
+        /* 确保聊天面板不会覆盖知识点面板 */
+        position: relative;
+        z-index: 5;
     }
     /* 知识区域 */
     /* 知识点展示（下排跨两列，宽度=左+中） */
-    .knowledge-panel {
-        height: auto;
-        flex: 1 1 0;
-        min-height: 0;
-        display: flex;
-        border-radius: 4px;
-        margin: 0;
-        flex-direction: column;
-        box-sizing: border-box;
-        border: 1px solid var(--border-color);
-        overflow: hidden;
-        background: var(--content-background);
-        /* 与上排 code-panel 右边界对齐 */
-        align-self: stretch;
-    }
+.knowledge-panel {
+    height: auto;
+    flex: 1 1 0;
+    min-height: 200px; /* 确保最小高度 */
+    display: flex;
+    border-radius: 4px;
+    margin: 0;
+    flex-direction: column;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    background: var(--content-background);
+    /* 与上排 preview-code-panel 右边界对齐 */
+    align-self: stretch;
+    /* 确保知识点面板始终可见 */
+    position: relative;
+    z-index: 10;
+    /* 确保默认状态下所有等级卡片都可见 */
+}
+
+/* 确保默认状态下所有等级卡片都可见 */
+.knowledge-panel:not(.expanded) .level-card {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.knowledge-panel:not(.expanded) .arrow {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 确保知识点面板在默认状态下可见 */
+.knowledge-panel {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    min-height: 200px !important;
+    background: var(--content-background) !important;
+}
+
+/* 确保知识点面板内容在默认状态下可见 */
+.knowledge-panel .levels-flow {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 确保等级卡片在默认状态下可见 */
+.knowledge-panel .level-card {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
     .ratio-16x9 {
         position: relative;
         width: 100%;
@@ -335,6 +386,7 @@ body {
         cursor: pointer;
         transition: all 0.3s ease;
         position: relative;
+        z-index: 50; /* 确保卡片在最上层 */
     }
 
     .level-card:hover {
@@ -371,12 +423,14 @@ body {
         opacity: 0;
         max-height: 0;
         overflow: hidden;
+        transform: translateY(-10px);
     }
 
     .level-card.expanded .level-content {
         opacity: 1;
         max-height: 200px;
         margin-top: 12px;
+        transform: translateY(0);
     }
 
     .level-card h3 {
@@ -471,17 +525,35 @@ body {
         font-weight: 500;
     }
     @media (max-width: 1100px) {
-        .preview-panel, .knowledge-panel { min-width: 200px; }
+        .preview-code-panel, .knowledge-panel { min-width: 200px; }
         .left-group { min-width: 0; width: 60%; }
+        .preview-section { min-width: 200px; }
+        .code-section { min-width: 200px; }
     }
     @media (max-width: 900px) {
         .main-container { flex-direction: column; }
-        .preview-panel, .knowledge-panel { min-width: 0; }
+        .preview-code-panel, .knowledge-panel { min-width: 0; }
         .content-container { flex-direction: column; height: auto; }
         .left-group { width: 100%; }
         .chat-panel { width: 100%; height: auto; }
         .top-row { height: auto; }
-        .knowledge-panel { height: auto; }
+        .preview-code-panel { 
+            flex-direction: column; 
+            min-height: 400px;
+        }
+        .preview-section { 
+            min-height: 200px;
+            border-right: none;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .code-section { 
+            min-height: 200px;
+        }
+        .knowledge-panel { 
+            height: auto; 
+            min-height: 200px; /* 确保小屏幕下也有最小高度 */
+            z-index: 10; /* 确保层级正确 */
+        }
     }
 
 
@@ -1280,6 +1352,18 @@ body {
     padding: 10px;
     min-height: 60px;
     border: 1px solid #e0e0e0;
+    font-size: 0.9rem; /* 确保代码字体比标题小 */
+    font-family: 'Courier New', monospace;
+    line-height: 1.4;
+    color: #333;
+}
+
+/* 代码展示区域标题样式 */
+#code-content h2 {
+    font-size: 1.1rem; /* 确保标题字体比代码大 */
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-color);
 }
 
 /* 代码示例样式 */
@@ -1304,6 +1388,9 @@ body {
 .knowledge-panel.expanded {
     position: relative;
     z-index: 100;
+    /* 确保展开时知识点面板仍然可见 */
+    min-height: 300px;
+    background: var(--content-background);
 }
 
 .knowledge-panel.expanded .info-content {
@@ -1321,17 +1408,14 @@ body {
     max-width: none;
 }
 
-.knowledge-panel.expanded .arrow {
-    transform: rotate(90deg);
-}
-
-/* 隐藏其他等级卡片 */
+/* 隐藏其他等级卡片 - 实现单卡片展开模式 */
 .knowledge-panel.expanded .level-card:not(.expanded) {
-    display: none;
+    display: none !important;
 }
 
 .knowledge-panel.expanded .arrow {
     display: none;
+    transform: rotate(90deg);
 }
 
 /* 展开时调整内容区域 */

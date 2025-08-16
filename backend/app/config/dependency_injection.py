@@ -1,4 +1,4 @@
-from app.services.sandbox_service_improved import SandboxService, DefaultPlaywrightManager
+from app.services.sandbox_service import SandboxService, DefaultPlaywrightManager
 from app.services.user_state_service import UserStateService
 from app.services.sentiment_analysis_service import sentiment_analysis_service
 from app.services.llm_gateway import llm_gateway
@@ -52,15 +52,18 @@ def get_sandbox_service():
         return ProductionConfig.create_sandbox_service()
 
 
-# 在应用启动时创建 UserStateService 的单例
-# 这确保了所有用户的状态都保存在同一个内存缓存中
-user_state_service_instance = UserStateService()
+# UserStateService 单例实例
+_user_state_service_instance = None
 
 def get_user_state_service() -> UserStateService:
     """
-    一个简单的依赖项，用于在整个应用中共享同一个UserStateService实例。
+    获取 UserStateService 单例实例
+    通过 DI 容器管理，确保整个应用中只有一个实例来维护用户状态一致性
     """
-    return user_state_service_instance
+    global _user_state_service_instance
+    if _user_state_service_instance is None:
+        _user_state_service_instance = UserStateService()
+    return _user_state_service_instance
 
 
 # --- AI服务依赖注入 ---
@@ -119,7 +122,7 @@ def create_dynamic_controller():
     创建动态控制器实例，注入所有依赖
     """
     from app.services.dynamic_controller import DynamicController
-    
+
     return DynamicController(
         user_state_service=get_user_state_service(),
         sentiment_service=get_sentiment_analysis_service(),

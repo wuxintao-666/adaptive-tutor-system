@@ -19,42 +19,45 @@
         <div class="content-container">
           <!-- 左侧组合列（占 60% 宽） -->
           <div class="left-group">
-            <!-- 上排：预览 + 代码（各占 50%） -->
+            <!-- 上排：预览 + 代码（合并成一个div） -->
             <div class="top-row">
-              <!-- 左侧网页预览区 -->
-              <div class="preview-panel">
-                  <div class="ratio-16x9">
-                    <iframe
-                      id="element-selector-iframe"
-                      src="../../backend/app/data/example_page/index01.html"
-                    ></iframe>
+              <!-- 合并的预览和代码展示区 -->
+              <div class="preview-code-panel">
+                <!-- 左侧网页预览区 -->
+                <div class="preview-section">
+                    <div class="ratio-16x9">
+                      <iframe
+                        id="element-selector-iframe"
+                        src="example_pages/index01.html"
+                      ></iframe>
+                    </div>
+                </div>
+                <!-- 右侧代码展示区 -->
+                <div class="code-section">
+                  <div class="panel-header">
+                    <h2>代码展示</h2>
                   </div>
-              </div>
-              <!-- 中间代码展示区（与预览等高） -->
-              <div class="code-panel">
-                <div class="panel-header">
-                  <h2>代码展示</h2>
-                </div>
-                <div class="info-content" id="code-content">
-                    <h2>选中元素代码</h2>
-                    <pre id="selectedElementCode"></pre>
-                </div>
-                <!-- 代码展示面板底部的选择器控制区域 -->
-                <div class="code-panel-footer">
-                    <div class="selector-controls">
-                        <button id="startSelector" class="btn btn-select">选取元素</button>
-                        <button id="stopSelector" class="btn btn-select btn-stop-selector">停止选择</button>
-                    </div>
-                    <!-- 选择范围开关 -->
-                    <div class="selector-toggle-container">
-                        <label class="toggle-label">
-                            <input type="checkbox" id="cumulativeToggle">
-                            <span>包含之前章节的元素</span>
-                        </label>
-                        <div class="toggle-description">
-                            开启后可选择当前及之前所有章节的元素，关闭时仅可选择当前章节元素
-                        </div>
-                    </div>
+                  <div class="info-content" id="code-content">
+                      <h2>选中元素代码</h2>
+                      <pre id="selectedElementCode"></pre>
+                  </div>
+                  <!-- 代码展示面板底部的选择器控制区域 -->
+                  <div class="code-panel-footer">
+                      <div class="selector-controls">
+                          <button id="startSelector" class="btn btn-select">选取元素</button>
+                          <button id="stopSelector" class="btn btn-select btn-stop-selector">停止选择</button>
+                      </div>
+                      <!-- 选择范围开关 -->
+                      <div class="selector-toggle-container">
+                          <label class="toggle-label">
+                              <input type="checkbox" id="cumulativeToggle">
+                              <span>包含之前章节的元素</span>
+                          </label>
+                          <div class="toggle-description">
+                              开启后可选择当前及之前所有章节的元素，关闭时仅可选择当前章节元素
+                          </div>
+                      </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -70,7 +73,7 @@
                                 <h3>Level 1 · 基础</h3>
                             </div>
                             <div class="level-content">
-                                <p class="content-text">适合零基础入门，掌握核心概念与基本语法。这个等级主要关注基础知识的建立，为后续学习打下坚实基础。</p>
+                                <p class="content-text">知识点内容将由JavaScript动态加载</p>
                             </div>
                             <div class="click-hint">点击进入学习</div>
                         </div>
@@ -80,7 +83,7 @@
                                 <h3>Level 2 · 进阶</h3>
                             </div>
                             <div class="level-content">
-                                <p class="content-text">理解常见场景与组合用法，提升实践能力。在这个等级中，学习者将接触到更复杂的应用场景。</p>
+                                <p class="content-text">知识点内容将由JavaScript动态加载</p>
                             </div>
                             <div class="click-hint">点击进入学习</div>
                         </div>
@@ -90,7 +93,7 @@
                                 <h3>Level 3 · 高级</h3>
                             </div>
                             <div class="level-content">
-                                <p class="content-text">深入机制与性能优化，形成系统化认知。高级等级专注于深层次理解和性能优化技巧。</p>
+                                <p class="content-text">知识点内容将由JavaScript动态加载</p>
                             </div>
                             <div class="click-hint">点击进入学习</div>
                         </div>
@@ -100,7 +103,7 @@
                                 <h3>Level 4 · 挑战</h3>
                             </div>
                             <div class="level-content">
-                                <p class="content-text">综合实战与拓展题，检验与突破现有水平。挑战等级包含复杂的综合应用和高级技巧。</p>
+                                <p class="content-text">知识点内容将由JavaScript动态加载</p>
                             </div>
                             <div class="click-hint">点击进入学习</div>
                         </div>
@@ -145,8 +148,7 @@
               <!-- 聊天输入主区域 -->
               <div class="chat-input-main">
                 <textarea id="user-message" placeholder="请输入信息"></textarea>
-                <button type="button" id="send-message" class="btn btn-primary"
-                  onclick="directSendMessage()">发送信息</button>
+                <button type="button" id="send-message" class="btn btn-primary">发送信息</button>
               </div>
             </div>
             <div class="status-container">
@@ -159,171 +161,40 @@
     </div>
 
     <!-- 引入配置模块 -->
-    <script src="../js/config.js"></script>
     <script type="module" src="../js/modules/config.js"></script>
+    <!-- 引入行为追踪模块（已注释） -->
+    <!-- <script type="module" src="../js/modules/behavior_tracker.js"></script> -->
     <!-- 引入选择模块 -->
-    <script src="../js/modules/select_modules.js"></script>
+    <script type="module" src="../js/modules/iframe-selector.js"></script>
     <!-- 引入文档模块 -->
     <script type="module" src="../js/modules/docs_module.js"></script>
     <!-- 引入learning_page.js -->
-    <script src="../js/pages/learning_page.js"></script>
+    <script type="module" src="../js/pages/learning_page.js"></script>
     
     <!-- 页面初始化脚本 -->
     <script type="module">
-        import { initializeConfig, AppConfig } from '../js/modules/config.js';
+        import { AppConfig } from '../js/modules/config.js';
         
-        // 等待所有模块和AIHTMLPlatform加载完成
-        function waitForModules() {
-            if (window.SelectModules && window.DocsModule && window.AIHTMLPlatform && window.AIHTMLPlatform.initMainApp) {
-                // 初始化主应用
-                window.AIHTMLPlatform.initMainApp();
-            } else {
-                // 如果还没加载完成，等待100ms后重试
-                setTimeout(waitForModules, 100);
-            }
-        }
-        
-        // 页面加载完成后初始化
+        // 页面加载完成后直接初始化
         document.addEventListener('DOMContentLoaded', async function() {
-            // 首先初始化配置
-            await initializeConfig();
-            console.log('当前模型：', AppConfig.model_name_for_display);
+            console.log('=== 页面加载完成，开始初始化 ===');
             
-            // 添加回车键发送功能
-            const messageInput = document.getElementById('user-message');
-            if (messageInput) {
-                messageInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        directSendMessage();
-                    }
-                });
-            }
+            // 直接设置配置
+            AppConfig.backend_port = 8000;
+            AppConfig.api_base_url = "/api/v1";
             
-            // 初始化知识点卡片点击事件
-            initializeKnowledgeCards();
+            console.log('配置已设置:', AppConfig);
             
-            // 然后开始等待模块加载
-            waitForModules();
-        });
-
-        // 初始化知识点卡片功能
-        function initializeKnowledgeCards() {
-            const levelCards = document.querySelectorAll('.level-card');
-            const knowledgePanel = document.getElementById('knowledge-panel');
-            
-            levelCards.forEach(card => {
-                card.addEventListener('click', function() {
-                    const isExpanded = this.classList.contains('expanded');
-                    
-                    // 先收起所有卡片
-                    levelCards.forEach(c => {
-                        c.classList.remove('expanded');
-                        c.classList.add('collapsed');
-                    });
-                    
-                    // 如果当前卡片不是展开状态，则展开它
-                    if (!isExpanded) {
-                        this.classList.remove('collapsed');
-                        this.classList.add('expanded');
-                        
-                        // 展开整个知识点面板
-                        knowledgePanel.classList.add('expanded');
-                        console.log('知识点面板已展开');
-                    } else {
-                        // 收起知识点面板
-                        knowledgePanel.classList.remove('expanded');
-                        console.log('知识点面板已收起');
-                    }
-                });
-            });
-        }
-        
-        // 发送消息函数（用于onclick事件）
-        window.directSendMessage = async function() {
-            const messageInput = document.getElementById('user-message');
-            const message = messageInput.value.trim();
-            
-            if (!message) {
-                alert('请输入消息内容');
-                return;
-            }
-            
-            // 禁用发送按钮，显示加载状态
-            const sendButton = document.getElementById('send-message');
-            const originalText = sendButton.textContent;
-            sendButton.disabled = true;
-            sendButton.textContent = '发送中...';
-            
-            try {
-                // 添加用户消息到聊天界面
-                addMessageToChat('user', message);
-                
-                                        // 发送消息到后端API
-                        const response = await fetch(`${window.FrontendConfig.getApiBaseUrl()}/chat/ai/chat`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        participant_id: 'user123', // 临时用户ID
-                        user_message: message,
-                        conversation_history: []
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                
-                if (result.code === 200 && result.data) {
-                    // 添加AI回复到聊天界面
-                    addMessageToChat('ai', result.data.ai_response);
+            // 等待模块加载完成后初始化主应用
+            setTimeout(() => {
+                if (window.AIHTMLPlatform && window.AIHTMLPlatform.initMainApp) {
+                    console.log('开始初始化主应用');
+                    window.AIHTMLPlatform.initMainApp();
                 } else {
-                    throw new Error(result.message || 'AI回复失败');
+                    console.error('AIHTMLPlatform.initMainApp 不可用');
                 }
-                
-            } catch (error) {
-                console.error('发送消息失败:', error);
-                addMessageToChat('ai', '抱歉，我暂时无法回复，请稍后再试。');
-            } finally {
-                // 恢复发送按钮状态
-                sendButton.disabled = false;
-                sendButton.textContent = originalText;
-                
-                // 清空输入框
-                messageInput.value = '';
-            }
-        }
-        
-        // 添加消息到聊天界面
-        function addMessageToChat(role, content) {
-            const chatMessages = document.getElementById('ai-chat-messages');
-            if (!chatMessages) return;
-            
-            const messageDiv = document.createElement('div');
-            messageDiv.className = role === 'user' ? 'user-message' : 'ai-message';
-            
-            const contentDiv = document.createElement('div');
-            contentDiv.className = role === 'user' ? 'user-content' : 'ai-content';
-            
-            if (role === 'ai') {
-                const markdownDiv = document.createElement('div');
-                markdownDiv.className = 'markdown-content';
-                markdownDiv.innerHTML = content.replace(/\n/g, '<br>');
-                contentDiv.appendChild(markdownDiv);
-            } else {
-                contentDiv.textContent = content;
-            }
-            
-            messageDiv.appendChild(contentDiv);
-            chatMessages.appendChild(messageDiv);
-            
-            // 滚动到底部
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+            }, 500);
+        });
     </script>
 </body>
 </html>

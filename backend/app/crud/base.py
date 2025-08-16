@@ -1,7 +1,8 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union, Tuple
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
+from sqlalchemy import asc, desc
 
 # 导入SQLAlchemy模型基类
 from app.db.base_class import Base
@@ -10,6 +11,13 @@ from app.db.base_class import Base
 ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+
+# 定义排序方向枚举
+from enum import Enum
+
+class SortDirection(str, Enum):
+    ASC = "asc"
+    DESC = "desc"
 
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
@@ -40,20 +48,80 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         return db.query(self.model).filter(self.model.id == obj_id).first()  # type: ignore
 
     def get_multi(
-        self, db: Session, *, skip: int = 0, limit: int = 100
+        self, 
+        db: Session, 
+        *, 
+        skip: int = 0, 
+        limit: int = 100,
+        filter_conditions: Optional[Dict[str, Any]] = None,
+        sort_by: Optional[Union[str, List[Tuple[str, SortDirection]]]] = None
     ) -> List[ModelType]:
         """
-        获取多个记录（支持分页）。
+        获取多个记录（支持分页、筛选和排序）。
         
         Args:
             db: 数据库会话
             skip: 跳过的记录数，默认为0
             limit: 返回的记录数限制，默认为100
+            filter_conditions: 筛选条件字典，例如 {"participant_id": "user123"}
+            sort_by: 排序字段，可以是单个字段名字符串或字段-方向元组列表
             
         Returns:
             List[ModelType]: 记录列表
         """
-        return db.query(self.model).offset(skip).limit(limit).all()
+        query = db.query(self.model)
+        
+        # 应用筛选条件
+        if filter_conditions:
+            for field, value in filter_conditions.items():
+                if hasattr(self.model, field):
+                    # 简单相等筛选
+                    query = query.filter(getattr(self.model, field) == value)
+        
+        # 应用排序
+        if sort_by:
+            if isinstance(sort_by, str):
+                # 单字段排序，默认升序
+                query = query.order_by(asc(getattr(self.model, sort_by)))
+            elif isinstance(sort_by, list):
+                # 多字段排序
+                for field, direction in sort_by:
+                    if hasattr(self.model, field):
+                        column = getattr(self.model, field)
+                        if direction == SortDirection.DESC:
+                            query = query.order_by(desc(column))
+                        else:
+                            query = query.order_by(asc(column))
+        
+        # 应用分页
+        return query.offset(skip).limit(limit).all()
+
+    def get_count(
+        self, 
+        db: Session, 
+        *, 
+        filter_conditions: Optional[Dict[str, Any]] = None
+    ) -> int:
+        """
+        获取符合条件的记录总数。
+        
+        Args:
+            db: 数据库会话
+            filter_conditions: 筛选条件字典，例如 {"participant_id": "user123"}
+            
+        Returns:
+            int: 符合条件的记录总数
+        """
+        query = db.query(self.model)
+        
+        # 应用筛选条件
+        if filter_conditions:
+            for field, value in filter_conditions.items():
+                if hasattr(self.model, field):
+                    # 简单相等筛选
+                    query = query.filter(getattr(self.model, field) == value)
+        
+        return query.count()
 
     def create(self, db: Session, *, obj_in: CreateSchemaType) -> ModelType:
         """
@@ -67,7 +135,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             ModelType: 创建的记录
         """
         # 使用fastapi的jsonable_encoder，确保数据可被序列化
-        obj_in_data = jsonable_encoder(obj_in)
+        obj_in_data = obj_in.model_dump()
         db_obj = self.model(**obj_in_data)  # SQLAlchemy model
         db.add(db_obj)
         db.commit()

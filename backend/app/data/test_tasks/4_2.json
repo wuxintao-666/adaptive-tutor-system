@@ -1,0 +1,39 @@
+{
+  "topic_id": "4_2",
+  "title": "理解盒模型及边距、边框、内边距",
+  "description_md": "请为卡片模块添加盒模型样式，增强卡片的视觉层次。\n\n具体要求：\n- 设置 `.card` 元素圆角为 `10px`\n- 添加阴影 `box-shadow: 0 0 10px rgba(0,0,0,0.2)`\n- 为 `.card-content` 设置内边距 `1rem`",
+  "start_code": {
+    "html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>猫咪展示 Demo</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: 'Arial', sans-serif;\n      background: linear-gradient(to bottom, #006400, #00aa00);\n      color: #fff;\n    }\n  </style>\n</head>\n<body>\n  <header>\n    <h1 style=\"font-weight: bold; font-style: italic;\">WCF 猫咪展示 2025</h1>\n  </header>\n  <section class=\"features\">\n    <div class=\"search-bar\">\n      <input type=\"text\" placeholder=\"搜索猫咪名称\" id=\"searchInput\">\n      <select>\n        <option>选择品种</option>\n        <option>英短</option>\n        <option>美短</option>\n        <option>加菲</option>\n      </select>\n      <button>搜索</button>\n    </div>\n    <div class=\"card-container\">\n      <div class=\"card\">\n        <img src=\"\" alt=\"猫咪图片\">\n        <div class=\"card-content\">\n          <h3>黑豆</h3>\n          <p>品种：英短</p>\n          <p>得分：12345</p>\n        </div>\n      </div>\n      <div class=\"card\">\n        <img src=\"\" alt=\"猫咪图片\">\n        <div class=\"card-content\">\n          <h3>雪球</h3>\n          <p>品种：加菲</p>\n          <p>得分：11200</p>\n        </div>\n      </div>\n    </div>\n    <div class=\"list-demo\">\n      <h3>猫咪照顾要点</h3>\n      <ol>\n        <li>每日梳毛</li>\n        <li>定时喂食</li>\n        <li>清洁猫砂盆</li>\n      </ol>\n      <h3>猫咪喜欢的活动</h3>\n      <ul>\n        <li>抓老鼠</li>\n        <li>晒太阳</li>\n        <li>玩毛线球</li>\n      </ul>\n    </div>\n    <div class=\"form-demo\">\n      <h3>猫咪偏好调查</h3>\n      <form onsubmit=\"handleForm(event)\">\n        <label><input type=\"checkbox\" name=\"likes\" value=\"晒太阳\"> 喜欢晒太阳</label>\n        <label><input type=\"checkbox\" name=\"likes\" value=\"抓老鼠\"> 爱抓老鼠</label>\n        <label>性别偏好：</label>\n        <label><input type=\"radio\" name=\"gender\" value=\"公\"> 公猫</label>\n        <label><input type=\"radio\" name=\"gender\" value=\"母\"> 母猫</label>\n        <button type=\"submit\">提交</button>\n      </form>\n    </div>\n  </section>\n  <footer>\n    <p>© 2025 猫咪前端示例页面 - 教学用途</p>\n  </footer>\n</body>\n</html>",
+    "css": "",
+    "js": ""
+  },
+  "checkpoints": [
+    {
+      "name": "圆角检查",
+      "type": "assert_style",
+      "selector": ".card",
+      "css_property": "border-radius",
+      "assertion_type": "equals",
+      "value": "10px",
+      "feedback": "请为卡片添加圆角样式：10px。"
+    },
+    {
+      "name": "阴影检查",
+      "type": "assert_style",
+      "selector": ".card",
+      "css_property": "box-shadow",
+      "assertion_type": "equals",
+      "value": "0 0 10px rgba(0,0,0,0.2)",
+      "feedback": "卡片应添加阴影以突出显示。"
+    },
+    {
+      "name": "内容区内边距",
+      "type": "assert_style",
+      "selector": ".card-content",
+      "css_property": "padding",
+      "assertion_type": "equals",
+      "value": "1rem",
+      "feedback": "请为 .card-content 添加 1rem 的 padding。"
+    }
+  ]
+}

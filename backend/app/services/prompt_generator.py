@@ -6,7 +6,7 @@ from ..schemas.content import CodeContent
 
 class PromptGenerator:
     """提示词生成器"""
-    
+
     def __init__(self):
         self.base_system_prompt = """
 "You are 'Alex', a world-class AI programming tutor. Your goal is to help a student master a specific topic by providing personalized, empathetic, and insightful guidance. You must respond in Markdown format.
@@ -30,11 +30,11 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         user_message: str,
         code_content: CodeContent = None,
         task_context: str = None,
-        topic_id: str = None  # TODO: 改成title
+        topic_title: str = None  # 使用topic_title而不是topic_id
     ) -> Tuple[str, List[Dict[str, str]]]:
         """
         创建完整的提示词和消息列表
-        
+
         Args:
             user_state: 用户状态摘要
             retrieved_context: RAG检索的上下文
@@ -42,8 +42,8 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             user_message: 用户当前消息
             code_content: 代码上下文
             task_context: 任务上下文
-            topic_id: 主题ID
-            
+            topic_title: 主题标题
+
         Returns:
             Tuple[str, List[Dict[str, str]]]: (system_prompt, messages)
         """
@@ -52,7 +52,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             user_state=user_state,
             retrieved_context=retrieved_context,
             task_context=task_context,
-            topic_id=topic_id
+            topic_title=topic_title
         )
 
         # 构建消息列表
@@ -69,7 +69,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         user_state: UserStateSummary,
         retrieved_context: List[str],
         task_context: str = None,
-        topic_id: str = None
+        topic_title: str = None
     ) -> str:
         """构建系统提示词"""
         prompt_parts = [self.base_system_prompt]
@@ -85,48 +85,48 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         else:
             # 添加更多用户状态信息
             student_info_parts = ["STUDENT INFO: This is an existing student. Build upon previous knowledge."]
-            
+
             # 添加学习进度信息
             if hasattr(user_state, 'bkt_models') and user_state.bkt_models:
                 mastery_info = []
-                for topic_id, bkt_model in user_state.bkt_models.items():
+                for topic_key, bkt_model in user_state.bkt_models.items():
                     if isinstance(bkt_model, dict) and 'mastery_prob' in bkt_model:
                         mastery_prob = bkt_model['mastery_prob']
                     elif hasattr(bkt_model, 'mastery_prob'):
                         mastery_prob = bkt_model.mastery_prob
                     else:
                         continue
-                    
+
                     mastery_level = "beginner"
                     if mastery_prob > 0.8:
                         mastery_level = "advanced"
                     elif mastery_prob > 0.5:
                         mastery_level = "intermediate"
                     
-                    mastery_info.append(f"{topic_id}: {mastery_level} (mastery: {mastery_prob:.2f})")
+                    mastery_info.append(f"{topic_key}: {mastery_level} (mastery: {mastery_prob:.2f})")
                 
                 if mastery_info:
                     student_info_parts.append(f"LEARNING PROGRESS: Student's mastery levels - {', '.join(mastery_info)}")
-            
+
             # 添加行为计数器信息
             if hasattr(user_state, 'behavior_counters') and user_state.behavior_counters:
                 behavior_info = []
                 counters = user_state.behavior_counters
-                
+
                 # 错误计数
                 if 'error_count' in counters:
                     behavior_info.append(f"errors: {counters['error_count']}")
-                
+
                 # 提交时间戳
                 if 'submission_timestamps' in counters and counters['submission_timestamps']:
                     submission_count = len(counters['submission_timestamps'])
                     behavior_info.append(f"submissions: {submission_count}")
-                
+
                 if behavior_info:
                     student_info_parts.append(f"BEHAVIOR: Student has {', '.join(behavior_info)}")
-            
+
             prompt_parts.append("\n".join(student_info_parts))
-        
+
         # 添加RAG上下文 (在用户状态信息之后，任务上下文之前)
         if retrieved_context:
             formatted_context = "\n\n---\n\n".join(retrieved_context)
@@ -134,17 +134,17 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         else:
             prompt_parts.append("REFERENCE KNOWLEDGE: No relevant knowledge was retrieved from the knowledge base. Answer based on your general knowledge.")
 
-        
+
         # 添加任务上下文
         if task_context:
             prompt_parts.append(f"TASK CONTEXT: The student is currently working on: '{task_context}'. Frame your explanations within this context.")
-        
+
         # 添加主题信息
-        if topic_id:
-            prompt_parts.append(f"TOPIC: The current learning topic is '{topic_id}'. Focus your explanations on this specific topic.")
-        
+        if topic_title:
+            prompt_parts.append(f"TOPIC: The current learning topic is '{topic_title}'. Focus your explanations on this specific topic.")
+
         return "\n\n".join(prompt_parts)
-    
+
     @staticmethod
     def _get_emotion_strategy(emotion: str) -> str:
         """根据情感获取教学策略"""
@@ -154,9 +154,9 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             'EXCITED': "The student seems excited and engaged. Praise their curiosity and capitalize on their momentum. Challenge them with deeper explanations or a more complex problem. Connect the concept to a real-world application or a related advanced topic to broaden their perspective.",
             'NEUTRAL': "The student seems neutral. Maintain a clear, structured teaching approach, but proactively try to spark interest by relating the topic to a surprising fact or a practical application. Frequently check for understanding with specific questions like 'Can you explain that back to me in your own words?' or 'How would you apply this to...?'"
         }
-        
+
         return strategies.get(emotion.upper(), strategies['NEUTRAL'])
-    
+
     def _build_message_history(
         self,
         conversation_history: List[Dict[str, str]],
@@ -165,7 +165,7 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
     ) -> List[Dict[str, str]]:
         """构建消息历史"""
         messages = []
-        
+
         # 添加历史对话
         for msg in conversation_history:
             if isinstance(msg, dict) and 'role' in msg and 'content' in msg:
@@ -173,37 +173,37 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
                     "role": msg['role'],
                     "content": msg['content']
                 })
-        
+
         # 构建当前用户消息
         current_user_content = user_message
-        
+
         # 如果有代码上下文，添加到用户消息中
         if code_context:
             code_section = self._format_code_context(code_context)
             current_user_content = f"{code_section}\n\nMy question is: {user_message}"
-        
+
         # 添加当前用户消息
         if current_user_content.strip():
             messages.append({
                 "role": "user",
                 "content": current_user_content
             })
-        
+
         return messages
-    
+
     def _format_code_context(self, code_context: CodeContent) -> str:
         """格式化代码上下文"""
         parts = []
-        
+
         if code_context.html.strip():
             parts.append(f"HTML Code:\n```html\n{code_context.html}\n```")
-        
+
         if code_context.css.strip():
             parts.append(f"CSS Code:\n```css\n{code_context.css}\n```")
-        
+
         if code_context.js.strip():
             parts.append(f"JavaScript Code:\n```javascript\n{code_context.js}\n```")
-        
+
         if parts:
             return "Here is my current code:\n\n" + "\n\n".join(parts)
         else:

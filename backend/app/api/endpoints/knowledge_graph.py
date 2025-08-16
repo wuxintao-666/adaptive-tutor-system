@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 import json
 import os
-from app.schemas.knowledge_graph import KnowledgeGraphResponse, KnowledgeGraph
+from app.schemas.knowledge_graph import KnowledgeGraph
 from app.core.config import settings
 from app.schemas.response import StandardResponse
 
@@ -12,7 +12,7 @@ GRAPH_FILE_PATH = os.path.join(settings.DATA_DIR, "knowledge_graph.json")
 
 _knowledge_graph_cache = None
 
-@router.get("", response_model=KnowledgeGraphResponse)  # 空路径，因为路由前缀会在api.py中定义
+@router.get("", response_model=StandardResponse[KnowledgeGraph])  # 空路径，因为路由前缀会在api.py中定义
 def get_knowledge_graph():
     global _knowledge_graph_cache
 

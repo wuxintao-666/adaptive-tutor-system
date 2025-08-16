@@ -1,72 +1,84 @@
-import {createLivePreview} from '../modules/live_preview.js'; // 假设该模块已存在
-import {getParticipantId} from '../modules/session.js'; // 导入会话管理模块
+// 导入会话管理模块
+import { getParticipantId } from '../modules/session.js';
 
-// ... 在获取到数据并设置好编辑器后 ...
-// TODO: cxz 需要获取HTML中的DOM
-const editors = {html: htmlEditor, css: cssEditor, js: jsEditor};
-const iframe = document.getElementById('preview-iframe');
-const livePreviewManager = createLivePreview(editors, iframe);
+// 等待DOM加载完成
+document.addEventListener('DOMContentLoaded', function() {
+    // 获取提交按钮
+    const submitButton = document.getElementById('submit-button');
+    
+    // 从URL获取topicId
+    const topicId = new URLSearchParams(window.location.search).get('topic');
+    
+    // 从localStorage获取用户ID
+    const participant_id = getParticipantId();
+    
+    // 添加提交按钮事件监听器
+    if (submitButton) {
+        submitButton.addEventListener('click', async () => {
+            // 禁用按钮并显示加载状态
+            submitButton.disabled = true;
+            submitButton.textContent = '批改中...';
+            
+            try {
+                // 从全局编辑器状态获取代码
+                const submissionData = {
+                    participant_id: participant_id,
+                    topic_id: topicId,
+                    code: {
+                        html: window.editorState?.html || '',
+                        css: window.editorState?.css || '',
+                        js: window.editorState?.js || ''
+                    }
+                };
+                
+                // 调用API提交测试
+                const result = await window.apiClient.post('/submit-test', submissionData);
+                
+                if (result.code === 200) {
+                    const testResult = result.data;
+                    displayTestResult(testResult);
+                    
+                    // 如果通过测试，跳转回知识图谱
+                    if (testResult.passed) {
+                        alert("测试完成！即将跳转回到知识图谱界面");
+                        setTimeout(() => {
+                            window.location.href = '/pages/knowledge_graph.html';
+                        }, 3000);
+                    }
+                } else {
+                    throw new Error(result.message || '提交失败');
+                }
+            } catch (error) {
+                console.error('提交测试时出错:', error);
+                alert('提交测试时出错: ' + (error.message || '未知错误'));
+            } finally {
+                // 恢复按钮状态
+                submitButton.disabled = false;
+                submitButton.textContent = '提交';
 
-// 触发一次初始渲染
-// TODO: cxz 需要实现这个逻辑
-livePreviewManager.triggerUpdate();
-
-const submitButton = document.getElementById('submit-button');
-const topicId = new URLSearchParams(window.location.search).get('topic');
-
-const participant_id = getParticipantId(); // 从localStorage获取用户ID
-
-submitButton.addEventListener('click', async () => {
-    submitButton.disabled = true;
-    submitButton.textContent = '批改中...';
-
-    // 准备请求体
-    const submissionData = {
-        participant_id: participant_id, // 用户ID，从session模块获取
-        topic_id: topicId,
-        code: {
-            html: htmlEditor.getValue(),
-            css: cssEditor.getValue(),
-            js: jsEditor.getValue()
-        }
-    };
-
-
-    try {
-        // 调用封装好的API客户端
-        const result = await window.apiClient.post('/submit-test', submissionData);
-
-        if (result.code === 200) {
-            const testResult = result.data;
-            // TODO: cxz 通过一个美观的模态框或alert显示结果
-            displayTestResult(testResult);
-
-            // TODO: 如果通过，可以自动更新本地进度并跳转
-            if (testResult.passed) {
-                // TODO: cxz (可选) 更新本地状态，然后跳转回知识图谱
-                alert("测试完成！即将跳转回到知识图谱界面")
-
-                setTimeout(() => {
-                    window.location.href = '/knowledge_graph.html';
-                }, 3000);
             }
-        } else {
-            throw new Error(result.message);
-        }
-
-    } catch (error) {
-        // TODO: cxz  ... 错误处理 ...
-    } finally {
-        submitButton.disabled = false;
-        submitButton.textContent = '提交';
+        });
     }
 });
 
+// 显示测试结果
 function displayTestResult(result) {
-    // TODO: cxz 这里到时候需要获取HTML中的对话框的元素
-    let message = result.passed ? '✅ 恭喜！所有测试点都通过了！' : '❌ 很遗憾，部分测试点未通过。';
-    if (result.details && result.details.length > 0) {
-        message += '\n\n详细信息:\n' + result.details.join('\n');
+    const testResultsContent = document.getElementById('test-results-content');
+    
+    if (testResultsContent) {
+        let message = result.passed ? '✅ 恭喜！所有测试点都通过了！' : '❌ 很遗憾，部分测试点未通过。';
+        
+        if (result.details && result.details.length > 0) {
+            message += '\n\n详细信息:\n' + result.details.join('\n');
+        }
+        
+        testResultsContent.innerHTML = `<pre>${message}</pre>`;
+    } else {
+        // 如果找不到测试结果区域，使用alert显示
+        let message = result.passed ? '✅ 恭喜！所有测试点都通过了！' : '❌ 很遗憾，部分测试点未通过。';
+        if (result.details && result.details.length > 0) {
+            message += '\n\n详细信息:\n' + result.details.join('\n');
+        }
+        alert(message);
     }
-    alert(message); // 在实际项目中会用一个漂亮的模态框代替
 }
