@@ -2,6 +2,7 @@
 import { getParticipantId } from '../modules/session.js';
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 import tracker from '../modules/behavior_tracker.js';
+import chatModule from '../modules/chat.js';
 
 // 初始化函数
 async function initializePage() {
@@ -179,10 +180,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const contentId = urlParams.get('topic');
         if (contentId) {
-            // 延迟初始化，确保DOM元素已加载
-            setTimeout(() => {
-                tracker.initChat('send-message', '#user-message', 'test', contentId);
-            }, 1000);
+            // 使用新的聊天模块初始化
+            chatModule.init('test', contentId);
         }
     });
 });
