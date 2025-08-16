@@ -10,18 +10,18 @@
   "checkpoints": [
     {
       "name": "font-weight属性检查",
-      "type": "assert_attribute",
+      "type": "assert_style",
       "selector": "h1",
-      "attribute": "font-weight",
+      "css_property": "font-weight",
       "assertion_type": "equals",
       "value": "bold",
       "feedback": "粗体应该使用font-weight:bold来实现。"
     },
     {
       "name": "font-style属性检查",
-      "type": "assert_attribute",
+      "type": "assert_style",
       "selector": "h1",
-      "attribute": "font-style",
+      "css_property": "font-style",
       "assertion_type": "equals",
       "value": "italic",
       "feedback": "斜体应该使用font-style:italic来实现。"

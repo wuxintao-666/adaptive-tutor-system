@@ -222,9 +222,9 @@ window.setInitialCode = function(startCode) {
         });
 
         // 将编辑器实例存储在editorState中，供其他模块使用
-        editorState.html = editor;
-        editorState.css = editorCSS;
-        editorState.js = editorJS;
+        editorState.htmlEditor = editor;
+        editorState.cssEditor = editorCSS;
+        editorState.jsEditor = editorJS;
 
         // 初始化编辑器标签切换
         initEditorTabs();
@@ -441,16 +441,16 @@ window.setInitialCode = function(startCode) {
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
-                        ${editorState.css}
+                        ${editorState.cssEditor ? editorState.cssEditor.getValue() : editorState.css}
                     </style>
                 </head>
                 <body>
-                    ${editorState.html}
+                    ${editorState.htmlEditor ? editorState.htmlEditor.getValue() : editorState.html}
                     <script>
                         ${consoleOverrideScript}
                         
                         try {
-                            ${editorState.js}
+                            ${editorState.jsEditor ? editorState.jsEditor.getValue() : editorState.js}
                         } catch (error) {
                             console.error('JavaScript错误:', error);
                             const errorDiv = document.createElement('div');
@@ -561,9 +561,9 @@ window.setInitialCode = function(startCode) {
         
         // 准备代码提交数据
         const codeData = {
-            html: editorState.html,
-            css: editorState.css,
-            js: editorState.js,
+            html: editorState.htmlEditor ? editorState.htmlEditor.getValue() : editorState.html,
+            css: editorState.cssEditor ? editorState.cssEditor.getValue() : editorState.css,
+            js: editorState.jsEditor ? editorState.jsEditor.getValue() : editorState.js,
             session_id: editorState.sessionId
         };
         
@@ -705,9 +705,9 @@ window.setInitialCode = function(startCode) {
     function performStaticCheck() {
         try {
             const codeData = {
-                html: editorState.html,
-                css: editorState.css,
-                js: editorState.js,
+                html: editorState.htmlEditor ? editorState.htmlEditor.getValue() : editorState.html,
+                css: editorState.cssEditor ? editorState.cssEditor.getValue() : editorState.css,
+                js: editorState.jsEditor ? editorState.jsEditor.getValue() : editorState.js,
                 session_id: editorState.sessionId
             };
 

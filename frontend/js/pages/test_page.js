@@ -74,14 +74,14 @@ function initializeEditors(startCode) {
     setTimeout(() => {
         if (window.monaco && window.editorState) {
             // 更新已经创建的编辑器实例的内容
-            if (window.editorState.html && window.editorState.html.setValue) {
-                window.editorState.html.setValue(window.editorState.htmlValue || '');
+            if (window.editorState.htmlEditor && window.editorState.htmlEditor.setValue) {
+                window.editorState.htmlEditor.setValue(window.editorState.htmlValue || '');
             }
-            if (window.editorState.css && window.editorState.css.setValue) {
-                window.editorState.css.setValue(window.editorState.cssValue || '');
+            if (window.editorState.cssEditor && window.editorState.cssEditor.setValue) {
+                window.editorState.cssEditor.setValue(window.editorState.cssValue || '');
             }
-            if (window.editorState.js && window.editorState.js.setValue) {
-                window.editorState.js.setValue(window.editorState.jsValue || '');
+            if (window.editorState.jsEditor && window.editorState.jsEditor.setValue) {
+                window.editorState.jsEditor.setValue(window.editorState.jsValue || '');
             }
             
             // 触发预览更新
@@ -101,9 +101,9 @@ function setupChat(topicId) {
     // const buildChatContext = () => {
     //     return {
     //         code_context: {
-    //             html: window.editorState.html?.getValue() || '',
-    //             css: window.editorState.css?.getValue() || '',
-    //             js: window.editorState.js?.getValue() || ''
+    //             html: window.editorState.htmlEditor?.getValue() || '',
+    //             css: window.editorState.cssEditor?.getValue() || '',
+    //             js: window.editorState.jsEditor?.getValue() || ''
     //         },
     //         task_context: `test:${topicId}` // 关键区别
     //     };
@@ -128,9 +128,9 @@ function setupSubmitLogic() {
             const submissionData = {
                 topic_id: topicId,
                 code: {
-                    html: window.editorState.html?.getValue() || '',
-                    css: window.editorState.css?.getValue() || '',
-                    js: window.editorState.js?.getValue() || ''
+                    html: window.editorState.htmlEditor?.getValue() || '',
+                    css: window.editorState.cssEditor?.getValue() || '',
+                    js: window.editorState.jsEditor?.getValue() || ''
                 }
             };
             

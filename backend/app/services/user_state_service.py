@@ -3,7 +3,7 @@ from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.crud.crud_event import event as crud_event
 from app.schemas.behavior import BehaviorEvent
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, UTC, timezone
 
 # 导入BKT模型
 from ..models.bkt import BKTModel
@@ -316,7 +316,16 @@ class UserStateService:
             event_count_since_snapshot = crud_event.get_count_by_participant(db, participant_id=participant_id)
             
         # 检查是否满足快照创建条件
-        time_since_last_snapshot = datetime.now(UTC) - (latest_snapshot.timestamp if latest_snapshot else datetime.min.replace(tzinfo=UTC))
+        # 确保时间戳有时区信息
+        if latest_snapshot:
+            snapshot_timestamp = latest_snapshot.timestamp
+            # 如果时间戳是naive的，将其转换为UTC时区
+            if snapshot_timestamp.tzinfo is None:
+                snapshot_timestamp = snapshot_timestamp.replace(tzinfo=timezone.utc)
+        else:
+            snapshot_timestamp = datetime.min.replace(tzinfo=timezone.utc)
+        
+        time_since_last_snapshot = datetime.now(UTC) - snapshot_timestamp
         
         if (event_count_since_snapshot >= self.SNAPSHOT_EVENT_INTERVAL or 
             time_since_last_snapshot >= self.SNAPSHOT_TIME_INTERVAL):
@@ -358,7 +367,7 @@ class UserStateService:
             snapshots_to_delete = snapshots[:-keep_latest]
             
             for snapshot in snapshots_to_delete:
-                crud_event.remove(db, id=snapshot.id)
+                crud_event.remove(db, obj_id=snapshot.id)
             
             logger.info(f"Cleaned up {len(snapshots_to_delete)} old snapshots for {participant_id}.")
 
