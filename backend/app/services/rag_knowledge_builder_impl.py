@@ -56,7 +56,9 @@ class KnowledgeBaseBuilderImpl(KnowledgeBaseBuilder):
             checkpoints_dir = os.path.join(project_root, "app", "data", "checkpoints")
             embeddings_path = os.path.join(checkpoints_dir, "embeddings.json")
             index_path = os.path.join(checkpoints_dir, "index.ann")
-            self.state.set_paths(embeddings_path, index_path) # 确保checkpoints目录存在
+            self.state.set_paths(embeddings_path, index_path)
+            
+            # 确保checkpoints目录存在
             os.makedirs(checkpoints_dir, exist_ok=True)
         
         # 构建知识库
@@ -137,11 +139,9 @@ class KnowledgeBaseBuilderImpl(KnowledgeBaseBuilder):
         print(f"开始处理 {len(texts)} 个文本块，共 {total_batches} 个批次...")
         
         for i in range(start_index, len(texts), batch_size):
-            # 检查是否收到中断信号
-            if self.state and getattr(self.state, 'interrupted', False):
-                print("收到中断信号，停止处理...")
-                break
-                
+            # 中断信号已经在KeyboardInterrupt异常处理中处理
+            # 这里不再需要额外的检查
+            
             batch_index = i//batch_size + 1
             batch_texts = texts[i:i+batch_size]
             batch_embeddings = []
