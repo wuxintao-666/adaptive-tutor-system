@@ -82,13 +82,13 @@ function initializeEditors(startCode) {
         if (window.monaco && window.editorState) {
             // 更新已经创建的编辑器实例的内容
             if (window.editorState.htmlEditor && window.editorState.htmlEditor.setValue) {
-                window.editorState.htmlEditor.setValue(window.editorState.htmlValue || '');
+                window.editorState.htmlEditor.setValue(window.editorState.html);
             }
             if (window.editorState.cssEditor && window.editorState.cssEditor.setValue) {
-                window.editorState.cssEditor.setValue(window.editorState.cssValue || '');
+                window.editorState.cssEditor.setValue(window.editorState.css);
             }
             if (window.editorState.jsEditor && window.editorState.jsEditor.setValue) {
-                window.editorState.jsEditor.setValue(window.editorState.jsValue || '');
+                window.editorState.jsEditor.setValue(window.editorState.js);
             }
             
             // 触发预览更新
