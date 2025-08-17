@@ -175,25 +175,16 @@
     <script type="module">
         import { AppConfig } from '../js/modules/config.js';
         
-        // 页面加载完成后直接初始化
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('=== 页面加载完成，开始初始化 ===');
+        // 页面加载完成后设置配置
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== 页面加载完成，设置配置 ===');
             
             // 直接设置配置
             AppConfig.backend_port = 8000;
             AppConfig.api_base_url = "/api/v1";
             
             console.log('配置已设置:', AppConfig);
-            
-            // 等待模块加载完成后初始化主应用
-            setTimeout(() => {
-                if (window.AIHTMLPlatform && window.AIHTMLPlatform.initMainApp) {
-                    console.log('开始初始化主应用');
-                    window.AIHTMLPlatform.initMainApp();
-                } else {
-                    console.error('AIHTMLPlatform.initMainApp 不可用');
-                }
-            }, 500);
+            console.log('主应用将自动初始化（在learning_page.js中）');
         });
     </script>
 </body>

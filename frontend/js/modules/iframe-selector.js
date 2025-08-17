@@ -91,6 +91,12 @@ class ElementSelector {
         this.cumulativeElements = options.cumulativeElements || [];  // 累积元素
         
         this.handleMouseMove = (event) => {
+            // 添加鼠标移动调试信息（只在第一次移动时显示）
+            if (!this._mouseMoveLogged) {
+                console.log('[ElementSelector] 鼠标移动事件被捕获，坐标:', event.clientX, event.clientY);
+                this._mouseMoveLogged = true;
+            }
+            
             requestAnimationFrame(() => {
                 if (this.highlightEl && this.highlightEl.style.display !== 'none') {
                     this.highlightEl.style.display = 'none';
@@ -165,10 +171,23 @@ class ElementSelector {
     
     start() {
         if (this.isActive) return;
+        console.log('[ElementSelector] 启动选择器');
         this.isActive = true;
         this.createSelectorElement();
         this.createHighlightElement();
         this.bindEscapeKey();
+        console.log('[ElementSelector] 选择器启动完成，十字光标应该已激活');
+        
+        // 验证选择器元素是否存在
+        setTimeout(() => {
+            const selectorElement = document.querySelector('.sw-selector');
+            if (selectorElement) {
+                console.log('[ElementSelector] 验证成功：选择器元素存在于DOM中');
+                console.log('[ElementSelector] 元素样式:', window.getComputedStyle(selectorElement).cursor);
+            } else {
+                console.error('[ElementSelector] 验证失败：选择器元素不存在于DOM中');
+            }
+        }, 100);
     }
     
     stop() {
@@ -231,24 +250,43 @@ class ElementSelector {
     createSelectorElement() {
         if (this.selectorEl) return;
         
+        console.log('[ElementSelector] 创建选择器元素');
+        
         const selectorEl = document.createElement('div');
         selectorEl.className = 'sw-selector';
-        Object.assign(selectorEl.style, {
-            position: 'fixed',
-            inset: '0',
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.01)',
-            zIndex: String(MAX_Z_INDEX),
-            cursor: 'crosshair',
-            pointerEvents: 'auto'
-        });
+        
+        // 使用更强的样式设置，确保十字光标显示
+        selectorEl.style.cssText = `
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background-color: rgba(0, 0, 0, 0.01) !important;
+            z-index: ${MAX_Z_INDEX} !important;
+            cursor: crosshair !important;
+            pointer-events: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            outline: none !important;
+        `;
         
         selectorEl.addEventListener('mousemove', this.handleMouseMove);
         selectorEl.addEventListener('mouseleave', this.handleMouseLeave);
         selectorEl.addEventListener('click', this.handleMouseClick);
         document.body.appendChild(selectorEl);
         this.selectorEl = selectorEl;
+        
+        console.log('[ElementSelector] 选择器元素已创建并添加到DOM，十字光标样式已设置');
+        console.log('[ElementSelector] 选择器元素样式:', selectorEl.style.cssText);
+        console.log('[ElementSelector] 选择器元素在DOM中的位置:', selectorEl);
+        
+        // 验证元素是否正确添加
+        const foundElement = document.querySelector('.sw-selector');
+        console.log('[ElementSelector] 通过选择器找到的元素:', foundElement);
     }
     
     createHighlightElement() {
@@ -340,49 +378,6 @@ class ElementSelector {
 }
 
 // ==================== API工具函数 ====================
-import { buildBackendUrl } from './config.js';
-
-async function loadAllowedElementsFromAPI(topicId) {
-    try {
-        console.log(`[SelectModules] 开始加载章节 ${topicId} 的可选元素数据`);
-        
-        // 使用导入的buildBackendUrl函数
-        const apiUrl = buildBackendUrl(`/learning-content/${topicId}`);
-        console.log(`[SelectModules] API请求地址: ${apiUrl}`);
-        
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        
-        console.log(`[SelectModules] 后端返回的原始数据:`, result);
-        
-        if (result.code === 200 && result.data) {
-            const data = result.data;
-            console.log(`[SelectModules] 解析后的数据:`, data);
-            
-            const allowedElements = getAllowedElementsFromData(data, topicId);
-            console.log(`[SelectModules] 提取的可选元素:`, allowedElements);
-            
-            return allowedElements;
-        }
-        
-        console.warn(`[SelectModules] API返回码不是200或没有数据:`, result);
-        
-        // 如果没有找到任何数据，返回空对象
-        return {
-            cumulative: [],
-            current: []
-        };
-    } catch (error) {
-        console.error('[SelectModules] Failed to load allowed elements:', error);
-        return {
-            cumulative: [],
-            current: []
-        };
-    }
-}
 
 function getCumulativeAllowedElements(scAll, targetTopicId) {
     const allowedElements = new Set();
@@ -418,7 +413,6 @@ function getCurrentChapterElements(scAll, targetTopicId) {
 function getAllowedElementsFromData(data, topicId) {
     console.log(`[SelectModules] 开始解析数据，目标章节: ${topicId}`);
     console.log(`[SelectModules] 数据中是否包含 sc_all:`, !!data.sc_all);
-    console.log(`[SelectModules] 数据中是否包含 allowedElements:`, !!data.allowedElements);
     
     if (data.sc_all && Array.isArray(data.sc_all)) {
         console.log(`[SelectModules] 找到 sc_all 数组，长度: ${data.sc_all.length}`);
@@ -436,16 +430,7 @@ function getAllowedElementsFromData(data, topicId) {
         };
     }
     
-    // 如果直接包含 allowedElements
-    if (data.allowedElements) {
-        console.log(`[SelectModules] 使用直接包含的 allowedElements:`, data.allowedElements);
-        return {
-            cumulative: data.allowedElements,
-            current: data.allowedElements
-        };
-    }
-    
-    console.warn(`[SelectModules] 未找到有效的元素数据，返回空数组`);
+    console.warn(`[SelectModules] 未找到 sc_all 数组，返回空数组`);
     return {
         cumulative: [],
         current: []
@@ -474,6 +459,8 @@ function initIframeSelector(options = {}) {
         
         switch (message.type) {
             case MESSAGE_TYPES.START:
+                console.log('[initIframeSelector] 接收到START消息:', message);
+                
                 if (selector) {
                     selector.stop();
                 }
@@ -492,7 +479,7 @@ function initIframeSelector(options = {}) {
                     cumulativeElements = allowedElements;
                 }
                 
-                console.log('iframe选择器接收到消息:', {
+                console.log('[initIframeSelector] 解析后的元素列表:', {
                     allowedElements: startMessage.allowedElements,
                     currentElements: currentElements,
                     cumulativeElements: cumulativeElements
@@ -592,9 +579,14 @@ function createSelectorBridge(options) {
                     allowedElements: elementsToSend
                 };
                 
+                // 添加调试信息
+                console.log('[createSelectorBridge] 发送启动消息到iframe:', message);
+                console.log('[createSelectorBridge] iframeWindow:', iframeWindow);
+                
                 // 使用try-catch包装postMessage调用
                 try {
                     iframeWindow.postMessage(message, targetOrigin);
+                    console.log('[createSelectorBridge] postMessage发送成功');
                 } catch (postMessageError) {
                     console.warn('postMessage发送失败:', postMessageError);
                     if (onError) {
@@ -641,7 +633,163 @@ function createSelectorBridge(options) {
     };
 }
 
+// ==================== 选择器控制函数 ====================
+// 启动选择器处理函数
+function handleStartSelector(allowedElements, bridge, showStatus) {
+    if (!bridge) {
+        showStatus('error', '桥接未初始化，请刷新页面重试');
+        return;
+    }
+    
+    // 获取开关状态
+    const cumulativeToggle = document.getElementById('cumulativeToggle');
+    const useCumulative = cumulativeToggle ? cumulativeToggle.checked : false;
+    
+    // 根据开关状态选择元素列表
+    const elementsToUse = useCumulative ? allowedElements.cumulative : allowedElements.current;
+    
+    const startButton = document.getElementById('startSelector');
+    const stopButton = document.getElementById('stopSelector');
+    
+    if (startButton) startButton.style.display = 'none';
+    if (stopButton) stopButton.style.display = 'inline-block';
+    
+    const statusMessage = useCumulative 
+        ? `可选择当前及之前章节的元素 (${elementsToUse.length}个)`
+        : `仅可选择当前章节的元素 (${elementsToUse.length}个)`;
+    
+    showStatus('info', statusMessage);
+    
+    // 添加调试信息
+    console.log('[handleStartSelector] 启动选择器，元素列表:', elementsToUse);
+    console.log('[handleStartSelector] 桥接对象:', bridge);
+    
+    bridge.start([], elementsToUse);
+}
+
+// 停止选择器
+function stopSelector(bridge) {
+    if (bridge) bridge.stop();
+    const startButton = document.getElementById('startSelector');
+    const stopButton = document.getElementById('stopSelector');
+    if (startButton) startButton.style.display = 'inline-block';
+    if (stopButton) stopButton.style.display = 'none';
+}
+
+// 初始化桥接
+function initBridge(createSelectorBridge, handleElementSelected, handleError) {
+    const iframe = document.getElementById('element-selector-iframe');
+    
+    // 检查iframe是否准备就绪
+    if (!iframe || !iframe.contentWindow) {
+        console.warn('iframe未准备就绪，延迟初始化桥接');
+        setTimeout(() => initBridge(createSelectorBridge, handleElementSelected, handleError), 100);
+        return null;
+    }
+    
+    try {
+        const bridge = createSelectorBridge({
+            iframeWindow: iframe.contentWindow,
+            onChosen: handleElementSelected,
+            onError: handleError
+        });
+        
+        // 标记为已初始化
+        if (bridge) {
+            bridge.isInitialized = true;
+        }
+        
+        console.log('选择器桥接已初始化');
+        return bridge;
+    } catch (error) {
+        console.error('初始化桥接失败:', error);
+        // 如果初始化失败，延迟重试
+        setTimeout(() => initBridge(createSelectorBridge, handleElementSelected, handleError), 200);
+        return null;
+    }
+}
+
+// 元素被选中的处理函数
+function handleElementSelected(info, showStatus) {
+    const tabKnowledge = document.getElementById('tab-knowledge');
+    const codePre = document.getElementById('selectedElementCode');
+    const startButton = document.getElementById('startSelector');
+    const stopButton = document.getElementById('stopSelector');
+
+    // 显示状态信息
+    showStatus('success', `已选择 ${info.tagName} 元素`);
+
+    // 显示选中的元素代码
+    if (codePre) {
+        codePre.textContent = info.outerHTML || '';
+    }
+
+    // 切换按钮状态
+    if (startButton) startButton.style.display = 'inline-block';
+    if (stopButton) stopButton.style.display = 'none';
+}
+
+// 累积开关处理函数
+function handleCumulativeToggle(allowedElements, showStatus) {
+    const isChecked = this.checked;
+    const currentCount = allowedElements.current.length;
+    const cumulativeCount = allowedElements.cumulative.length;
+    
+    const statusMessage = isChecked 
+        ? `已开启：可选择当前及之前章节的元素 (${cumulativeCount}个)`
+        : `已关闭：仅可选择当前章节的元素 (${currentCount}个)`;
+    
+    showStatus('info', statusMessage);
+}
+
+// 显示源代码处理函数
+function handleShowSource() {
+    const iframe = document.getElementById('element-selector-iframe');
+    const tabCode = document.getElementById('tab-code');
+    
+    try {
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        const html = doc.documentElement.outerHTML;
+        const codeElement = document.getElementById('selectedElementCode');
+        if (codeElement) codeElement.textContent = html;
+        if (tabCode) tabCode.click();
+    } catch (e) {
+        const codeElement = document.getElementById('selectedElementCode');
+        if (codeElement) codeElement.textContent = '无法获取iframe页面源码';
+    }
+}
+
+// 错误处理
+function handleError(error, showStatus, stopSelector) {
+    console.error('选择器错误:', error);
+    showStatus('error', '发生错误: ' + error.message);
+    stopSelector();
+}
+
 // 导出模块
+export {
+    getElementAtPoint,
+    isElementAtPoint,
+    getElementXPath,
+    getElementInfo,
+    ElementSelector,
+    initIframeSelector,
+    createSelectorBridge,
+    getCumulativeAllowedElements,
+    getCurrentChapterElements,
+    getAllowedElementsFromData,
+    MESSAGE_TYPES,
+    // 新增的选择器控制函数
+    handleStartSelector,
+    stopSelector,
+    initBridge,
+    handleElementSelected,
+    handleCumulativeToggle,
+    handleShowSource,
+    handleError
+};
+
+// 同时保持向后兼容
 window.SelectModules = {
     getElementAtPoint,
     isElementAtPoint,
@@ -650,7 +798,6 @@ window.SelectModules = {
     ElementSelector,
     initIframeSelector,
     createSelectorBridge,
-    loadAllowedElementsFromAPI,
     getCumulativeAllowedElements,
     getCurrentChapterElements,
     getAllowedElementsFromData,
