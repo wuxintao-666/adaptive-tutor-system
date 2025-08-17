@@ -57,9 +57,9 @@ class Settings(BaseSettings):
     LLM_TEMPERATURE: float = 0.7
 
     # Module enable/disable flags
-    ENABLE_RAG_SERVICE: bool = False
+    ENABLE_RAG_SERVICE: bool = True
     ENABLE_SENTIMENT_ANALYSIS: bool = True
-    ENABLE_TRANSLATION_SERVICE: bool = True
+    ENABLE_TRANSLATION_SERVICE: bool = False
 
 # Create a single, globally accessible instance of the settings.
 # This will raise a validation error on startup if required settings are missing.
