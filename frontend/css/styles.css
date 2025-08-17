@@ -69,10 +69,30 @@ body {
 /* 内容容器样式 */
 .content-container {
     display: flex;
+    gap: 10px;
     margin: 10px 0px;
     height: calc(100vh - var(--header-height));
     overflow: hidden;
     width: 100%;
+}
+
+/* 左侧组合列（占 60% 宽） */
+.left-group {
+    display: flex;
+    flex-direction: column;
+    width: 70%;
+    min-width: 400px;
+    gap: 10px;
+    height: 100%;
+}
+
+/* 上排：预览 + 代码（等分） */
+.top-row {
+    display: flex;
+    gap: 10px;
+    height: auto;
+    min-height: 240px;
+    align-items: stretch;
 }
 /* index页面布局样式 */
     .index-container { 
@@ -222,18 +242,59 @@ body {
     }
 
 /* lean页面布局样式 */
-    /* 预览界面面板样式 */
-    .preview-panel {
-        width: 30%;
-        min-width: 300px;
-        overflow-y: auto;
-        margin: 0px 10px;
+    /* 合并的预览和代码展示面板样式 */
+    .preview-code-panel {
+        flex: 1 1 0;
+        display: flex;
         border-radius: 4px;
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+        background: var(--content-background);
+        min-height: 240px;
+    }
+    
+    /* 预览区域样式 */
+    .preview-section {
+        flex: 2 1 0;
+        min-width: 300px;
         display: flex;
         flex-direction: column;
         align-items: stretch;
         box-sizing: border-box;
-        border: 1px solid var(--border-color);
+        background: transparent;
+        border-right: 1px solid var(--border-color);
+    }
+    
+    /* 代码展示区域样式 */
+    .code-section {
+        flex: 1 1 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background: var(--content-background);
+        min-width: 250px;
+    }
+
+    /* 代码展示面板底部区域 */
+    .code-panel-footer {
+        margin-top: auto;
+        padding: 16px 32px;
+        background: var(--content-background);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+    }
+
+    .selector-controls {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        justify-content: flex-end;
+    }
+
+    .selector-controls .btn {
+        flex: 0 0 auto;
+        min-width: 100px;
     }
 
     /* 聊天面板样式 */
@@ -241,30 +302,88 @@ body {
         width: 30%;
         display: flex;
         border-radius: 4px;
-        margin: 0px 10px;
+        margin: 0;
         border: 1px solid var(--border-color);
         flex-direction: column;
         overflow: hidden;
-        flex: 1;
+        /* 确保聊天面板不会覆盖知识点面板 */
+        position: relative;
+        z-index: 5;
     }
     /* 知识区域 */
-    .info-panel {
-        flex: 1;
-        width: 40%;
-        display: flex;
-        border-radius: 4px;
-        margin: 0px 10px;
-        flex-direction: column;
-        box-sizing: border-box;
-        border: 1px solid var(--border-color);
+    /* 知识点展示（下排跨两列，宽度=左+中） */
+.knowledge-panel {
+    height: auto;
+    flex: 1 1 0;
+    min-height: 200px; /* 确保最小高度 */
+    display: flex;
+    border-radius: 4px;
+    margin: 0;
+    flex-direction: column;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    background: var(--content-background);
+    /* 与上排 preview-code-panel 右边界对齐 */
+    align-self: stretch;
+    /* 确保知识点面板始终可见 */
+    position: relative;
+    z-index: 10;
+    /* 确保默认状态下所有等级卡片都可见 */
+}
+
+/* 确保默认状态下所有等级卡片都可见 */
+.knowledge-panel:not(.expanded) .level-card {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.knowledge-panel:not(.expanded) .arrow {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 确保知识点面板在默认状态下可见 */
+.knowledge-panel {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    min-height: 200px !important;
+    background: var(--content-background) !important;
+}
+
+/* 确保知识点面板内容在默认状态下可见 */
+.knowledge-panel .levels-flow {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 确保等级卡片在默认状态下可见 */
+.knowledge-panel .level-card {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+    .ratio-16x9 {
+        position: relative;
+        width: 100%;
+        /* 16:9 高/宽 = 9/16 → 用 padding-top 支撑高度 */
+        padding-top: 56.25%;
+        background: transparent;
         overflow: hidden;
     }
-    #element-selector-iframe {
+
+    .ratio-16x9 > iframe#element-selector-iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         border: none;
-        flex: 1 1 auto;
-        min-height: 0;
+        display: block;
     }
     .info-tabs {
         display: flex;
@@ -295,6 +414,111 @@ body {
         padding: 4px 12px;
         border-radius: 6px;
         border: 1px solid #ccc;
+    }
+
+    /* 等级流展示 */
+    .levels-flow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 0 24px 0;
+    }
+
+    .levels-flow .arrow {
+        font-size: 22px;
+        color: #9aa0a6;
+        flex: 0 0 auto;
+        line-height: 1;
+    }
+
+    .level-card {
+        flex: 1 1 0;
+        background: #fff;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 120px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        z-index: 50; /* 确保卡片在最上层 */
+    }
+
+    .level-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+
+    .level-card.collapsed {
+        min-height: 80px;
+        padding: 12px 16px;
+    }
+
+    .level-card.expanded {
+        min-height: 200px;
+        z-index: 10;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .level-header {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+    }
+
+    .level-content {
+        opacity: 1;
+        max-height: 200px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .level-card.collapsed .level-content {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+        transform: translateY(-10px);
+    }
+
+    .level-card.expanded .level-content {
+        opacity: 1;
+        max-height: 200px;
+        margin-top: 12px;
+        transform: translateY(0);
+    }
+
+    .level-card h3 {
+        margin: 0;
+        font-size: 16px;
+        color: #2c3e50;
+    }
+
+    .click-hint {
+        font-size: 12px;
+        color: var(--primary-color);
+        text-align: center;
+        margin-top: 8px;
+        opacity: 0.8;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .level-card.collapsed .click-hint {
+        opacity: 1;
+    }
+
+    .level-card.expanded .click-hint {
+        opacity: 0;
+    }
+
+    .start-button {
+        align-self: flex-end;
+        margin: 12px 24px 16px auto;
     }
 
     /* 卡片式知识点展示区样式 */
@@ -360,11 +584,35 @@ body {
         font-weight: 500;
     }
     @media (max-width: 1100px) {
-        .preview-panel, .info-panel { min-width: 200px; width: 28vw; }
+        .preview-code-panel, .knowledge-panel { min-width: 200px; }
+        .left-group { min-width: 0; width: 60%; }
+        .preview-section { min-width: 200px; }
+        .code-section { min-width: 200px; }
     }
     @media (max-width: 900px) {
         .main-container { flex-direction: column; }
-        .preview-panel, .info-panel { width: 100vw; min-width: 0; }
+        .preview-code-panel, .knowledge-panel { min-width: 0; }
+        .content-container { flex-direction: column; height: auto; }
+        .left-group { width: 100%; }
+        .chat-panel { width: 100%; height: auto; }
+        .top-row { height: auto; }
+        .preview-code-panel { 
+            flex-direction: column; 
+            min-height: 400px;
+        }
+        .preview-section { 
+            min-height: 200px;
+            border-right: none;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .code-section { 
+            min-height: 200px;
+        }
+        .knowledge-panel { 
+            height: auto; 
+            min-height: 200px; /* 确保小屏幕下也有最小高度 */
+            z-index: 10; /* 确保层级正确 */
+        }
     }
 
 
@@ -916,7 +1164,6 @@ body {
 }
 
 .ai-chat-input {
-    display: flex;
     padding: 10px 15px;
     background-color: white;
     border-top: 1px solid var(--border-color);
@@ -931,7 +1178,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     resize: none;
-    height: 40px;
+    height: 50px;
     font-family: inherit;
     margin-right: 10px;
 }
@@ -1013,21 +1260,19 @@ body {
 }
 
 .btn-select {
-    padding: 0.3rem 0.6rem;
+    padding: 0.5rem 1rem;
     margin-right: 10px;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
+    background-color: var(--primary-color);
+    color: white;
 }
 .btn-select:hover { 
-    font-size: 0.9rem;
-    margin-right: 10px;
-    color: #ffffff;
-    background: #2196f3;
+    background-color: var(--primary-hover);
 }
 .btn-stop-selector {
     background: #e74c3c;
     border-color: #e74c3c;
     color: #fff;
-    display: none;
 }
 
 .info-tab {
@@ -1105,3 +1350,296 @@ body {
     }
 }
 
+/* 选择器开关样式 */
+.selector-toggle-container {
+    margin: 0;
+    padding-top: 0;
+    border-top: none;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    position: relative;
+}
+
+.toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.85em;
+}
+
+.toggle-label input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+.selector-toggle-container .toggle-description {
+    font-size: 0.75em;
+    color: #666;
+    margin-top: 1px;
+    line-height: 1.3;
+    position: fixed;
+    top: auto;
+    bottom: auto;
+    right: auto;
+    left: auto;
+    background: #333;
+    color: white !important;
+    padding: 8px 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    z-index: 9999 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    transform: translateY(-100%);
+}
+
+.toggle-description::before {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 10px;
+    border: 5px solid transparent;
+    border-top-color: #333;
+}
+
+.selector-toggle-container .toggle-label:hover + .toggle-description {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+/* 聊天输入区域布局 */
+.chat-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.chat-input-main {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.chat-input-main textarea {
+    flex: 1;
+    margin-right: 0;
+}
+
+/* 代码展示区域的样式 */
+#selectedElementCode {
+    background: #f7f7f7;
+    border-radius: 6px;
+    padding: 10px;
+    min-height: 60px;
+    border: 1px solid #e0e0e0;
+    font-size: 0.9rem; /* 确保代码字体比标题小 */
+    font-family: 'Courier New', monospace;
+    line-height: 1.4;
+    color: #333;
+}
+
+/* 选择器相关样式 */
+.sw-selector {
+    cursor: crosshair !important;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.01) !important;
+    z-index: 2147483646 !important;
+    pointer-events: auto !important;
+}
+
+/* 确保所有子元素也继承十字光标 */
+.sw-selector * {
+    cursor: crosshair !important;
+}
+
+/* 强制设置body和html的光标 */
+body.sw-selector-active,
+html.sw-selector-active {
+    cursor: crosshair !important;
+}
+
+/* 确保iframe内部的选择器也能正常工作 */
+iframe .sw-selector {
+    cursor: crosshair !important;
+}
+
+iframe .sw-selector * {
+    cursor: crosshair !important;
+}
+
+/* 只在选择器激活时强制十字光标 */
+body.sw-selector-active *,
+html.sw-selector-active * {
+    cursor: crosshair !important;
+}
+
+/* 但保持按钮等交互元素的正常光标 */
+body.sw-selector-active button, 
+body.sw-selector-active input, 
+body.sw-selector-active select, 
+body.sw-selector-active textarea, 
+body.sw-selector-active a, 
+body.sw-selector-active .clickable,
+html.sw-selector-active button, 
+html.sw-selector-active input, 
+html.sw-selector-active select, 
+html.sw-selector-active textarea, 
+html.sw-selector-active a, 
+html.sw-selector-active .clickable {
+    cursor: pointer !important;
+}
+
+.sw-highlight {
+    position: fixed;
+    display: none;
+    pointer-events: none;
+    border: 2px solid #0079d3;
+    background-color: rgba(0, 121, 211, 0.1);
+    z-index: 2147483645;
+}
+
+/* 代码面板样式 */
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.code-header h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.element-info {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.element-info span {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.tag-name {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.element-id {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.element-class {
+    background-color: #e8f5e8;
+    color: #388e3c;
+}
+
+.code-block {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 0;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #333;
+}
+
+.code-block code {
+    background: none;
+    padding: 0;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+}
+
+/* 代码展示区域标题样式 */
+#code-content h2 {
+    font-size: 1.1rem; /* 确保标题字体比代码大 */
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-color);
+}
+
+/* 代码示例样式 */
+.code-example {
+    background: #f9f9f9;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+/* 状态区域样式 */
+.status-container {
+    padding: 0 32px 12px 32px;
+}
+
+#statusBadge {
+    display: none;
+    font-size: 13px;
+    margin-right: 12px;
+}
+
+/* 展开时的特殊样式 */
+.knowledge-panel.expanded {
+    position: relative;
+    z-index: 100;
+    /* 确保展开时知识点面板仍然可见 */
+    min-height: 300px;
+    background: var(--content-background);
+}
+
+.knowledge-panel.expanded .info-content {
+    padding: 30px;
+    min-height: 200px;
+}
+
+.knowledge-panel.expanded .levels-flow {
+    flex-direction: column;
+    gap: 20px;
+}
+
+.knowledge-panel.expanded .level-card {
+    width: 100%;
+    max-width: none;
+}
+
+/* 隐藏其他等级卡片 - 实现单卡片展开模式 */
+.knowledge-panel.expanded .level-card:not(.expanded) {
+    display: none !important;
+}
+
+.knowledge-panel.expanded .arrow {
+    display: none;
+    transform: rotate(90deg);
+}
+
+/* 展开时调整内容区域 */
+.knowledge-panel.expanded .level-content {
+    max-height: none;
+    margin-top: 20px;
+}
+
+.knowledge-panel.expanded .level-card.expanded {
+    min-height: 300px;
+}

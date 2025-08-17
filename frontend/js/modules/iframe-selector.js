@@ -1,7 +1,12 @@
-/**
- * iframe内页面选择器 - 专门用于iframe内的元素选择功能
- * 参考 hello-HTML 项目的实现
- */
+
+// ==================== 常量定义 ====================
+const MAX_Z_INDEX = 2147483646;
+
+const MESSAGE_TYPES = {
+    START: 'SW_SELECT_START',
+    STOP: 'SW_SELECT_STOP',
+    CHOSEN: 'SW_SELECT_CHOSEN',
+};
 
 // ==================== 工具函数 ====================
 function getElementAtPoint(x, y) {
@@ -70,7 +75,7 @@ function getElementInfo(element) {
         className: element.className || '',
         classList: Array.from(element.classList || []),
         textContent: element.textContent?.trim().substring(0, 100) || '',
-        outerHTML: element.outerHTML?.substring(0, 500) || '',
+        outerHTML: element.outerHTML || '',
         selector: getElementXPath(element),
         bounds: { x: bbox.left, y: bbox.top, width: bbox.width, height: bbox.height },
         styles: {
@@ -82,111 +87,159 @@ function getElementInfo(element) {
     };
 }
 
-// ==================== 元素选择器 ====================
-const MAX_Z_INDEX = 2147483646;
-
+// ==================== 核心选择器类 ====================
 class ElementSelector {
     constructor(options = {}) {
         this.selectorEl = null;
         this.highlightEl = null;
         this.lastHoveredElement = null;
         this.isActive = false;
-        
-        this.handleMouseMove = (event) => {
-            requestAnimationFrame(() => {
-                if (this.highlightEl && this.highlightEl.style.display !== 'none') {
-                    this.highlightEl.style.display = 'none';
-                }
-                
-                const refElement = getElementAtPoint(event.clientX, event.clientY);
-                if (!refElement || this.shouldIgnoreElement(refElement)) {
-                    this.hideHighlight();
-                    return;
-                }
-                
-                if (this.lastHoveredElement === refElement) {
-                    if (this.highlightEl && this.highlightEl.style.display === 'none') {
-                        this.updateHighlight(refElement);
-                    }
-                    return;
-                }
-                
-                if (this.lastHoveredElement !== refElement) {
-                    if (this.lastHoveredElement && this.options.onElementUnhovered) {
-                        this.options.onElementUnhovered();
-                    }
-                    this.lastHoveredElement = refElement;
-                    this.updateHighlight(refElement);
-                    if (this.options.onElementHovered) {
-                        this.options.onElementHovered(refElement);
-                    }
-                }
-            });
-        };
-        
-        this.handleMouseLeave = () => {
-            this.hideHighlight();
-            this.lastHoveredElement = null;
-            if (this.options.onElementUnhovered) {
-                this.options.onElementUnhovered();
-            }
-        };
-        
-        this.handleMouseClick = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (!this.lastHoveredElement) return;
-            if (this.shouldIgnoreElement(this.lastHoveredElement)) return;
-            
-            const elementInfo = getElementInfo(this.lastHoveredElement);
-            if (this.options.onElementSelected) {
-                this.options.onElementSelected(this.lastHoveredElement, elementInfo);
-            }
-            this.stop();
-        };
-        
-        this.handleKeyDown = (event) => {
-            if (event.key === 'Escape') {
-                this.stop();
-            }
-        };
+        this.currentElements = options.currentElements || [];
+        this.cumulativeElements = options.cumulativeElements || [];
         
         this.options = {
             ignoreSelectors: ['.sw-selector', '.sw-highlight'],
             allowedTags: [],
             ...options
         };
+        
+        // 绑定事件处理器
+        this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleMouseLeave = this.handleMouseLeave.bind(this);
+        this.handleMouseClick = this.handleMouseClick.bind(this);
+        this.handleKeyDown = this.handleKeyDown.bind(this);
     }
     
+    // ==================== 生命周期方法 ====================
     start() {
         if (this.isActive) return;
+        console.log('[ElementSelector] 启动选择器...');
         this.isActive = true;
         this.createSelectorElement();
         this.createHighlightElement();
         this.bindEscapeKey();
+        
+        // 给body添加选择器激活类
+        document.body.classList.add('sw-selector-active');
+        document.documentElement.classList.add('sw-selector-active');
+        
+        console.log('[ElementSelector] 选择器启动完成，isActive:', this.isActive);
     }
     
     stop() {
         if (!this.isActive) return;
+        console.log('[ElementSelector] 停止选择器...');
         this.isActive = false;
         this.removeSelectorElement();
         this.removeHighlightElement();
         this.unbindEscapeKey();
+        
+        // 移除选择器激活类
+        document.body.classList.remove('sw-selector-active');
+        document.documentElement.classList.remove('sw-selector-active');
+        
         if (this.options.onClose) {
             this.options.onClose();
         }
+        console.log('[ElementSelector] 选择器已停止');
     }
     
+    // ==================== 事件处理方法 ====================
+    handleMouseMove(event) {
+        requestAnimationFrame(() => {
+            if (this.highlightEl && this.highlightEl.style.display !== 'none') {
+                this.highlightEl.style.display = 'none';
+            }
+            
+            const refElement = getElementAtPoint(event.clientX, event.clientY);
+            if (!refElement) {
+                this.hideHighlight();
+                return;
+            }
+            
+            if (this.shouldIgnoreElement(refElement)) {
+                this.hideHighlight();
+                return;
+            }
+            
+            if (this.lastHoveredElement === refElement) {
+                if (this.highlightEl && this.highlightEl.style.display === 'none') {
+                    this.updateHighlight(refElement);
+                }
+                return;
+            }
+            
+            if (this.lastHoveredElement !== refElement) {
+                if (this.lastHoveredElement && this.options.onElementUnhovered) {
+                    this.options.onElementUnhovered();
+                }
+                this.lastHoveredElement = refElement;
+                this.updateHighlight(refElement);
+                if (this.options.onElementHovered) {
+                    this.options.onElementHovered(refElement);
+                }
+            }
+        });
+    }
+    
+    handleMouseLeave() {
+        this.hideHighlight();
+        this.lastHoveredElement = null;
+        if (this.options.onElementUnhovered) {
+            this.options.onElementUnhovered();
+        }
+    }
+    
+    handleMouseClick(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!this.lastHoveredElement) return;
+        if (this.shouldIgnoreElement(this.lastHoveredElement)) return;
+        
+        const elementInfo = getElementInfo(this.lastHoveredElement);
+        if (this.options.onElementSelected) {
+            this.options.onElementSelected(this.lastHoveredElement, elementInfo);
+        }
+        this.stop();
+    }
+    
+    handleKeyDown(event) {
+        if (event.key === 'Escape') {
+            this.stop();
+        }
+    }
+    
+    // ==================== 元素过滤方法 ====================
     shouldIgnoreElement(element) {
         if (!element) return true;
         
+        const tag = element.tagName.toLowerCase();
+        
+        // 检查是否在允许的元素列表中
+        if (this.options.allowedElements && this.options.allowedElements.length > 0) {
+            const isAllowed = this.options.allowedElements.some(allowed => {
+                if (typeof allowed === 'string') {
+                    return tag === allowed.toLowerCase();
+                }
+                if (allowed.tagName) {
+                    return tag === allowed.tagName.toLowerCase();
+                }
+                return false;
+            });
+            
+            if (!isAllowed) {
+                return true;
+            }
+        }
+        
+        // 检查允许的标签
         if (this.options.allowedTags && this.options.allowedTags.length > 0) {
-            const tag = element.tagName.toLowerCase();
             if (!this.options.allowedTags.includes(tag)) {
                 return true;
             }
         }
         
+        // 检查忽略的选择器
         const ignoreSelectors = this.options.ignoreSelectors || [];
         return ignoreSelectors.some(selector => {
             if (selector.startsWith('.')) {
@@ -199,11 +252,14 @@ class ElementSelector {
         });
     }
     
+    // ==================== DOM元素管理 ====================
     createSelectorElement() {
         if (this.selectorEl) return;
         
         const selectorEl = document.createElement('div');
         selectorEl.className = 'sw-selector';
+        
+        // 直接设置样式，不使用动态CSS
         Object.assign(selectorEl.style, {
             position: 'fixed',
             inset: '0',
@@ -220,6 +276,8 @@ class ElementSelector {
         selectorEl.addEventListener('click', this.handleMouseClick);
         document.body.appendChild(selectorEl);
         this.selectorEl = selectorEl;
+        
+        console.log('[ElementSelector] 选择器元素已创建并添加到DOM');
     }
     
     createHighlightElement() {
@@ -257,6 +315,7 @@ class ElementSelector {
         this.lastHoveredElement = null;
     }
     
+    // ==================== 键盘事件管理 ====================
     bindEscapeKey() {
         document.addEventListener('keydown', this.handleKeyDown);
     }
@@ -265,16 +324,43 @@ class ElementSelector {
         document.removeEventListener('keydown', this.handleKeyDown);
     }
     
+    // ==================== 高亮显示管理 ====================
     updateHighlight(element) {
         if (!this.highlightEl || !element) return;
         
         const rect = element.getBoundingClientRect();
+        const tagName = element.tagName.toLowerCase();
+        
+        // 判断元素类型并设置相应的颜色
+        let borderColor, backgroundColor;
+        
+        // 检查是否是当前章节的元素
+        const isCurrentElement = this.currentElements.includes(tagName);
+        // 检查是否是之前章节的元素
+        const isPreviousElement = this.cumulativeElements.includes(tagName) && !isCurrentElement;
+        
+        if (isCurrentElement) {
+            // 当前章节元素 - 蓝色
+            borderColor = '#0079d3';
+            backgroundColor = 'rgba(0, 121, 211, 0.1)';
+        } else if (isPreviousElement) {
+            // 之前章节元素 - 红色
+            borderColor = '#dc3545';
+            backgroundColor = 'rgba(220, 53, 69, 0.1)';
+        } else {
+            // 默认颜色
+            borderColor = '#0079d3';
+            backgroundColor = 'rgba(0, 121, 211, 0.1)';
+        }
+        
         Object.assign(this.highlightEl.style, {
             display: 'block',
             left: `${rect.left}px`,
             top: `${rect.top}px`,
             width: `${rect.width}px`,
-            height: `${rect.height}px`
+            height: `${rect.height}px`,
+            border: `2px solid ${borderColor}`,
+            backgroundColor: backgroundColor
         });
     }
     
@@ -284,13 +370,7 @@ class ElementSelector {
     }
 }
 
-// ==================== iframe桥接 ====================
-const MESSAGE_TYPES = {
-    START: 'SW_SELECT_START',
-    STOP: 'SW_SELECT_STOP',
-    CHOSEN: 'SW_SELECT_CHOSEN',
-};
-
+// ==================== iframe通信桥接 ====================
 function initIframeSelector(options = {}) {
     const { allowed = true, allowedOrigins = ['*'], allowedTags = [] } = options;
     if (!allowed) return () => {};
@@ -306,27 +386,60 @@ function initIframeSelector(options = {}) {
         
         switch (message.type) {
             case MESSAGE_TYPES.START:
+                console.log('[initIframeSelector] 接收到START消息:', message);
+                
                 if (selector) {
                     selector.stop();
                 }
                 const startMessage = message;
+                const allowedElements = startMessage.allowedElements || [];
+                let currentElements = [];
+                let cumulativeElements = [];
+                
+                if (typeof allowedElements === 'object' && !Array.isArray(allowedElements)) {
+                    currentElements = allowedElements.current || [];
+                    cumulativeElements = allowedElements.cumulative || [];
+                } else {
+                    cumulativeElements = allowedElements;
+                }
+                
+                console.log('[initIframeSelector] 解析后的元素列表:', {
+                    allowedElements: startMessage.allowedElements,
+                    currentElements: currentElements,
+                    cumulativeElements: cumulativeElements
+                });
+                
+                // 创建ElementSelector实例
                 selector = new ElementSelector({
                     ignoreSelectors: startMessage.ignore,
                     allowedTags: startMessage.allowedTags || allowedTags,
+                    allowedElements: cumulativeElements,
+                    currentElements: currentElements,
+                    cumulativeElements: cumulativeElements,
                     onElementSelected: (element, info) => {
-                        window.parent.postMessage({
-                            type: MESSAGE_TYPES.CHOSEN,
-                            payload: info
-                        }, '*');
+                        try {
+                            if (window.parent && window.parent.postMessage) {
+                                window.parent.postMessage({
+                                    type: MESSAGE_TYPES.CHOSEN,
+                                    payload: info
+                                }, '*');
+                            } else {
+                                console.warn('无法发送postMessage到父窗口');
+                            }
+                        } catch (error) {
+                            console.error('发送postMessage失败:', error);
+                        }
                     }
                 });
                 selector.start();
+                console.log('[initIframeSelector] 选择器启动，允许元素:', cumulativeElements);
                 break;
             case MESSAGE_TYPES.STOP:
                 if (selector) {
                     selector.stop();
                     selector = null;
                 }
+                console.log('[initIframeSelector] 选择器停止');
                 break;
         }
     };
@@ -341,11 +454,226 @@ function initIframeSelector(options = {}) {
     };
 }
 
-// 自动初始化
+function createSelectorBridge(options) {
+    const { iframeWindow, targetOrigin = '*', ignoreSelectors = ['.sw-selector', '.sw-highlight'], onChosen, onError } = options;
+    
+    if (!iframeWindow) throw new Error('Invalid iframe window');
+    
+    const handleMessage = (event) => {
+        let message;
+        try {
+            message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        } catch (e) { return; }
+        
+        if (message.type === MESSAGE_TYPES.CHOSEN && onChosen) {
+            const chosenMessage = message;
+            onChosen(chosenMessage.payload);
+        }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    
+    return {
+        start(allowedTags = [], allowedElements = []) {
+            try {
+                if (!iframeWindow || !iframeWindow.postMessage) {
+                    console.warn('iframe window未准备就绪，无法发送消息');
+                    if (onError) {
+                        onError(new Error('iframe window未准备就绪'));
+                    }
+                    return;
+                }
+                
+                let elementsToSend = allowedElements;
+                
+                if (typeof allowedElements === 'object' && !Array.isArray(allowedElements)) {
+                    elementsToSend = allowedElements;
+                } else {
+                    elementsToSend = {
+                        current: allowedElements,
+                        cumulative: allowedElements
+                    };
+                }
+                
+                const message = {
+                    type: MESSAGE_TYPES.START,
+                    ignore: ignoreSelectors,
+                    allowedTags,
+                    allowedElements: elementsToSend
+                };
+                
+                try {
+                    iframeWindow.postMessage(message, targetOrigin);
+                } catch (postMessageError) {
+                    console.warn('postMessage发送失败:', postMessageError);
+                    if (onError) {
+                        onError(postMessageError instanceof Error ? postMessageError : new Error(String(postMessageError)));
+                    }
+                }
+            } catch (error) {
+                console.error('启动选择器失败:', error);
+                if (onError) {
+                    onError(error instanceof Error ? error : new Error(String(error)));
+                }
+            }
+        },
+        
+        stop() {
+            try {
+                if (!iframeWindow || !iframeWindow.postMessage) {
+                    console.warn('iframe window未准备就绪，无法发送停止消息');
+                    return;
+                }
+                
+                const message = {
+                    type: MESSAGE_TYPES.STOP
+                };
+                
+                try {
+                    iframeWindow.postMessage(message, targetOrigin);
+                } catch (postMessageError) {
+                    console.warn('postMessage停止消息发送失败:', postMessageError);
+                }
+            } catch (error) {
+                console.error('停止选择器失败:', error);
+                if (onError) {
+                    onError(error instanceof Error ? error : new Error(String(error)));
+                }
+            }
+        },
+        
+        destroy() {
+            window.removeEventListener('message', handleMessage);
+        }
+    };
+}
+
+// ==================== 公共API函数 ====================
+function handleStartSelector(allowedElements, bridge, showStatus) {
+    if (!bridge) {
+        showStatus('error', '选择器桥接未初始化');
+        return;
+    }
+    
+    try {
+        console.log('启动选择器，允许的元素:', allowedElements);
+        bridge.start([], allowedElements);
+        // 不再显示选择器启动状态信息
+        // showStatus('success', '选择器已启动，请点击要选择的元素');
+    } catch (error) {
+        console.error('启动选择器失败:', error);
+        showStatus('error', '启动选择器失败: ' + error.message);
+    }
+}
+
+function stopSelector(bridge) {
+    if (bridge) {
+        bridge.stop();
+        console.log('选择器已停止');
+    }
+}
+
+function initBridge(createSelectorBridge, onElementSelected, onError) {
+    const iframe = document.getElementById('element-selector-iframe');
+    if (!iframe || !iframe.contentWindow) {
+        console.error('iframe元素未找到或未加载');
+        return null;
+    }
+    
+    try {
+        const bridge = createSelectorBridge({
+            iframeWindow: iframe.contentWindow,
+            onChosen: onElementSelected,
+            onError: onError
+        });
+        
+        console.log('选择器桥接初始化成功');
+        return bridge;
+    } catch (error) {
+        console.error('初始化选择器桥接失败:', error);
+        if (onError) {
+            onError(error);
+        }
+        return null;
+    }
+}
+
+function handleCumulativeToggle(allowedElements, showStatus) {
+    const cumulativeToggle = document.getElementById('cumulativeToggle');
+    if (cumulativeToggle) {
+        const isCumulative = cumulativeToggle.checked;
+        console.log('累积模式切换:', isCumulative);
+        
+        // 不再显示累积模式切换状态信息
+        // if (isCumulative) {
+        //     showStatus('info', '已启用累积模式，可选择之前章节的元素');
+        // } else {
+        //     showStatus('info', '已禁用累积模式，只能选择当前章节的元素');
+        // }
+    }
+}
+
+function handleShowSource() {
+    const iframe = document.getElementById('element-selector-iframe');
+    if (iframe && iframe.contentDocument) {
+        const sourceCode = iframe.contentDocument.documentElement.outerHTML;
+        console.log('页面源代码:', sourceCode);
+        alert('源代码已输出到控制台，请按F12查看');
+    } else {
+        console.warn('无法获取iframe内容');
+    }
+}
+
+function handleError(error, showStatus, onStop) {
+    console.error('选择器错误:', error);
+    showStatus('error', '选择器错误: ' + error.message);
+    
+    if (onStop) {
+        onStop();
+    }
+}
+
+// ==================== 模块导出 ====================
+export {
+    getElementAtPoint,
+    isElementAtPoint,
+    getElementXPath,
+    getElementInfo,
+    ElementSelector,
+    initIframeSelector,
+    createSelectorBridge,
+    handleStartSelector,
+    stopSelector,
+    initBridge,
+    handleCumulativeToggle,
+    handleShowSource,
+    handleError,
+    MESSAGE_TYPES
+};
+
+// ==================== 向后兼容性 ====================
+window.SelectModules = {
+    getElementAtPoint,
+    isElementAtPoint,
+    getElementXPath,
+    getElementInfo,
+    ElementSelector,
+    initIframeSelector,
+    createSelectorBridge,
+    handleStartSelector,
+    stopSelector,
+    initBridge,
+    handleCumulativeToggle,
+    handleShowSource,
+    handleError,
+    MESSAGE_TYPES
+};
+
+// ==================== 自动初始化 ====================
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         initIframeSelector();
     });
 } else {
     initIframeSelector();
-} 
+}
