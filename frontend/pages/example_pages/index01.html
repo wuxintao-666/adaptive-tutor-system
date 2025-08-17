@@ -222,44 +222,41 @@
     <p>© 2025 猫咪前端示例页面 - 教学用途</p>
   </footer>
 
-  <!-- 加载配置模块 -->
-  <script type="module" src="../../js/modules/config.js"></script>
-  <!-- 加载选择器模块 -->
-  <script type="module" src="../../js/modules/iframe-selector.js"></script>
-  
-  <script>
-    
-    function searchCat() {
-        const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
-        const breed = document.getElementById("searchSelect").value;
-        const cards = document.querySelectorAll("#cardContainer .card");
+     <!-- 加载选择器模块 -->
+   <script type="module" src="../../js/modules/iframe-selector.js"></script>
+   
+   <script>
+     function searchCat() {
+         const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+         const breed = document.getElementById("searchSelect").value;
+         const cards = document.querySelectorAll("#cardContainer .card");
 
-        cards.forEach(card => {
-            const name = card.getAttribute("data-name").toLowerCase();
-            const cardBreed = card.getAttribute("data-breed");
+         cards.forEach(card => {
+             const name = card.getAttribute("data-name").toLowerCase();
+             const cardBreed = card.getAttribute("data-breed");
 
-            const matchesKeyword = keyword === "" || name.includes(keyword);
-            const matchesBreed = breed === "选择品种" || cardBreed === breed;
+             const matchesKeyword = keyword === "" || name.includes(keyword);
+             const matchesBreed = breed === "选择品种" || cardBreed === breed;
 
-            if (matchesKeyword && matchesBreed) {
-                card.style.display = "";
-            } else {
-                card.style.display = "none";
-            }
-        });
-    }
+             if (matchesKeyword && matchesBreed) {
+                 card.style.display = "";
+             } else {
+                 card.style.display = "none";
+             }
+         });
+     }
 
-    function handleForm(event) {
-        event.preventDefault();
-        const likes = Array.from(document.querySelectorAll('input[name="likes"]:checked')).map(el => el.value);
-        const gender = document.querySelector('input[name="gender"]:checked')?.value || '未选择';
-        alert("猫咪偏好：" + likes.join(", ") + "\n性别：" + gender);
-    }
+     function handleForm(event) {
+         event.preventDefault();
+         const likes = Array.from(document.querySelectorAll('input[name="likes"]:checked')).map(el => el.value);
+         const gender = document.querySelector('input[name="gender"]:checked')?.value || '未选择';
+         alert("猫咪偏好：" + likes.join(", ") + "\n性别：" + gender);
+     }
 
-    // 页面加载完成后记录日志
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('示例页面加载完成，元素选择器已准备就绪');
-    });
-  </script>
+     // 页面加载完成后记录日志
+     document.addEventListener('DOMContentLoaded', () => {
+         console.log('示例页面加载完成，元素选择器已准备就绪');
+     });
+   </script>
 </body>
 </html>

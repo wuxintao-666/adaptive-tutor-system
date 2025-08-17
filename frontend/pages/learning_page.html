@@ -45,7 +45,7 @@
                   <div class="code-panel-footer">
                       <div class="selector-controls">
                           <button id="startSelector" class="btn btn-select">选取元素</button>
-                          <button id="stopSelector" class="btn btn-select btn-stop-selector">停止选择</button>
+                          <button id="stopSelector" class="btn btn-select btn-stop-selector" style="display: none;">停止选择</button>
                       </div>
                       <!-- 选择范围开关 -->
                       <div class="selector-toggle-container">
@@ -160,32 +160,7 @@
         </div>
     </div>
 
-    <!-- 引入配置模块 -->
-    <script type="module" src="../js/modules/config.js"></script>
-    <!-- 引入行为追踪模块（已注释） -->
-    <!-- <script type="module" src="../js/modules/behavior_tracker.js"></script> -->
-    <!-- 引入选择模块 -->
-    <script type="module" src="../js/modules/iframe-selector.js"></script>
-    <!-- 引入文档模块 -->
-    <script type="module" src="../js/modules/docs_module.js"></script>
-    <!-- 引入learning_page.js -->
+    <!-- 引入learning_page.js（已包含所有必要功能） -->
     <script type="module" src="../js/pages/learning_page.js"></script>
-    
-    <!-- 页面初始化脚本 -->
-    <script type="module">
-        import { AppConfig } from '../js/modules/config.js';
-        
-        // 页面加载完成后设置配置
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('=== 页面加载完成，设置配置 ===');
-            
-            // 直接设置配置
-            AppConfig.backend_port = 8000;
-            AppConfig.api_base_url = "/api/v1";
-            
-            console.log('配置已设置:', AppConfig);
-            console.log('主应用将自动初始化（在learning_page.js中）');
-        });
-    </script>
 </body>
 </html>

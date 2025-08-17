@@ -218,10 +218,77 @@
 
   <!-- 加载配置模块 -->
   <script type="module" src="../../js/modules/config.js"></script>
-  <!-- 加载选择器模块 -->
-  <script type="module" src="../../js/modules/iframe-selector.js"></script>
   
   <script>
+    // ==================== iframe选择器初始化 ====================
+    const MESSAGE_TYPES = {
+        START: 'SW_SELECT_START',
+        STOP: 'SW_SELECT_STOP',
+        CHOSEN: 'SW_SELECT_CHOSEN',
+    };
+
+    function initIframeSelector(options = {}) {
+        const { allowed = true, allowedOrigins = ['*'], allowedTags = [] } = options;
+        if (!allowed) return () => {};
+        
+        let selector = null;
+        const handleMessage = (event) => {
+            if (allowedOrigins[0] !== '*' && !allowedOrigins.includes(event.origin)) return;
+            
+            let message;
+            try {
+                message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+            } catch (e) { return; }
+            
+            switch (message.type) {
+                case MESSAGE_TYPES.START:
+                    console.log('[initIframeSelector] 接收到START消息:', message);
+                    
+                    if (selector) {
+                        selector.stop();
+                    }
+                    const startMessage = message;
+                    const allowedElements = startMessage.allowedElements || [];
+                    let currentElements = [];
+                    let cumulativeElements = [];
+                    
+                    if (typeof allowedElements === 'object' && !Array.isArray(allowedElements)) {
+                        currentElements = allowedElements.current || [];
+                        cumulativeElements = allowedElements.cumulative || [];
+                    } else {
+                        cumulativeElements = allowedElements;
+                    }
+                    
+                    console.log('[initIframeSelector] 解析后的元素列表:', {
+                        allowedElements: startMessage.allowedElements,
+                        currentElements: currentElements,
+                        cumulativeElements: cumulativeElements
+                    });
+                    
+                    // 这里可以添加ElementSelector的实现
+                    // 为了简化，我们只记录消息
+                    console.log('[initIframeSelector] 选择器启动，允许元素:', cumulativeElements);
+                    break;
+                case MESSAGE_TYPES.STOP:
+                    if (selector) {
+                        selector.stop();
+                        selector = null;
+                    }
+                    console.log('[initIframeSelector] 选择器停止');
+                    break;
+            }
+        };
+        
+        window.addEventListener('message', handleMessage);
+        return () => {
+            window.removeEventListener('message', handleMessage);
+            if (selector) {
+                selector.stop();
+                selector = null;
+            }
+        };
+    }
+    
     function searchCat() {
       const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
       const breed = document.getElementById("searchSelect").value;
@@ -252,6 +319,8 @@
     // 页面加载完成后记录日志
     document.addEventListener('DOMContentLoaded', () => {
         console.log('示例页面加载完成，元素选择器已准备就绪');
+        // 初始化iframe选择器
+        initIframeSelector();
     });
   </script>
 </body>

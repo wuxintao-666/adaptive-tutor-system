@@ -1273,7 +1273,6 @@ body {
     background: #e74c3c;
     border-color: #e74c3c;
     color: #fff;
-    display: none;
 }
 
 .info-tab {
@@ -1443,6 +1442,136 @@ body {
     font-family: 'Courier New', monospace;
     line-height: 1.4;
     color: #333;
+}
+
+/* 选择器相关样式 */
+.sw-selector {
+    cursor: crosshair !important;
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background-color: rgba(0, 0, 0, 0.01) !important;
+    z-index: 2147483646 !important;
+    pointer-events: auto !important;
+}
+
+/* 确保所有子元素也继承十字光标 */
+.sw-selector * {
+    cursor: crosshair !important;
+}
+
+/* 强制设置body和html的光标 */
+body.sw-selector-active,
+html.sw-selector-active {
+    cursor: crosshair !important;
+}
+
+/* 确保iframe内部的选择器也能正常工作 */
+iframe .sw-selector {
+    cursor: crosshair !important;
+}
+
+iframe .sw-selector * {
+    cursor: crosshair !important;
+}
+
+/* 只在选择器激活时强制十字光标 */
+body.sw-selector-active *,
+html.sw-selector-active * {
+    cursor: crosshair !important;
+}
+
+/* 但保持按钮等交互元素的正常光标 */
+body.sw-selector-active button, 
+body.sw-selector-active input, 
+body.sw-selector-active select, 
+body.sw-selector-active textarea, 
+body.sw-selector-active a, 
+body.sw-selector-active .clickable,
+html.sw-selector-active button, 
+html.sw-selector-active input, 
+html.sw-selector-active select, 
+html.sw-selector-active textarea, 
+html.sw-selector-active a, 
+html.sw-selector-active .clickable {
+    cursor: pointer !important;
+}
+
+.sw-highlight {
+    position: fixed;
+    display: none;
+    pointer-events: none;
+    border: 2px solid #0079d3;
+    background-color: rgba(0, 121, 211, 0.1);
+    z-index: 2147483645;
+}
+
+/* 代码面板样式 */
+.code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.code-header h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.element-info {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.element-info span {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.tag-name {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.element-id {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.element-class {
+    background-color: #e8f5e8;
+    color: #388e3c;
+}
+
+.code-block {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 15px;
+    margin: 0;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: #333;
+}
+
+.code-block code {
+    background: none;
+    padding: 0;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
 }
 
 /* 代码展示区域标题样式 */
