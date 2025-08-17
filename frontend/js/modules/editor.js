@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 从本地存储中获取现有会话ID（如果有）
     const savedSessionId = localStorage.getItem('editorSessionId');
-    console.log(savedSessionId ? `从本地存储中恢复会话ID: ${savedSessionId}` : '未找到本地存储的会话ID');
     
     // 默认代码内容
     const defaultHTML = `<!DOCTYPE html>\n<html>\n<head>\n    <title>示例页面</title>\n</head>\n<body>\n    <h1>欢迎使用代码编辑器</h1>\n    <p>在这里编写你的HTML代码</p>\n    <button id="demo-button">点击我</button>\n    \n    <script src="script.js"></script>\n</body>\n</html>`;
@@ -28,6 +27,15 @@ window.editorState = {
     // 使用动态构建的后端URL
     get backendUrl() {
         return buildBackendUrl('/api/ide');
+    }
+};
+
+// 添加一个函数来设置初始代码
+window.setInitialCode = function(startCode) {
+    if (startCode && typeof startCode === 'object') {
+        editorState.html = startCode.html !== undefined ? startCode.html : defaultHTML;
+        editorState.css = startCode.css !== undefined ? startCode.css : defaultCSS;
+        editorState.js = startCode.js !== undefined ? startCode.js : defaultJS;
     }
 };
 
@@ -95,9 +103,8 @@ window.editorState = {
 
         // 创建各个编辑器实例
         // HTML 编辑器
-        editor = monaco.editor.create(document.getElementById('monaco-editor'), {
-            value: editorState.html,
-            language: 'html',
+        // 创建编辑器的通用配置
+        const editorConfig = {
             theme: 'myCustomTheme',
             automaticLayout: true,
             minimap: { enabled: false },
@@ -120,101 +127,65 @@ window.editorState = {
             fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
             fontLigatures: true,
             cursorBlinking: 'smooth'
+        };
+        
+        // HTML 编辑器
+        editor = monaco.editor.create(document.getElementById('monaco-editor'), {
+            value: editorState.html,
+            language: 'html',
+            ...editorConfig
         });
         
         // CSS 编辑器
         editorCSS = monaco.editor.create(document.getElementById('monaco-editor-css'), {
             value: editorState.css,
             language: 'css',
-            theme: 'myCustomTheme',
-            automaticLayout: true,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            renderLineHighlight: 'all',
-            renderWhitespace: 'none',
-            lineNumbers: 'on',
-            tabSize: 2,
-            formatOnPaste: true,
-            formatOnType: true,
-            autoIndent: 'full',
-            semanticHighlighting: true,
-            suggestOnTriggerCharacters: true,
-            acceptSuggestionOnCommitCharacter: true,
-            wordBasedSuggestions: true,
-            parameterHints: { enabled: true },
-            folding: true,
-            renderValidationDecorations: 'on',
-            fontSize: 14,
-            fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
-            fontLigatures: true,
-            cursorBlinking: 'smooth'
+            ...editorConfig
         });
         
         // JavaScript 编辑器
         editorJS = monaco.editor.create(document.getElementById('monaco-editor-js'), {
             value: editorState.js,
             language: 'javascript',
-            theme: 'myCustomTheme',
-            automaticLayout: true,
-            minimap: { enabled: false },
-            scrollBeyondLastLine: false,
-            renderLineHighlight: 'all',
-            renderWhitespace: 'none',
-            lineNumbers: 'on',
-            tabSize: 2,
-            formatOnPaste: true,
-            formatOnType: true,
-            autoIndent: 'full',
-            semanticHighlighting: true,
-            suggestOnTriggerCharacters: true,
-            acceptSuggestionOnCommitCharacter: true,
-            wordBasedSuggestions: true,
-            parameterHints: { enabled: true },
-            folding: true,
-            renderValidationDecorations: 'on',
-            fontSize: 14,
-            fontFamily: "'Fira Code', Consolas, 'Courier New', monospace",
-            fontLigatures: true,
-            cursorBlinking: 'smooth'
+            ...editorConfig
         });
 
+        // 防抖函数
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+        
         // 监听编辑器内容变化
-        editor.onDidChangeModelContent(function(e) {
+        editor.onDidChangeModelContent(debounce(function(e) {
             // 保存当前编辑器内容到状态
             editorState.html = editor.getValue();
-            
-            // 添加防抖，避免频繁请求
-            clearTimeout(window.staticCheckTimer);
-            window.staticCheckTimer = setTimeout(function() {
-                performStaticCheck();
-            }, 1000); // 1秒后执行静态检查
-        });
+        }, 1000));
         
-        editorCSS.onDidChangeModelContent(function(e) {
+        editorCSS.onDidChangeModelContent(debounce(function(e) {
             // 保存当前编辑器内容到状态
             editorState.css = editorCSS.getValue();
-            
-            // 添加防抖，避免频繁请求
-            clearTimeout(window.staticCheckTimer);
-            window.staticCheckTimer = setTimeout(function() {
-                performStaticCheck();
-            }, 1000); // 1秒后执行静态检查
-        });
+        }, 1000));
         
-        editorJS.onDidChangeModelContent(function(e) {
+        editorJS.onDidChangeModelContent(debounce(function(e) {
             // 保存当前编辑器内容到状态
             editorState.js = editorJS.getValue();
-            
-            // 添加防抖，避免频繁请求
-            clearTimeout(window.staticCheckTimer);
-            window.staticCheckTimer = setTimeout(function() {
-                performStaticCheck();
-            }, 1000); // 1秒后执行静态检查
-        });
+        }, 1000));
+
+        // 将编辑器实例存储在editorState中，供其他模块使用
+        editorState.htmlEditor = editor;
+        editorState.cssEditor = editorCSS;
+        editorState.jsEditor = editorJS;
 
         // 初始化编辑器标签切换
         initEditorTabs();
-
         // 初始化按钮事件
         initButtons();
     });
@@ -230,7 +201,6 @@ window.editorState = {
         tabButtons.forEach(button => {
             button.addEventListener('click', function() {
                 const tab = this.getAttribute('data-tab');
-                console.log('切换到标签：', tab);
                 
                 // 更新标签按钮状态
                 tabButtons.forEach(btn => btn.classList.remove('active'));
@@ -254,9 +224,6 @@ window.editorState = {
                 const editorContainer = document.getElementById('editor-' + tab);
                 if (editorContainer) {
                     editorContainer.style.display = 'block';
-                    console.log('显示编辑器容器：', 'editor-' + tab);
-                } else {
-                    console.error('找不到编辑器容器：', 'editor-' + tab);
                 }
                 
                 // 将当前标签页保存到状态
@@ -279,7 +246,17 @@ window.editorState = {
         const runButton = document.getElementById('run-button');
         if (runButton) {
             runButton.addEventListener('click', function() {
-                runCodeOnBackend();
+                // 更新本地预览
+                updateLocalPreview();
+                
+                // 切换到预览标签页
+                const previewTabButton = document.querySelector('.tab-button[data-tab="preview"]');
+                if (previewTabButton) {
+                    previewTabButton.click();
+                }
+
+                // 提示用户
+                showNotification('本地预览已更新', 'info');
             });
         }
 
@@ -306,6 +283,30 @@ window.editorState = {
                 }
             });
         }
+    }
+    
+    // 更新编辑器内容的函数
+    function updateEditorContent(startCode) {
+        // 更新编辑器状态
+        if (startCode && typeof startCode === 'object') {
+            editorState.html = startCode.html || '';
+            editorState.css = startCode.css || '';
+            editorState.js = startCode.js || '';
+        }
+        
+        // 更新编辑器显示
+        if (editor) {
+            editor.setValue(editorState.html);
+        }
+        if (editorCSS) {
+            editorCSS.setValue(editorState.css);
+        }
+        if (editorJS) {
+            editorJS.setValue(editorState.js);
+        }
+        
+        // 更新预览
+        updateLocalPreview();
     }
 
     // 本地预览更新（仅用于快速刷新和初始化）
@@ -403,16 +404,16 @@ window.editorState = {
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
-                        ${editorState.css}
+                        ${editorState.cssEditor ? editorState.cssEditor.getValue() : editorState.css}
                     </style>
                 </head>
                 <body>
-                    ${editorState.html}
+                    ${editorState.htmlEditor ? editorState.htmlEditor.getValue() : editorState.html}
                     <script>
                         ${consoleOverrideScript}
                         
                         try {
-                            ${editorState.js}
+                            ${editorState.jsEditor ? editorState.jsEditor.getValue() : editorState.js}
                         } catch (error) {
                             console.error('JavaScript错误:', error);
                             const errorDiv = document.createElement('div');
@@ -444,45 +445,15 @@ window.editorState = {
                 URL.revokeObjectURL(url);
             };
             
-            // 改进的心跳检测机制
-            if (!window.hasHeartbeatListener) {
-                // 使用自定义事件来接收心跳
-                document.addEventListener('preview-heartbeat', function() {
-                    window.lastPreviewHeartbeatTime = Date.now();
-                    // 收到心跳，预览正常
-                    console.log('预览心跳正常');
-                });
-                window.hasHeartbeatListener = true;
-            }
-            
-            // 初始化心跳时间
-            window.lastPreviewHeartbeatTime = Date.now();
-            
-            // 添加预览框架心跳检测
+            // 初始化预览框架心跳检测
             if (window.localPreviewHeartbeatInterval) {
                 clearInterval(window.localPreviewHeartbeatInterval);
             }
             
             window.localPreviewHeartbeatInterval = setInterval(() => {
-                const currentTime = Date.now();
-                const heartbeatTimeout = 8000; // 心跳超时时间，单位毫秒
-                
-                // 如果超过超时时间没有心跳，则重新加载预览
-                if (currentTime - window.lastPreviewHeartbeatTime > heartbeatTimeout) {
-                    console.log('预览心跳超时，尝试重新加载');
-                    
-                    // 尝试保持当前页面的段落和滚动位置
-                    try {
-                        // 更新预览
-                        updateLocalPreview();
-                        
-                        // 重置心跳时间为当前时间
-                        window.lastPreviewHeartbeatTime = currentTime;
-                    } catch (e) {
-                        console.error('重新加载预览出错:', e);
-                    }
-                }
-            }, 2000); // 每2秒检查一次
+                // 每10秒重新加载一次预览，确保预览保持连接
+                updateLocalPreview();
+            }, 10000); // 每10秒检查一次
         } catch (error) {
             console.error('生成预览出错:', error);
             showNotification('预览生成错误', 'error');
@@ -501,8 +472,8 @@ window.editorState = {
         runButton.textContent = '运行中...';
         runButton.disabled = true;
         
-        // 执行静态检查
-        performStaticCheck();
+        // 不再执行后端静态检查
+        // performStaticCheck();
         
         // 立即更新本地预览，提高响应速度
         updateLocalPreview();
@@ -514,18 +485,15 @@ window.editorState = {
         if (!editorState.sessionId) {
             // 如果没有会话ID，创建一个新的
             editorState.sessionId = generateUUID();
-            console.log(`运行代码: 创建新的会话ID: ${editorState.sessionId}`);
             // 将会话ID保存到本地存储，即使页面刷新也能保持会话ID
             localStorage.setItem('editorSessionId', editorState.sessionId);
-        } else {
-            console.log(`运行代码: 使用现有会话ID: ${editorState.sessionId}`);
         }
         
         // 准备代码提交数据
         const codeData = {
-            html: editorState.html,
-            css: editorState.css,
-            js: editorState.js,
+            html: editorState.htmlEditor ? editorState.htmlEditor.getValue() : editorState.html,
+            css: editorState.cssEditor ? editorState.cssEditor.getValue() : editorState.css,
+            js: editorState.jsEditor ? editorState.jsEditor.getValue() : editorState.js,
             session_id: editorState.sessionId
         };
         
@@ -567,7 +535,6 @@ window.editorState = {
             }
         })
         .catch(error => {
-            console.error('运行代码出错:', error);
             showNotification(`沙箱环境连接错误，使用本地预览模式`, 'info');
             // 注意：不再调用本地预览，因为我们已经在开始时调用过了
         })
@@ -592,7 +559,7 @@ window.editorState = {
         const previewFrame = document.getElementById('preview-frame');
         previewFrame.src = url;
         
-        // 添加30秒的心跳检查，确保预览保持连接
+        // 添加预览检查，确保预览保持连接
         if (window.previewHeartbeatInterval) {
             clearInterval(window.previewHeartbeatInterval);
         }
@@ -602,12 +569,10 @@ window.editorState = {
             try {
                 if (!previewFrame.contentWindow || previewFrame.contentWindow.closed) {
                     // 预览窗口不可访问，尝试重新加载
-                    console.log('预览窗口不可访问，尝试重新加载');
                     previewFrame.src = url;
                 }
             } catch (e) {
                 // 跨域错误或其他错误，尝试重新加载
-                console.log('预览窗口出错，尝试重新加载');
                 previewFrame.src = url;
             }
         }, 5000); // 每5秒检查一次
@@ -644,209 +609,23 @@ window.editorState = {
         // 清理后端会话
         if (editorState.sessionId) {
             const oldSessionId = editorState.sessionId;
-            console.log(`重置编辑器：清理会话ID ${oldSessionId}`);
             fetch(`${editorState.backendUrl}/cleanup/${oldSessionId}`, {
                 method: 'POST'
             })
             .then(response => {
                 if (response.ok) {
-                    console.log(`会话 ${oldSessionId} 已成功清理`);
                     // 重置会话ID，确保下次会创建新容器
                     editorState.sessionId = null;
                     // 同时清除本地存储的会话ID
                     localStorage.removeItem('editorSessionId');
-                } else {
-                    console.error(`清理会话失败: ${response.status}`);
-                }
-            })
-            .catch(error => console.error('清理会话失败:', error));
-        }
-    }
-
-    // 执行静态检查
-    function performStaticCheck() {
-        try {
-            const codeData = {
-                html: editorState.html,
-                css: editorState.css,
-                js: editorState.js,
-                session_id: editorState.sessionId
-            };
-
-            if (!editorState.sessionId) {
-                editorState.sessionId = generateUUID();
-            }
-            codeData.session_id = editorState.sessionId;
-
-            fetch(`${editorState.backendUrl}/static-check`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(codeData),
-                timeout: 5000
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`服务器响应错误: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.status === 'success' && data.details) {
-                    showStaticCheckResults(data.details);
                 }
             })
             .catch(error => {
-                console.error('静态检查出错:', error);
+                // 忽略清理错误，不影响主要功能
             });
-        } catch (error) {
-            console.error('静态检查错误:', error);
         }
     }
 
-    // 显示静态检查结果
-    function showStaticCheckResults(results) {
-        // 清除所有现有的错误标记
-        if (window.currentDecorations) {
-            editor.deltaDecorations(window.currentDecorations.html || [], []);
-            editorCSS.deltaDecorations(window.currentDecorations.css || [], []);
-            editorJS.deltaDecorations(window.currentDecorations.js || [], []);
-        }
-        
-        window.currentDecorations = { html: [], css: [], js: [] };
-
-        const problemsDiv = document.getElementById('problems-panel') || createProblemsPanel();
-        problemsDiv.innerHTML = ''; // 清空现有内容
-
-        let totalErrors = 0;
-        let totalWarnings = 0;
-
-        const processResults = (lang, editorInstance, resultsData) => {
-            if (!resultsData) return;
-
-            const errors = resultsData.errors || [];
-            const warnings = resultsData.warnings || [];
-            totalErrors += errors.length;
-            totalWarnings += warnings.length;
-            
-            const decorations = [];
-            const model = editorInstance.getModel();
-
-            if (errors.length > 0) {
-                const errorHeader = document.createElement('div');
-                errorHeader.className = 'problem-category';
-                errorHeader.innerHTML = `<span class="problem-icon error">⚠️</span> ${lang.toUpperCase()} 错误 (${errors.length})`;
-                problemsDiv.appendChild(errorHeader);
-
-                errors.forEach(error => {
-                    if (error.line && error.column) {
-                        const lineLength = model.getLineLength(error.line) || 1;
-                        const endColumn = Math.min(error.column + 10, lineLength);
-                        decorations.push({
-                            range: new monaco.Range(error.line, error.column, error.line, endColumn),
-                            options: {
-                                inlineClassName: 'monaco-error-squiggle',
-                                hoverMessage: { value: error.message },
-                                overviewRuler: { color: '#FF0000', position: monaco.editor.OverviewRulerLane.Right },
-                                minimap: { color: '#FF0000', position: monaco.editor.MinimapPosition.Inline }
-                            }
-                        });
-
-                        const problemItem = document.createElement('div');
-                        problemItem.className = 'problem-item';
-                        problemItem.innerHTML = `
-                            <span class="problem-icon error">⛔</span>
-                            <span class="problem-message">${error.message}</span>
-                            <span class="problem-location">[${error.line}:${error.column}]</span>
-                        `;
-                        problemItem.addEventListener('click', () => {
-                            editorInstance.revealPositionInCenter({ lineNumber: error.line, column: error.column });
-                            editorInstance.setPosition({ lineNumber: error.line, column: error.column });
-                            editorInstance.focus();
-                        });
-                        problemsDiv.appendChild(problemItem);
-                    }
-                });
-            }
-
-            if (warnings.length > 0) {
-                const warningHeader = document.createElement('div');
-                warningHeader.className = 'problem-category';
-                warningHeader.innerHTML = `<span class="problem-icon warning">⚠</span> ${lang.toUpperCase()} 警告 (${warnings.length})`;
-                problemsDiv.appendChild(warningHeader);
-
-                warnings.forEach(warning => {
-                    if (warning.line && warning.column) {
-                        const lineLength = model.getLineLength(warning.line) || 1;
-                        const endColumn = Math.min(warning.column + 10, lineLength);
-                        decorations.push({
-                            range: new monaco.Range(warning.line, warning.column, warning.line, endColumn),
-                            options: {
-                                inlineClassName: 'monaco-warning-squiggle',
-                                hoverMessage: { value: warning.message },
-                                overviewRuler: { color: '#FFA500', position: monaco.editor.OverviewRulerLane.Right },
-                                minimap: { color: '#FFA500', position: monaco.editor.MinimapPosition.Inline }
-                            }
-                        });
-
-                        const problemItem = document.createElement('div');
-                        problemItem.className = 'problem-item';
-                        problemItem.innerHTML = `
-                            <span class="problem-icon warning">⚠</span>
-                            <span class="problem-message">${warning.message}</span>
-                            <span class="problem-location">[${warning.line}:${warning.column}]</span>
-                        `;
-                        problemItem.addEventListener('click', () => {
-                            editorInstance.revealPositionInCenter({ lineNumber: warning.line, column: warning.column });
-                            editorInstance.setPosition({ lineNumber: warning.line, column: warning.column });
-                            editorInstance.focus();
-                        });
-                        problemsDiv.appendChild(problemItem);
-                    }
-                });
-            }
-            
-            window.currentDecorations[lang] = editorInstance.deltaDecorations(window.currentDecorations[lang] || [], decorations);
-        };
-
-        processResults('html', editor, results.html);
-        processResults('css', editorCSS, results.css);
-        processResults('js', editorJS, results.js);
-
-        if (totalErrors > 0 || totalWarnings > 0) {
-            problemsDiv.style.display = 'block';
-        } else {
-            problemsDiv.style.display = 'none';
-        }
-    }
-    
-    // 创建问题面板
-    function createProblemsPanel() {
-        const problemsDiv = document.createElement('div');
-        problemsDiv.id = 'problems-panel';
-        problemsDiv.className = 'problems-panel';
-        
-        // 添加标题栏
-        const titleBar = document.createElement('div');
-        titleBar.className = 'problems-titlebar';
-        titleBar.innerHTML = `
-            <span class="problems-title">问题</span>
-            <button class="problems-close">×</button>
-        `;
-        problemsDiv.appendChild(titleBar);
-        
-        // 添加关闭按钮事件
-        titleBar.querySelector('.problems-close').addEventListener('click', () => {
-            problemsDiv.style.display = 'none';
-        });
-        
-        // 添加到页面
-        document.querySelector('.editor-container').appendChild(problemsDiv);
-        
-        return problemsDiv;
-    }
-    
     // 显示通知消息
     function showNotification(message, type = 'info', duration = 3000) {
         // 创建通知元素
@@ -905,80 +684,7 @@ window.editorState = {
             background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 6 3' enable-background='new 0 0 6 3' height='3' width='6'%3E%3Cg fill='%23ffa500'%3E%3Cpolygon points='5.5,0 2.5,3 1.1,3 4.1,0'/%3E%3Cpolygon points='4,0 6,2 6,0.6 5.4,0'/%3E%3Cpolygon points='0,2 1,3 2.4,3 0,0.6'/%3E%3C/g%3E%3C/svg%3E") repeat-x bottom left;
         }
 
-        /* 问题面板样式 */
-        .problems-panel {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 150px;
-            background-color: #f8f8f8;
-            border-top: 1px solid #e0e0e0;
-            z-index: 10;
-            overflow-y: auto;
-            display: none;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 12px;
-            color: #333;
-        }
-
-        .problems-titlebar {
-            padding: 5px 10px;
-            background-color: #eee;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .problems-title {
-            font-weight: bold;
-        }
-
-        .problems-close {
-            background: none;
-            border: none;
-            font-size: 16px;
-            cursor: pointer;
-            color: #777;
-        }
-
-        .problems-close:hover {
-            color: #000;
-        }
-
-        .problem-category {
-            padding: 5px 10px;
-            background-color: #f0f0f0;
-            font-weight: bold;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .problem-item {
-            padding: 5px 10px 5px 30px;
-            border-bottom: 1px solid #eee;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-
-        .problem-item:hover {
-            background-color: #e8e8e8;
-        }
-
-        .problem-icon {
-            margin-right: 6px;
-        }
-
-        .problem-message {
-            flex-grow: 1;
-        }
-
-        .problem-location {
-            color: #777;
-            margin-left: 10px;
-        }
-
+        
         .notification {
             transition: opacity 0.5s ease;
             opacity: 1;

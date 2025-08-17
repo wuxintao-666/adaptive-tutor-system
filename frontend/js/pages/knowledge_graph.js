@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded',async () => {
         };
         
         testBtn.onclick = () => {
-          window.location.href = `/pages//test_page.html?chapter=${knowledgeId}`;
+          window.location.href = `/pages//test_page.html?topic=${knowledgeId}`;
         };
       } else if (graphState.isKnowledgeUnlocked(knowledgeId)) {
         status.textContent = '您可以开始学习该知识点或直接进行测试';
@@ -108,7 +108,7 @@ document.addEventListener('DOMContentLoaded',async () => {
         };
         
         testBtn.onclick = () => {
-          window.location.href = `/pages/test_page.html?chapter=${knowledgeId}`;
+          window.location.href = `/pages/test_page.html?topic=${knowledgeId}`;
         };
       } else {
         status.textContent = '该知识点尚未解锁，您是否要直接开始测试？';
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded',async () => {
         
         learnBtn.onclick = () => {};
         testBtn.onclick = () => {
-          window.location.href = `/pages/test_page.html?chapter=${knowledgeId}`;
+          window.location.href = `/pages/test_page.html?topic=${knowledgeId}`;
         };
       }
       modal.style.display = 'block';
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded',async () => {
           showKnowledgeModal(id, label);
         } else {// 未解锁知识点
           if (confirm("您还未学习前置知识点，是否直接开始测试？")) {
-            window.location.href = `/pages/test_page.html?node=${id}`;
+            window.location.href = `/pages/test_page.html?topic=${id}`;
           }
         }
       }
@@ -194,15 +194,15 @@ document.addEventListener('DOMContentLoaded',async () => {
       if (type === 'chapter') {
         if (graphState.isChapterCompleted(id)) {
           if (confirm("您已学过本章节，是否再次进行测试？")) {
-            window.location.href = `/pages/test_page.html?chapter=${id}`;
+            window.location.href = `/pages/test_page.html?topic=${id}`;
           }
         } else if (graphState.currentLearningChapter === id) {
           if (confirm("您还未学完当前章节内容，是否直接开始测试？")) {
-            window.location.href = `/pages/test_page.html?chapter=${id}`;
+            window.location.href = `/pages/test_page.html?topic=${id}`;
           }
         } else {
           if (confirm("您还未解锁前置章节，是否直接开始测试？")) {
-            window.location.href = `/pages/test_page.html?chapter=${id}`;
+            window.location.href = `/pages/test_page.html?topic=${id}`;
           }
         }
         

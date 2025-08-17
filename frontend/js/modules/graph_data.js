@@ -155,8 +155,15 @@ export class GraphState {
       (this.displayMap[u] || []).forEach(v => {
         if (visited.has(v)) return;
         visited.add(v);
-        if (v.startsWith('chapter')) return;
-        if (this.isKnowledge(v)) out.push(v);
+        
+        const node = this.graphData.nodes.find(n => n.data && n.data.id === v);
+        const type = node && node.data && node.data.type ? node.data.type : '';
+        
+        if (type === 'chapter') {
+          return; // 跳过章节节点
+        } else {
+          out.push(v);
+        }
         dfs(v);
       });
     };
@@ -168,11 +175,17 @@ export class GraphState {
   // 知识点解锁判断
   isKnowledgeUnlocked(knowledgeId) {
     const pres = this.prereqMap[knowledgeId] || [];
+    const node = this.graphData.nodes.find(n => n.data && n.data.id === knowledgeId);
+    const type = node && node.data && node.data.type ? node.data.type : '';
+
     return pres.every(pid => {
-      if (pid.startsWith('chapter')) {
-        return this.canLearnChapter(pid);
+      const preNode = this.graphData.nodes.find(n => n.data && n.data.id === pid);
+      const preType = preNode && preNode.data && preNode.data.type ? preNode.data.type : '';
+      
+      if (preType === 'chapter') {
+        return this.canLearnChapter(pid); // 如果是章节节点，检查章节是否可学
       } else {
-        return this.learnedNodes.includes(pid);
+        return this.learnedNodes.includes(pid); // 否则检查是否已学
       }
     });
   }
@@ -193,12 +206,26 @@ export class GraphState {
   }
 
   // 收集依赖知识点
-  collectKnowledgeDescendantsForDep(rootId, out = new Set()) {
-    (this.depMap[rootId] || []).forEach(cid => {
-      if (this.isKnowledge(cid)) out.add(cid);
-      if (cid.startsWith('chapter')) return;
-      this.collectKnowledgeDescendantsForDep(cid, out);
-    });
+  collectKnowledgeDescendantsForDep(rootId) {
+    const out = new Set();
+    const visited = new Set();
+    const queue = [rootId];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      (this.depMap[currentId] || []).forEach(cid => {
+        const node = this.graphData.nodes.find(n => n.data && n.data.id === cid);
+        const type = node && node.data && node.data.type ? node.data.type : '';
+        
+        if (type !== 'chapter') {
+          out.add(cid);
+          queue.push(cid);
+        }
+      });
+    }
     return Array.from(out);
   }
 

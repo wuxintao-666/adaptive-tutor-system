@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import Any
@@ -23,6 +24,10 @@ def submit_test(
     """
     接收用户代码提交，进行评测，更新BKT模型，并返回结果。
     """
+    # 记录提交的代码内容用于调试
+    print(f"Received submission for participant {submission_in.participant_id}, topic {submission_in.topic_id}")
+    print(f"Submitted code: {submission_in.code}")
+    
     # 1. 加载测试内容
     try:
         test_task_data = load_json_content("test_tasks", submission_in.topic_id)
