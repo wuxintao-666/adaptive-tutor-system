@@ -8,16 +8,22 @@ from app.core.document import Document
 from app.core.rag_knowledge_builder import KnowledgeBaseBuilder
 from app.core.config import settings
 from app.services.markdown_loader import MarkdownLoader
+from app.services.build_state import BuildState
 
 class KnowledgeBaseBuilderImpl(KnowledgeBaseBuilder):
     """知识库构建器实现"""
     
-    def __init__(self):
+    def __init__(self, state_file_path: Optional[str] = None):
         self.documents: List[Document] = []
         self.embeddings: List[List[float]] = []
         self.index: Optional[AnnoyIndex] = None
         self.chunk_size = 500  # 每个文本块的最大字符数
         self.chunk_overlap = 50  # 文本块之间的重叠字符数
+        self.state: Optional[BuildState] = None
+        
+        # 如果提供了状态文件路径，初始化BuildState
+        if state_file_path:
+            self.state = BuildState(state_file_path)
         
         # 初始化OpenAI客户端
         self.client = OpenAI(
@@ -41,7 +47,26 @@ class KnowledgeBaseBuilderImpl(KnowledgeBaseBuilder):
         print("开始从目录加载文档...")
         documents = list(loader.load_from_directory(directory_path, recursive))
         print(f"文档加载完成，共加载 {len(documents)} 个有效文档。")
-        return self.build_from_documents(documents)
+        
+        # 如果有状态管理器，设置路径信息
+        if self.state:
+            # 设置embeddings和索引的保存路径
+            # 使用backend/app/data/checkpoints目录
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            checkpoints_dir = os.path.join(project_root, "app", "data", "checkpoints")
+            embeddings_path = os.path.join(checkpoints_dir, "embeddings.json")
+            index_path = os.path.join(checkpoints_dir, "index.ann")
+            self.state.set_paths(embeddings_path, index_path) # 确保checkpoints目录存在
+            os.makedirs(checkpoints_dir, exist_ok=True)
+        
+        # 构建知识库
+        result = self.build_from_documents(documents)
+        
+        # 如果有状态管理器且构建成功，标记构建完成
+        if self.state and result:
+            self.state.mark_build_completed()
+        
+        return result
     
     def save(self, vector_store_path: str) -> bool:
         """保存知识库到指定路径"""
@@ -99,24 +124,66 @@ class KnowledgeBaseBuilderImpl(KnowledgeBaseBuilder):
         embeddings = []
         batch_size = 10  # 与原脚本保持一致
         
-        for i in range(0, len(texts), batch_size):
+        # 如果有可恢复的检查点，从检查点恢复进度
+        start_index = 0
+        if self.state and self.state.is_resumable():
+            progress = self.state.get_progress()
+            # 使用已处理的文本块数作为起始索引，而不是批次索引
+            start_index = progress["processed_chunks"]
+            embeddings = self._load_partial_embeddings()
+            print(f"从检查点恢复进度: 已处理 {progress['processed_chunks']}/{progress['total_chunks']} 个文本块")
+        
+        total_batches = (len(texts)-1)//batch_size + 1
+        print(f"开始处理 {len(texts)} 个文本块，共 {total_batches} 个批次...")
+        
+        for i in range(start_index, len(texts), batch_size):
+            # 检查是否收到中断信号
+            if self.state and getattr(self.state, 'interrupted', False):
+                print("收到中断信号，停止处理...")
+                break
+                
+            batch_index = i//batch_size + 1
             batch_texts = texts[i:i+batch_size]
             batch_embeddings = []
             
-            for text in batch_texts:
+            print(f"正在处理批次 {batch_index}/{total_batches} (包含 {len(batch_texts)} 个文本块)...")
+            
+            for j, text in enumerate(batch_texts):
                 try:
+                    # print(f"  正在处理批次 {batch_index} 中的第 {j+1}/{len(batch_texts)} 个文本块...")
                     response = self.client.embeddings.create(
                         model=self.embedding_model,
                         input=text,
                         encoding_format="float"
                     )
                     batch_embeddings.append(response.data[0].embedding)
+                    
+                    # 在每次API调用成功后更新进度
+                    if self.state:
+                        # 临时将当前批次的embeddings加入总列表以保存检查点
+                        temp_embeddings = embeddings + batch_embeddings
+                        processed_chunks = len(temp_embeddings)
+                        # current_batch现在表示已处理的文本块数，而不是批次索引
+                        self.state.update_progress(
+                            processed_chunks=processed_chunks,
+                            total_chunks=len(texts),
+                            current_batch=processed_chunks,  # 使用已处理的文本块数
+                            total_batches=total_batches
+                        )
+                        self._save_partial_embeddings(temp_embeddings)
+
+                except KeyboardInterrupt:
+                    print("\n捕获到中断信号，正在保存当前进度...")
+                    # 重新抛出异常，以便上层脚本可以捕获并优雅退出
+                    raise
                 except Exception as e:
                     print(f"API调用错误: '{text[:50]}...': {e}")
                     batch_embeddings.append([0.0] * self.embedding_dimension)
             
             embeddings.extend(batch_embeddings)
-            print(f"Processed batch {i//batch_size + 1}/{(len(texts)-1)//batch_size + 1}")
+            print(f"批次 {batch_index}/{total_batches} 处理完成")
+        
+        print(f"所有批次处理完成，共处理 {len(embeddings)} 个文本块的embeddings")
         
         # 验证所有embedding维度一致
         for i, emb in enumerate(embeddings):
@@ -128,6 +195,34 @@ class KnowledgeBaseBuilderImpl(KnowledgeBaseBuilder):
                     embeddings[i] = emb[:self.embedding_dimension]
         
         return embeddings
+    
+    def _save_partial_embeddings(self, embeddings: List[List[float]]):
+        """保存部分embeddings到临时文件"""
+        if not self.state or not self.state.state.get("embeddings_path"):
+            return
+        
+        embeddings_path = self.state.state["embeddings_path"]
+        if embeddings_path:
+            try:
+                with open(embeddings_path, 'w', encoding='utf-8') as f:
+                    json.dump(embeddings, f, ensure_ascii=False)
+            except Exception as e:
+                print(f"保存embeddings时出错: {e}")
+    
+    def _load_partial_embeddings(self) -> List[List[float]]:
+        """从临时文件加载部分embeddings"""
+        if not self.state:
+            return []
+        
+        embeddings_path = self.state.state.get("embeddings_path")
+        if embeddings_path and os.path.exists(embeddings_path):
+            try:
+                with open(embeddings_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"加载embeddings时出错: {e}")
+                return []
+        return []
     
     @staticmethod
     def _build_annoy_index(embeddings: List[List[float]]) -> AnnoyIndex:

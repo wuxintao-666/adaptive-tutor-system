@@ -1,0 +1,12 @@
+{
+  "checkpoint_version": "1.0",
+  "last_updated": 1755418061.710402,
+  "processed_documents": [],
+  "processed_chunks": 26,
+  "total_chunks": 33763,
+  "embeddings_path": "D:\\Learning\\Code\\adaptive-tutor-system\\backend\\scripts\\..\\app\\data\\checkpoints\\embeddings.json",
+  "index_path": "D:\\Learning\\Code\\adaptive-tutor-system\\backend\\scripts\\..\\app\\data\\checkpoints\\index.ann",
+  "current_batch": 26,
+  "total_batches": 3377,
+  "completed": false
+}
