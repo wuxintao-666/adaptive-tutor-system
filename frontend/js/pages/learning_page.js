@@ -584,6 +584,19 @@ function initEventListeners() {
     if (showSourceBtn) {
         showSourceBtn.addEventListener('click', handleShowSource);
     }
+
+    // 开始测试按钮
+    const startTestButton = document.getElementById('start-test-button');
+    if (startTestButton) {
+        startTestButton.addEventListener('click', () => {
+            // 获取当前主题ID
+            const topicId = getTopicIdFromURL();
+            // 跳转到测试页面并传递topicId参数
+            const testPageUrl = `../pages/test_page.html?topic=${topicId}`;
+            console.log('[MainApp] 跳转到测试页面:', testPageUrl);
+            window.location.href = testPageUrl;
+        });
+    }
 }
 
 // 行为追踪器初始化
