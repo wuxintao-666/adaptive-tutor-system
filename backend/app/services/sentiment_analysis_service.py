@@ -10,7 +10,7 @@ class SentimentAnalysisService:
         self.device = None
         
         # 检查模型文件是否存在
-        model_dir = 'backend/models/sentiment_bert'
+        model_dir = 'models/sentiment_bert'
         if os.path.exists(model_dir):
             try:
                 # 只在模型文件存在时才导入相关库

@@ -164,7 +164,16 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             
         # 添加内容JSON（如果提供）
         if content_json:
-            prompt_parts.append(f"CONTENT DATA: Here is the detailed content data for the current topic. Use this to provide more specific and accurate guidance.\n{content_json}")
+            # 确保JSON内容正确编码，避免Unicode转义序列问题
+            try:
+                # 解析JSON字符串
+                content_dict = json.loads(content_json)
+                # 重新序列化为格式化的JSON字符串，确保中文正确显示
+                formatted_content_json = json.dumps(content_dict, indent=2, ensure_ascii=False)
+                prompt_parts.append(f"CONTENT DATA: Here is the detailed content data for the current topic. Use this to provide more specific and accurate guidance.\n{formatted_content_json}")
+            except json.JSONDecodeError:
+                # 如果解析失败，使用原始内容
+                prompt_parts.append(f"CONTENT DATA: Here is the detailed content data for the current topic. Use this to provide more specific and accurate guidance.\n{content_json}")
             
         # 添加测试结果（如果提供且在测试模式下）
         if mode == "test" and test_results:
