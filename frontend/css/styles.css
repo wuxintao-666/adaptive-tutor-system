@@ -142,6 +142,8 @@ body {
     justify-content: space-between;
     background: var(--head-background);
     align-items: center;
+    font-size: var(--font-size-sm);
+    color: white;
     padding: var(--spacing-md) var(--spacing-lg);
     border-bottom: 1px solid var(--border-color);
 }
@@ -149,11 +151,12 @@ body {
     font-size: var(--font-size-lg);
     font-weight: 600;
     margin: 0;
-    color: white;
 }
+
 .panel-content {
     padding: var(--spacing-lg);
-    max-height: 150px;
+    min-height: 150px;
+    height: auto;
     overflow-y: auto;
     background-color: var(--content-background);
     font-size: var(--font-size-sm);
@@ -253,6 +256,8 @@ body {
     .test-requirements-container,
     .test-results-container {
         margin-bottom: var(--spacing-md);
+        min-height: 20%;
+        height: auto;
         overflow: hidden;
         background: var(--panel-background);
     }
@@ -1213,6 +1218,43 @@ body {
 .btn-stop-selector:hover {
     background: #dc2626;
     transform: translateY(-2px);
+}
+/* 返回按钮样式 */
+.back-button {
+    position: absolute;
+    right: 130px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: var(--border-radius-md);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.back-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+    transform: translateX(-2px);
+}
+
+.back-button i {
+    font-size: var(--font-size-base);
+}
+
+/* 标题链接样式 */
+.header-title {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.header-title:hover {
+    opacity: 0.8;
+    transform: scale(1.02);
 }
 .info-tab {
     padding: var(--spacing-sm) var(--spacing-lg);
