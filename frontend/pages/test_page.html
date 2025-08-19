@@ -29,7 +29,7 @@
             <!-- 左侧区域：测试要求、测试结果和修改建议 -->
             <div class="left-panel">
                 <!-- 测试要求区域 -->
-                <div class="test-requirements-container">
+                <div class="test-requirements-container panel">
                     <div class="panel-header">
                         <h2>测试要求</h2>
                     </div>
@@ -42,7 +42,7 @@
                 </div>
 
                 <!-- 测试结果区域 -->
-                <div class="test-results-container">
+                <div class="test-results-container panel">
                     <div class="panel-header">
                         <h2>测试结果</h2>
                     </div>
@@ -50,47 +50,12 @@
                         <!-- 测试结果内容，初始为空 -->
                     </div>
                 </div>
-
-                <!-- 修改建议区域（原AI对话框） -->
-                <div class="suggestions-container">
-                    <div class="panel-header">
-                        <h2>修改建议</h2>
-                    </div>
-                    <div class="suggestions-content">
-                        <!-- 修改建议内容 -->
-                        <div class="ai-chat-messages" id="ai-chat-messages">
-                            <div class="ai-message">
-                                <div class="ai-avatar">AI</div>
-                                <div class="ai-content">
-                                    <div class="markdown-content">
-                                        <h3>欢迎使用AI学习助手！</h3>
-                                        <p>我是你的AI助手，可以帮助你：</p>
-                                        <ul>
-                                            <li>解决HTML、CSS和JavaScript的编程问题</li>
-                                            <li>提供代码优化建议</li>
-                                            <li>解释编程概念和最佳实践</li>
-                                        </ul>
-                                        <p>你可以输入问题并点击“提问”按钮或按Enter键发送消息。</p>
-                                        <pre><code class="language-html">&lt;!-- 以下是一个简单的HTML示例 --&gt;
-&lt;div class="container"&gt;
-  &lt;h1&gt;欢迎学习前端开发！&lt;/h1&gt;
-&lt;/div&gt;</code></pre>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="ai-chat-input">
-                            <textarea id="user-message" placeholder="在这里输入你的问题..."></textarea>
-                            <button type="button" id="send-message" class="btn btn-primary">提问</button>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- 右侧区域：编辑器 -->
-            <div class="right-panel">
+            <div class="mid-panel panel">
                 <!-- 编辑器工具栏 -->
-                <div class="editor-toolbar">
+                <div class="panel-header">
                     <h2>编译器</h2>
                     <div class="editor-tabs">
                         <button class="tab-button active" data-tab="html">HTML</button>
@@ -130,6 +95,40 @@
                     <button id="run-button" class="btn btn-primary">测试</button>
                     <button id="submit-button" class="btn btn-secondary">提交</button>
                 </div>
+            </div>
+            <!-- 修改建议区域（原AI对话框） -->
+            <div class="chat-panel panel">
+                    <div class="panel-header">
+                        <h2>修改建议</h2>
+                    </div>
+                    <div class="chat-history">
+                        <!-- 修改建议内容 -->
+                        <div class="ai-chat-messages" id="ai-chat-messages">
+                            <div class="ai-message">
+                                <div class="ai-avatar">AI</div>
+                                <div class="ai-content">
+                                    <div class="markdown-content">
+                                        <h3>欢迎使用AI学习助手！</h3>
+                                        <p>我是你的AI助手，可以帮助你：</p>
+                                        <ul>
+                                            <li>解决HTML、CSS和JavaScript的编程问题</li>
+                                            <li>提供代码优化建议</li>
+                                            <li>解释编程概念和最佳实践</li>
+                                        </ul>
+                                        <p>你可以输入问题并点击“提问”按钮或按Enter键发送消息。</p>
+                                        <pre><code class="language-html">&lt;!-- 以下是一个简单的HTML示例 --&gt;
+&lt;div class="container"&gt;
+  &lt;h1&gt;欢迎学习前端开发！&lt;/h1&gt;
+&lt;/div&gt;</code></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ai-chat-input">
+                            <textarea id="user-message" placeholder="在这里输入你的问题..."></textarea>
+                            <button type="button" id="send-message" class="btn btn-primary">提问</button>
+                        </div>
+                    </div>
             </div>
         </div>
     </div>
