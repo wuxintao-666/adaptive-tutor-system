@@ -1,13 +1,15 @@
 // frontend/js/pages/registration.js
 import { saveParticipantId, checkAndRedirect } from '../modules/session.js';
 import { AppConfig, initializeConfig } from '../modules/config.js';
-
+import { setupHeaderTitle } from '../modules/navigation.js';
 // 页面加载时先检查是否已有会话
 // checkAndRedirect(); // 暂时注释掉，避免在注册页面直接跳转
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 初始化配置
     await initializeConfig();
+    // 设置标题点击跳转到首页（刷新）
+    setupHeaderTitle('/index.html');
     
     const startButton = document.getElementById('start-button');
     const usernameInput = document.getElementById('username-input');

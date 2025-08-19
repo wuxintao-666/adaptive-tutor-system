@@ -1,6 +1,7 @@
 // 导入模块
 import { getParticipantId } from '../modules/session.js';
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
+import { setupHeaderTitle, setupBackButton, getUrlParam, debugUrlParams } from '../modules/navigation.js';
 import tracker from '../modules/behavior_tracker.js';
 import chatModule from '../modules/chat.js';
 
@@ -13,11 +14,29 @@ async function initializePage() {
             participantElement.textContent = participantId;
         }
     }
-    // 获取URL参数
-    const urlParams = new URLSearchParams(window.location.search);
+    // 获取并解密URL参数
+     // 获取URL参数（带错误处理）
+        const topicData = getUrlParam('topic');
+        
+        if (topicData && topicData.id) {
+            console.log('测试主题ID:', topicData.id, '有效期:', topicData.isValid ? '有效' : '已过期');
+                
+            // 更新页面标题
+            document.getElementById('headerTitle').textContent = `测试 - ${topicData.id}`;
+            
+            // 即使过期也继续加载内容，但提示用户
+            if (!topicData.isValid) {
+               console.warn('参数已过期，但仍继续加载内容');
+            }
+                
+            // 加载对应的测试内容
+            chatModule.init('test', topicData.id);
+        } else {
+            console.warn('未找到有效的主题参数，使用默认内容');
+            console.log('加载默认测试内容');
+        }
     
-    // 先尝试获取topic参数，如果没有则检查是否直接在查询字符串中（如?1_1）
-    let topicId = urlParams.get('topic');
+    let topicId = topicData.id;
     
     // 如果没有topic参数，且查询字符串只有一个值，则使用该值
     if (!topicId) {
@@ -171,15 +190,18 @@ function displayTestResult(result) {
 
 // 主程序入口
 document.addEventListener('DOMContentLoaded', function() {
+    // 设置标题和返回按钮
+    setupHeaderTitle('/pages/knowledge_graph.html');
+    // 设置返回按钮
+    setupBackButton();
     require(['vs/editor/editor.main'], function () {
         initializePage();
         setupSubmitLogic();
         
         // 初始化AI聊天功能
-        // 从URL获取topicId作为contentId
-        const urlParams = new URLSearchParams(window.location.search);
-        const contentId = urlParams.get('topic');
-        if (contentId) {
+        // 获取并解密URL参数
+        const contentId = getUrlParam('topic');
+        if (contentId&& contentId.id) {
             // 使用新的聊天模块初始化
             chatModule.init('test', contentId);
         }
