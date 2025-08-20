@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI HTML学习平台 - 代码编辑器</title>
     <link rel="stylesheet" href="../css/styles.css">
+    <!-- Iconify图标库 -->
+    <script src="../js/modules/iconify-icon.min.js"></script>
     <!-- Monaco Editor CSS -->
     <link rel="stylesheet" data-name="vs/editor/editor.main"
         href="https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs/editor/editor.main.css">
@@ -17,13 +19,18 @@
     <div class="main-container">
         <!-- 顶部标题栏 -->
         <header class="top-header">
-            <h1 class="header-title" id="headerTitle">标题</h1>
-            <button class="back-button" id="backButton">
-                <i>←</i> 返回
-            </button>
+            <h1 class="header-title" id="headerTitle">
+                <iconify-icon icon="mdi:test-tube" width="24" height="24"></iconify-icon>
+                标题
+            </h1>
             <div class="user-profile">
+                <button class="back-button" id="backButton">
+                    <iconify-icon icon="mdi:arrow-left"></iconify-icon> 
+                    返回
+                </button>
                 <p>hello👋：</p>
                 <P id="participant_id"></P>
+                <iconify-icon icon="mdi:account-circle" width="36" height="36"></iconify-icon>
             </div>
         </header>
 
@@ -34,6 +41,7 @@
                 <!-- 测试要求区域 -->
                 <div class="test-requirements-container panel">
                     <div class="panel-header">
+                        <iconify-icon icon="mdi:clipboard-list" width="18" height="18"></iconify-icon>
                         <h2>测试要求</h2>
                     </div>
                     <div class="panel-content" id="test-requirements-content">
@@ -47,9 +55,14 @@
                 <!-- 测试结果区域 -->
                 <div class="test-results-container panel">
                     <div class="panel-header">
+                        <iconify-icon icon="mdi:chart-box" width="18" height="18"></iconify-icon>
                         <h2>测试结果</h2>
                     </div>
                     <div class="panel-content" id="test-results-content">
+                        <div class="result-placeholder">
+                            <iconify-icon icon="mdi:progress-clock" width="32" height="32" style="color: var(--text-light);"></iconify-icon>
+                            <p>等待测试结果...</p>
+                        </div>
                         <!-- 测试结果内容，初始为空 -->
                     </div>
                 </div>
@@ -61,10 +74,18 @@
                 <div class="panel-header">
                     <h2>编译器</h2>
                     <div class="editor-tabs">
-                        <button class="tab-button active" data-tab="html">HTML</button>
-                        <button class="tab-button" data-tab="css">CSS</button>
-                        <button class="tab-button" data-tab="js">JS</button>
-                        <button class="tab-button" data-tab="preview">预览</button>
+                        <button class="tab-button active" data-tab="html">
+                            HTML
+                        </button>
+                        <button class="tab-button" data-tab="css">
+                            CSS
+                        </button>
+                        <button class="tab-button" data-tab="js">
+                            JS
+                        </button>
+                        <button class="tab-button" data-tab="preview">
+                            预览
+                        </button>
                     </div>
                 </div>
 
@@ -95,20 +116,29 @@
 
                 <!-- 底部操作按钮 -->
                 <div class="editor-actions">
-                    <button id="run-button" class="btn btn-primary">测试</button>
-                    <button id="submit-button" class="btn btn-secondary">提交</button>
+                    <button id="run-button" class="btn btn-primary">
+                        <iconify-icon icon="mdi:play" width="16" height="16"></iconify-icon>
+                        测试
+                    </button>
+                    <button id="submit-button" class="btn btn-secondary">
+                        <iconify-icon icon="mdi:check-all" width="16" height="16"></iconify-icon>
+                        提交
+                    </button>
                 </div>
             </div>
             <!-- 修改建议区域（原AI对话框） -->
             <div class="chat-panel panel">
                     <div class="panel-header">
+                        <iconify-icon icon="mdi:lightbulb-on" width="18" height="18"></iconify-icon>
                         <h2>修改建议</h2>
                     </div>
                     <div class="chat-history">
                         <!-- 修改建议内容 -->
                         <div class="ai-chat-messages" id="ai-chat-messages">
                             <div class="ai-message">
-                                <div class="ai-avatar">AI</div>
+                                <div class="ai-avatar">
+                                    <iconify-icon icon="mdi:robot" width="20" height="20"></iconify-icon>
+                                </div>
                                 <div class="ai-content">
                                     <div class="markdown-content">
                                         <h3>欢迎使用AI学习助手！</h3>
@@ -129,7 +159,10 @@
                         </div>
                         <div class="ai-chat-input">
                             <textarea id="user-message" placeholder="在这里输入你的问题..."></textarea>
-                            <button type="button" id="send-message" class="btn btn-primary">提问</button>
+                            <button type="button" id="send-message" class="btn btn-primary">
+                                <iconify-icon icon="mdi:send" width="16" height="16"></iconify-icon>
+                                提问
+                            </button>
                         </div>
                     </div>
             </div>

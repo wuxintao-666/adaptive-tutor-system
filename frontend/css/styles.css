@@ -935,7 +935,7 @@ body {
 }
 
 .user-avatar {
-    background-color: var(--secondary-color);
+    background-color: var(--primary-color);
     margin-left: var(--spacing-sm);
 }
 
@@ -1221,8 +1221,6 @@ body {
 }
 /* 返回按钮样式 */
 .back-button {
-    position: absolute;
-    right: 130px;
     display: flex;
     align-items: center;
     gap: var(--spacing-xs);
@@ -1624,4 +1622,112 @@ html.sw-selector-active .clickable {
 
 .knowledge-panel.expanded .level-card.expanded {
     min-height: 300px;
+}
+/* 图标相关样式 */
+iconify-icon {
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+/* 输入框带图标 */
+.input-with-icon {
+    position: relative;
+    width: 100%;
+    max-width: 400px;
+}
+
+.input-with-icon iconify-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-light);
+    z-index: 2;
+}
+
+.input-with-icon input {
+    padding-left: 40px;
+    width: 100%;
+}
+
+/* 按钮图标间距 */
+.btn iconify-icon {
+    margin-right: 6px;
+}
+
+/* 面板标题图标 */
+.panel-header iconify-icon {
+    margin-right: 8px;
+    color: currentColor;
+}
+
+/* 等级卡片图标 */
+.level-card iconify-icon {
+    color: var(--primary-color);
+    margin-right: 8px;
+}
+
+/* 聊天头像图标 */
+.ai-avatar iconify-icon,
+.user-avatar iconify-icon {
+    color: white;
+}
+
+/* 占位符样式 */
+.graph-placeholder,
+.result-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    color: var(--text-light);
+    text-align: center;
+}
+
+.graph-placeholder iconify-icon,
+.result-placeholder iconify-icon {
+    margin-bottom: var(--spacing-md);
+}
+
+/* 模态框图标 */
+.modal-content iconify-icon {
+    display: block;
+    margin: 0 auto var(--spacing-md);
+}
+
+/* 标签页图标 */
+.tab-button iconify-icon {
+    margin-right: 4px;
+}
+
+/* 选择器开关图标 */
+.toggle-label iconify-icon {
+    margin-right: 6px;
+    color: var(--primary-color);
+}
+
+.toggle-description iconify-icon {
+    margin-right: 4px;
+    color: var(--text-light);
+}
+
+/* 点击提示图标 */
+.click-hint iconify-icon {
+    margin-right: 4px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .input-with-icon {
+        max-width: 100%;
+    }
+    
+    .btn iconify-icon {
+        margin-right: 4px;
+    }
+    
+    .panel-header iconify-icon {
+        margin-right: 6px;
+    }
 }
