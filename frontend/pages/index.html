@@ -5,24 +5,34 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI HTML学习平台 - 用户注册</title>
   <link rel="stylesheet" href="../css/styles.css">
+  <!-- Iconify图标库 -->
+  <script src="../js/modules/iconify-icon.min.js"></script>
 </head>
 <body>
   <div class="main-container">
     <!-- 顶部标题栏 -->
     <header class="top-header">
-      <h1 class="header-title">AI HTML学习平台</h1>
+      <iconify-icon icon="mdi:code-braces" width="28" height="28"></iconify-icon>
+      <h1 class="header-title" id="headerTitle" >AI HTML学习平台</h1>
     </header>
 
     <!-- 内容区域 -->
     <div class="content-container">
-      <div class="index-container">
-        <div class="index-header">
-          <h1>欢迎使用AI HTML学习平台</h1>
+      <div class="index-container panel">
+        <div class="panel-header">
+          <iconify-icon icon="mdi:rocket-launch" width="24" height="24"></iconify-icon>
+          <h2>欢迎使用AI HTML学习平台</h2>
           <p>请输入您的用户ID开始学习之旅</p>
         </div>
         <div class="index-form">
-          <input type="text" id="username-input" placeholder="请输入您的用户ID" />
-          <button id="start-button" class="btn btn-primary">开始学习</button>
+          <div class="input-with-icon">
+            <iconify-icon icon="mdi:account" width="20" height="20"></iconify-icon>
+            <input type="text" id="username-input" placeholder="请输入您的用户ID" />
+          </div>
+          <button id="start-button" class="btn btn-primary">
+            <iconify-icon icon="mdi:login" width="18" height="18"></iconify-icon>
+            开始学习
+          </button>
         </div>
       </div>
     </div>

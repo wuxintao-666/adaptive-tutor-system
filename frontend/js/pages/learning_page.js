@@ -2,7 +2,7 @@
 // ==================== 导入模块 ====================
 // 导入配置模块
 import { AppConfig, buildBackendUrl, initializeConfig } from '../modules/config.js';
-
+import { setupHeaderTitle, setupBackButton, getUrlParam } from '../modules/navigation.js';
 // 导入功能模块
 import { 
     renderTopicContent,
@@ -181,10 +181,9 @@ function getRequiredDOMElements() {
 
 // 从URL获取topicId
 function getTopicIdFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const topicId = urlParams.get('topic') || '1_1'; // 使用默认值
-    currentTopicId = topicId;
-    return topicId;
+    const topicId = getUrlParam('topic') || '1_1'; // 使用默认值
+    currentTopicId = topicId.id;
+    return topicId.id;
 }
 
 // 更新页面标题
@@ -860,6 +859,10 @@ function showStatus(type, message) {
 // 页面加载完成后自动初始化主应用
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // 设置标题点击跳转到知识图谱页面
+        setupHeaderTitle('/pages/knowledge_graph.html');
+        // 设置返回按钮
+        setupBackButton();
         // 先初始化配置
         console.log('[MainApp] 开始初始化配置...');
         await initializeConfig();
