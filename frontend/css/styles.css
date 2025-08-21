@@ -265,6 +265,15 @@ body {
         overflow: hidden;
         background: var(--panel-background);
     }
+    .requirement-content{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: var(--spacing-xl);
+        color: var(--text-light);
+        text-align: center;
+    }
 
 
 /* learn页面栏目布局 */
@@ -760,26 +769,26 @@ body {
 .markdown-content h4, 
 .markdown-content h5, 
 .markdown-content h6 {
-    margin-top: var(--spacing-lg);
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     font-weight: 600;
     line-height: 1.25;
 }
 
 .markdown-content h1 {
-    font-size: var(--font-size-2xl);
-    padding-bottom: 0.3em;
+    font-size: var(--font-size-lg);
+    padding-bottom: var(--spacing-sm);
     border-bottom: 1px solid var(--border-color);
 }
 
 .markdown-content h2 {
-    font-size: var(--font-size-xl);
-    padding-bottom: 0.3em;
+    font-size: var(--font-size-base);
+    padding-left: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
     border-bottom: 1px solid var(--border-color);
 }
 
 .markdown-content h3 {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-base);
 }
 
 .markdown-content h4 {
@@ -797,7 +806,7 @@ body {
 
 .markdown-content p {
     margin-top: 0;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
 }
 
 .markdown-content a {
