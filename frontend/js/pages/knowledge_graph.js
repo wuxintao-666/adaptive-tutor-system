@@ -3,11 +3,12 @@ import { getParticipantId } from '../modules/session.js';
 import { GraphState } from '../modules/graph_data.js';
 import { GraphRenderer } from '../modules/graph_renderer.js';
 import { buildBackendUrl } from '../modules/config.js';  // 新增导入
-import { setupHeaderTitle, setupBackButton, navigateTo  } from '../modules/navigation.js';
+import { setupHeaderTitle, trackReferrer,setupBackButton, navigateTo  } from '../modules/navigation.js';
 
 
 // 初始化应用
 document.addEventListener('DOMContentLoaded',async () => {
+  trackReferrer();
   // 设置标题点击跳转到首页
   setupHeaderTitle('/pages/knowledge_graph.html');
     
@@ -104,7 +105,7 @@ document.addEventListener('DOMContentLoaded',async () => {
         };
         
         testBtn.onclick = () => {
-          navigateTo('/pages/test_page.html', knowledgeId);
+          navigateTo('/pages/test_page.html', knowledgeId, true, true);
         };
       } else if (graphState.isKnowledgeUnlocked(knowledgeId)) {
         status.textContent = '您可以开始学习该知识点或直接进行测试';
@@ -114,7 +115,7 @@ document.addEventListener('DOMContentLoaded',async () => {
         };
         
         testBtn.onclick = () => {
-          navigateTo('/pages/test_page.html', knowledgeId);
+          navigateTo('/pages/test_page.html', knowledgeId, true, true);
         };
       } else {
         status.textContent = '该知识点尚未解锁，您是否要直接开始测试？';
@@ -123,7 +124,7 @@ document.addEventListener('DOMContentLoaded',async () => {
         
         learnBtn.onclick = () => {};
         testBtn.onclick = () => {
-          navigateTo('/pages/test_page.html', knowledgeId);
+          navigateTo('/pages/test_page.html', knowledgeId, true, true);
         };
       }
       modal.style.display = 'block';
@@ -186,7 +187,7 @@ document.addEventListener('DOMContentLoaded',async () => {
           showKnowledgeModal(id, label);
         } else {// 未解锁知识点
           if (confirm("您还未学习前置知识点，是否直接开始测试？")) {
-            navigateTo('/pages/test_page.html', id);
+            navigateTo('/pages/test_page.html', id, true, true);
           }
         }
       }
@@ -200,15 +201,15 @@ document.addEventListener('DOMContentLoaded',async () => {
       if (type === 'chapter') {
         if (graphState.isChapterCompleted(id)) {
           if (confirm("您已学过本章节，是否再次进行测试？")) {
-            navigateTo('/pages/test_page.html', id);
+            navigateTo('/pages/test_page.html', id, true, true);
           }
         } else if (graphState.currentLearningChapter === id) {
           if (confirm("您还未学完当前章节内容，是否直接开始测试？")) {
-            navigateTo('/pages/test_page.html', id);
+            navigateTo('/pages/test_page.html', id, true, true);
           }
         } else {
           if (confirm("您还未解锁前置章节，是否直接开始测试？")) {
-            navigateTo('/pages/test_page.html', id);
+            navigateTo('/pages/test_page.html', id, true, true);
           }
         }
         

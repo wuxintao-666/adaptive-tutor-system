@@ -1,12 +1,24 @@
 import { encryptWithTimestamp, decryptWithTimestamp, simpleParamDecode } from './encryption.js';
 
+// 存储最后一个来源页面
+let lastReferrer = null;
+
+/**
+ * 记录来源页面（在页面加载时调用）
+ */
+export function trackReferrer() {
+    // 记录当前页面作为下一个页面的来源
+    lastReferrer = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    console.log('记录来源页面:', lastReferrer);
+}
 /**
  * 安全的页面跳转
  * @param {string} url - 目标URL
  * @param {string} id - 要传递的参数
  * @param {boolean} encryptData - 是否加密参数
+ * @param {boolean} addReturn - 是否添加返回参数（仅测试页面使用）
  */
-export function navigateTo(url, id = null, encryptData = true) {
+export function navigateTo(url, id = null, encryptData = true, addReturn = false) {
     let targetUrl = url;
     
     if (id) {
@@ -14,12 +26,19 @@ export function navigateTo(url, id = null, encryptData = true) {
         if (encryptData) {
             paramValue = encryptWithTimestamp(id);
         } else {
-            // 未加密时使用简单的时间戳
-            paramValue = btoa(`${id}|${Date.now()}`);
+            paramValue = id;
         }
         targetUrl += `?topic=${encodeURIComponent(paramValue)}`;
+        
+        // 只有在测试页面且明确要求时才添加返回参数
+        if (addReturn && url.includes('test_page.html')) {
+            const returnUrl = lastReferrer || '/pages/knowledge_graph.html';
+            targetUrl += `&return=${encodeURIComponent(returnUrl)}`;
+            console.log('添加返回参数:', returnUrl);
+        }
     }
     
+    console.log('跳转到:', targetUrl);
     window.location.href = targetUrl;
 }
 
@@ -61,10 +80,38 @@ export function getUrlParam(name, decryptData = true) {
 }
 
 /**
+ * 获取返回URL（仅测试页面使用）
+ */
+export function getReturnUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const returnUrl = urlParams.get('return');
+    
+    if (returnUrl) {
+        return decodeURIComponent(returnUrl);
+    }
+    
+    // 默认返回知识图谱
+    return '/pages/knowledge_graph.html';
+}
+
+/**
  * 返回上一页
  */
 export function goBack() {
-    if (window.history.length > 1) {
+    const returnUrl = getReturnUrl();
+    
+    // 如果当前是测试页面且有返回URL，使用快速返回
+    if (window.location.pathname.includes('test_page.html') && returnUrl) {
+        console.log('快速返回到:', returnUrl);
+        window.location.href = returnUrl;
+    } 
+    // 如果是学习页面，固定返回知识图谱
+    else if (window.location.pathname.includes('learning_page.html')) {
+        console.log('返回知识图谱');
+        window.location.href = '/pages/knowledge_graph.html';
+    }
+    // 其他情况使用浏览器历史
+    else if (window.history.length > 1) {
         window.history.back();
     } else {
         // 如果没有历史记录，跳转到首页
@@ -102,4 +149,8 @@ export function setupBackButton() {
 export function debugUrlParams() {
     const params = new URLSearchParams(window.location.search);
     console.log('URL参数:', Object.fromEntries(params.entries()));
+    
+    if (window.location.pathname.includes('test_page.html')) {
+        console.log('返回URL:', getReturnUrl());
+    }
 }

@@ -2,7 +2,7 @@
 // ==================== 导入模块 ====================
 // 导入配置模块
 import { AppConfig, buildBackendUrl, initializeConfig } from '../modules/config.js';
-import { setupHeaderTitle, setupBackButton, getUrlParam } from '../modules/navigation.js';
+import { setupHeaderTitle, setupBackButton, getUrlParam, trackReferrer,navigateTo } from '../modules/navigation.js';
 // 导入功能模块
 import { 
     renderTopicContent,
@@ -593,7 +593,7 @@ function initEventListeners() {
             // 跳转到测试页面并传递topicId参数
             const testPageUrl = `../pages/test_page.html?topic=${topicId}`;
             console.log('[MainApp] 跳转到测试页面:', testPageUrl);
-            window.location.href = testPageUrl;
+            navigateTo('/pages/test_page.html', topicId, true, true);
         });
     }
 }
@@ -859,9 +859,10 @@ function showStatus(type, message) {
 // 页面加载完成后自动初始化主应用
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        trackReferrer();
         // 设置标题点击跳转到知识图谱页面
         setupHeaderTitle('/pages/knowledge_graph.html');
-        // 设置返回按钮
+        // 设置返回按钮（固定返回知识图谱）
         setupBackButton();
         // 先初始化配置
         console.log('[MainApp] 开始初始化配置...');
