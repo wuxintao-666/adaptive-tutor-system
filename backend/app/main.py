@@ -7,18 +7,18 @@ import asyncio
 from contextlib import asynccontextmanager
 from app.api.endpoints.ws_chat1 import manager, ws_router
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """FastAPI生命周期管理函数，替代弃用的on_event方法"""
-    # 启动时执行的代码
-    asyncio.create_task(manager.check_heartbeats())
-    yield
-    # 关闭时执行的代码（如果需要的话）
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     """FastAPI生命周期管理函数，替代弃用的on_event方法"""
+#     # 启动时执行的代码
+#     asyncio.create_task(manager.check_heartbeats())
+#     yield
+#     # 关闭时执行的代码（如果需要的话）
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
-    lifespan=lifespan
+    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    #,lifespan=lifespan
 )
 
 # Set all CORS enabled origins

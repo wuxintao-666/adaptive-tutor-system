@@ -409,10 +409,19 @@
             
             // 追加内容到消息元素
             appendMessageContent(messageContentElement, content) {
-                messageContentElement.textContent += content;
-                // 滚动到底部
-                const messagesContainer = document.getElementById('messagesContainer');
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                // 逐字符添加内容，使输出更加丝滑
+                let i = 0;
+                const interval = setInterval(() => {
+                    if (i < content.length) {
+                        messageContentElement.textContent += content.charAt(i);
+                        i++;
+                        // 滚动到底部
+                        const messagesContainer = document.getElementById('messagesContainer');
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    } else {
+                        clearInterval(interval);
+                    }
+                }, 2); // 20ms间隔，可以根据需要调整
             }
         }
 

@@ -20,8 +20,10 @@ class ConnectionManager:
         # 超时时间(秒)
         self.timeout = 45
 
+    #websocket.
     async def connect(self, websocket: WebSocket, user_id: str):
         await websocket.accept()
+        
         self.active_connections[user_id] = websocket
         self.last_activity[user_id] = time.time()
         print(f"用户 {user_id} 已连接。当前活跃连接数: {len(self.active_connections)}")
@@ -31,12 +33,14 @@ class ConnectionManager:
             del self.active_connections[user_id]
         if user_id in self.last_activity:
             del self.last_activity[user_id]
+        
         print(f"用户 {user_id} 已断开连接。当前活跃连接数: {len(self.active_connections)}")
 
     async def send_personal_message(self, message: str, user_id: str):
         if user_id in self.active_connections:
             websocket = self.active_connections[user_id]
             await websocket.send_text(message)
+    
 
     async def broadcast(self, message: str):
         disconnected_users = []
@@ -50,25 +54,25 @@ class ConnectionManager:
         for user_id in disconnected_users:
             self.disconnect(user_id)
 
-    async def check_heartbeats(self):
-        """定期检查心跳，关闭不活跃的连接"""
-        while True:
-            await asyncio.sleep(self.heartbeat_interval)
-            current_time = time.time()
-            disconnected_users = []
+    # async def check_heartbeats(self):
+    #     """定期检查心跳，关闭不活跃的连接"""
+    #     while True:
+    #         await asyncio.sleep(self.heartbeat_interval)
+    #         current_time = time.time()
+    #         disconnected_users = []
             
-            for user_id, last_active in self.last_activity.items():
-                if current_time - last_active > self.timeout:
-                    print(f"用户 {user_id} 心跳超时，强制断开连接")
-                    disconnected_users.append(user_id)
+    #         for user_id, last_active in self.last_activity.items():
+    #             if current_time - last_active > self.timeout:
+    #                 print(f"用户 {user_id} 心跳超时，强制断开连接")
+    #                 disconnected_users.append(user_id)
             
-            for user_id in disconnected_users:
-                if user_id in self.active_connections:
-                    try:
-                        await self.active_connections[user_id].close()
-                    except Exception:
-                        pass
-                    self.disconnect(user_id)
+    #         for user_id in disconnected_users:
+    #             if user_id in self.active_connections:
+    #                 try:
+    #                     await self.active_connections[user_id].close()
+    #                 except Exception:
+    #                     pass
+    #                 self.disconnect(user_id)
 
     def update_activity(self, user_id: str):
         """更新用户最后活动时间"""
@@ -80,6 +84,10 @@ manager = ConnectionManager()
 @ws_router.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
     await manager.connect(websocket, user_id)
+    #if user_id in db[return]
+    #   db[reurn][message]
+    #   websocket.receive_text = copy_recive_text[userid]
+    #copy_recive_text[userid] = await websocket.receive_text()
     try:
         while True:
             data = await websocket.receive_text()
@@ -109,7 +117,6 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                     "type": "stream_start"
                 }
                 await websocket.send_text(json.dumps(start_response))
-                
                 # 调用LLM服务获取流式响应
                 async for chunk in llm_gateway.get_stream_completion(
                     system_prompt="You are a helpful AI programming tutor.",
@@ -122,6 +129,8 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                         "type": "stream"
                     }
                     await websocket.send_text(json.dumps(stream_response))
+                    # 添加延迟以控制流式输出速度，避免生成过快
+                    await asyncio.sleep(0.1)  # 50ms延迟，可以根据需要调整
                 
                 # 流式发送结束信号
                 end_response = {
@@ -138,17 +147,11 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                     "message": data,
                     "type": "message"
                 }
-                await manager.broadcast(json.dumps(response))
+                #await manager.broadcast(json.dumps(response))
+        
                 
     except WebSocketDisconnect:
         manager.disconnect(user_id)
-        # 通知其他用户该用户已断开连接
-        disconnect_message = {
-            "sender": "系统",
-            "message": f"用户 {user_id} 已断开连接",
-            "type": "notification"
-        }
-        await manager.broadcast(json.dumps(disconnect_message))
 
 @ws_router.get("/")
 async def root():
