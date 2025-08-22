@@ -1,7 +1,7 @@
 // 导入模块
 import { getParticipantId } from '../modules/session.js';
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
-import { setupHeaderTitle, setupBackButton, getUrlParam, debugUrlParams } from '../modules/navigation.js';
+import { setupHeaderTitle, setupBackButton, getUrlParam, debugUrlParams, getReturnUrl  } from '../modules/navigation.js';
 import tracker from '../modules/behavior_tracker.js';
 import chatModule from '../modules/chat.js';
 
@@ -194,12 +194,16 @@ document.addEventListener('DOMContentLoaded', function() {
     setupHeaderTitle('/pages/knowledge_graph.html');
     // 设置返回按钮
     setupBackButton();
+    // 调试信息
+    debugUrlParams();
     require(['vs/editor/editor.main'], function () {
         initializePage();
         setupSubmitLogic();
         
         // 初始化AI聊天功能
         // 获取并解密URL参数
+        const returnUrl = getReturnUrl();
+        console.log('返回URL:', returnUrl);
         const contentId = getUrlParam('topic');
         if (contentId&& contentId.id) {
             // 使用新的聊天模块初始化
