@@ -130,7 +130,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                     }
                     await websocket.send_text(json.dumps(stream_response))
                     # 添加延迟以控制流式输出速度，避免生成过快
-                    await asyncio.sleep(0.1)  # 50ms延迟，可以根据需要调整
+                    #await asyncio.sleep(0.1)  # 50ms延迟，可以根据需要调整
                 
                 # 流式发送结束信号
                 end_response = {
