@@ -10,7 +10,6 @@
 
 import { getParticipantId } from './session.js';
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
-import websocket from './socket.js';
 
 class ChatModule {
   constructor() {
@@ -40,19 +39,6 @@ class ChatModule {
 
     // 绑定事件监听器
     this.bindEvents(mode, contentId);
-
-    // 初始化并连接 WebSocket（供消息传输与接收）
-    try {
-      websocket.userId = getParticipantId ? getParticipantId() : websocket.userId;
-      websocket.connect();
-
-      // 附加一个额外的 message listener，不会覆盖 socket.js 内部的 onmessage
-      if (websocket.socket) {
-        websocket.socket.addEventListener('message', (event) => this._handleWsMessage(event));
-      }
-    } catch (e) {
-      console.warn('[ChatModule] 无法连接 WebSocket，继续使用 HTTP 回退', e);
-    }
 
     console.log('[ChatModule] 聊天模块初始化完成');
   }
@@ -113,26 +99,15 @@ class ChatModule {
         }
       }
 
-      // 优先通过已创建的 WebSocket 发送（如果存在且已打开）
-      if (websocket && websocket.socket && websocket.socket.readyState === WebSocket.OPEN) {
-        const wsPayload = {
-          type: 'chat_request',
-          userId: websocket.userId || getParticipantId?.(),
-          payload: requestBody
-        };
-        websocket.socket.send(JSON.stringify(wsPayload));
-        // 后端回复将通过 websocket 的 message 事件到达，我们在 _handleWsMessage 中处理渲染
-      } else {
-        // 回退到原先的 HTTP API
-        const data = await window.apiClient.post('/chat/ai/chat', requestBody);
+      // 使用封装的 apiClient 发送请求
+      const data = await window.apiClient.post('/chat/ai/chat', requestBody);
 
-        if (data.code === 200 && data.data && typeof data.data.ai_response === 'string') {
-          // 添加AI回复到UI
-          this.addMessageToUI('ai', data.data.ai_response);
-        } else {
-          // 即使请求成功，但如果响应内容为空或格式不正确，也抛出错误
-          throw new Error(data.message || 'AI回复内容为空或格式不正确');
-        }
+      if (data.code === 200 && data.data && typeof data.data.ai_response === 'string') {
+        // 添加AI回复到UI
+        this.addMessageToUI('ai', data.data.ai_response);
+      } else {
+        // 即使请求成功，但如果响应内容为空或格式不正确，也抛出错误
+        throw new Error(data.message || 'AI回复内容为空或格式不正确');
       }
     } catch (error) {
       console.error('[ChatModule] 发送消息时出错:', error);
@@ -140,62 +115,6 @@ class ChatModule {
     } finally {
       // 取消加载状态
       this.setLoadingState(false);
-    }
-  }
-
-  /**
-   * 处理来自 WebSocket 的消息，支持流式分片（stream）和普通消息
-   * @private
-   */
-  _handleWsMessage(event) {
-    if (!event || !event.data) return;
-    try {
-      const data = JSON.parse(event.data);
-
-      // 支持后端直接返回 data.data.ai_response（兼容原 HTTP 响应）
-      if (data.data && typeof data.data.ai_response === 'string') {
-        this.setLoadingState(false);
-        this.addMessageToUI('ai', data.data.ai_response);
-        return;
-      }
-
-      // 如果后端使用统一字段 message
-      if (data.message && !data.type) {
-        this.setLoadingState(false);
-        this.addMessageToUI('ai', data.message);
-        return;
-      }
-
-      // 处理流式分片事件（stream_start / stream / stream_end）
-      if (data.type === 'stream_start') {
-        // 在UI中创建占位AI消息元素并记录为当前流元素
-        this.setLoadingState(true);
-        this.addMessageToUI('ai', '');
-        // 保存一个指向最后一个 ai-message 元素的引用，供后续分片追加
-        this._currentStreamElement = this.messagesContainer.querySelector('.ai-message:last-child .markdown-content');
-        return;
-      }
-
-      if (data.type === 'stream') {
-        if (this._currentStreamElement) {
-          // 直接追加纯文本，保留 markdown 渲染为后续整段完成时的责任
-          this._currentStreamElement.textContent += data.message || '';
-          this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
-        }
-        return;
-      }
-
-      if (data.type === 'stream_end') {
-        if (this._currentStreamElement && data.message) {
-          this._currentStreamElement.textContent += data.message;
-        }
-        this._currentStreamElement = null;
-        this.setLoadingState(false);
-        return;
-      }
-
-    } catch (e) {
-      console.error('[ChatModule] 解析 WebSocket 消息失败', e);
     }
   }
 
@@ -229,29 +148,6 @@ class ChatModule {
       `;
     }
 
-    /**
-     * 请求数据
-     * 返回数据
-     * 传入add
-     * add渲染元素
-     * 
-     * 
-     * add <div>
-     * 请求数据
-     * 返回数据
-     * if redate.done = ture
-     * break
-     * else
-     * update(content)
-     * 
-     */
-    /**
-     * Ai:今天
-     * AI：天
-     * AI：气
-     * AI：不错
-     * 
-     */
     this.messagesContainer.appendChild(messageElement);
 
     // 滚动到底部
