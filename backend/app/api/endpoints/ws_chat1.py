@@ -92,13 +92,13 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 message_data = json.loads(data)
                 
                 # 处理心跳消息
-                if message_data.get("type") == "ping":
-                    pong_response = {
-                        "type": "pong",
-                        "timestamp": message_data.get("timestamp")
-                    }
-                    await websocket.send_text(json.dumps(pong_response))
-                    continue
+                # if message_data.get("type") == "ping":
+                #     pong_response = {
+                #         "type": "pong",
+                #         "timestamp": message_data.get("timestamp")
+                #     }
+                #     await websocket.send_text(json.dumps(pong_response))
+                #     continue
                 
                 # 处理普通消息
                 sender_id = message_data.get("userId", user_id)

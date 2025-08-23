@@ -1,3 +1,5 @@
+//TODO:Aeolyn:对接chat.js
+//TODO:Aeolyn:对接上chat.js后将manager和connector逻辑分离
 class WebSocketManager {
             constructor() {
                 this.socket = null;
@@ -5,11 +7,20 @@ class WebSocketManager {
                 this.reconnectAttempts = 0;
                 this.maxReconnectAttempts = 5;
                 this.currentAiMessageElement = null;
-                
-                // 更新页面显示的userId
-                //document.getElementById('userId').textContent = this.userId;
+                this.onMessageCallback = null;
+                this.onOpenCallback = null;
+                this.onCloseCallback = null;
             }
-            
+            // 允许外部注册回调
+            onMessage(callback) {
+                 this.onMessageCallback = callback;
+            }
+            onOpen(callback) {
+                 this.onOpenCallback = callback;
+            }
+            onClose(callback) {
+                 this.onCloseCallback = callback;
+            }
             // 连接WebSocket
             connect() {
                 if (this.socket && this.socket.readyState === WebSocket.OPEN) {
@@ -27,20 +38,25 @@ class WebSocketManager {
                     this.socket = new WebSocket(wsUrl);
                     
                     this.socket.onopen = () => {
-                    
-                        //this.updateConnectionStatus(true);
-                        //this.addMessage('WebSocket 连接已建立', 'system');
+                        if (this.onOpenCallback) {
+                               this.onOpenCallback();
+                            }
+                        this.updateConnectionStatus(true);
+                        this.addMessage('WebSocket 连接已建立', 'system');
                         this.reconnectAttempts = 0; // 重置重连尝试次数
                         
                         // 启用发送消息的输入框和按钮
-                        //document.getElementById('messageInput').disabled = false;
-                        //document.getElementById('sendBtn').disabled = false;
+                        document.getElementById('messageInput').disabled = false;
+                        document.getElementById('sendBtn').disabled = false;
                     };
-                    
+                    //TODO:Aeolyn:将流式输出部分拆成单独的工具函数
                     this.socket.onmessage = (event) => {
                         try {
                             const data = JSON.parse(event.data);
-                            
+                            if (this.onMessageCallback) {
+                               this.onMessageCallback(data, event);
+                            }
+                            /* 
                             if (data.type === "stream_start") {
                                 // 开始流式传输
                                 //this.showTypingIndicator(false);
@@ -70,6 +86,7 @@ class WebSocketManager {
                                 // 普通消息
                                 this.addMessage(data.message, 'received', data.sender);
                             }
+                            */
                         } catch (e) {
                             //this.addMessage(event.data, 'received', '系统');
                             console.error('解析消息错误:', e);
@@ -77,33 +94,36 @@ class WebSocketManager {
                     };
                     
                     this.socket.onclose = (event) => {
-                        this.updateConnectionStatus(false);
-                        this.addMessage('WebSocket 连接已关闭', 'system');
+                        //this.updateConnectionStatus(false);
+                        //this.addMessage('WebSocket 连接已关闭', 'system');
                         
                         // 禁用发送消息的输入框和按钮
-                        document.getElementById('messageInput').disabled = true;
-                        document.getElementById('sendBtn').disabled = true;
-                        
+                        // document.getElementById('messageInput').disabled = true;
+                        // document.getElementById('sendBtn').disabled = true;
+                        if (this.onCloseCallback) {
+                               this.onCloseCallback();
+                            }
                         // 尝试重新连接
                         if (this.reconnectAttempts < this.maxReconnectAttempts) {
                             this.reconnectAttempts++;
-                            this.addMessage(`尝试重新连接 (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`, 'system');
+                            //this.addMessage(`尝试重新连接 (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`, 'system');
                             setTimeout(() => this.connect(), 3000);
                         }
                     };
                     
                     this.socket.onerror = (error) => {
-                        this.addMessage('WebSocket 错误发生', 'system');
+                        //this.addMessage('WebSocket 错误发生', 'system');
                         console.error('WebSocket error:', error);
                     };
                     
                 } catch (error) {
                     console.error('Failed to connect WebSocket:', error);
-                    this.addMessage('连接失败: ' + error.message, 'system');
+                    //this.addMessage('连接失败: ' + error.message, 'system');
                 }
             }
             
-            // 发送消息
+            
+            // // 发送消息
             sendMessage(message) {
                 if (this.socket && this.socket.readyState === WebSocket.OPEN) {
                     const messageData = {
@@ -111,7 +131,7 @@ class WebSocketManager {
                         message: message
                     };
                     this.socket.send(JSON.stringify(messageData));
-                    this.addMessage(message, 'sent', '我');
+                    //this.addMessage(message, 'sent', '我');
                     //this.showTypingIndicator(true);
                 } else {
                     this.addMessage('无法发送消息，WebSocket未连接', 'system');
@@ -124,22 +144,22 @@ class WebSocketManager {
                     this.socket.close();
                     this.socket = null;
                 }
-                this.updateConnectionStatus(false);
+                //this.updateConnectionStatus(false);
             }
             
             // 更新连接状态UI
-            updateConnectionStatus(connected) {
-                const statusDot = document.getElementById('statusDot');
-                const statusText = document.getElementById('statusText');
+            // updateConnectionStatus(connected) {
+            //     const statusDot = document.getElementById('statusDot');
+            //     const statusText = document.getElementById('statusText');
                 
-                if (connected) {
-                    statusDot.classList.add('connected');
-                    statusText.textContent = '已连接';
-                } else {
-                    statusDot.classList.remove('connected');
-                    statusText.textContent = '未连接';
-                }
-            }
+            //     if (connected) {
+            //         statusDot.classList.add('connected');
+            //         statusText.textContent = '已连接';
+            //     } else {
+            //         statusDot.classList.remove('connected');
+            //         statusText.textContent = '未连接';
+            //     }
+            // }
             
             // 显示/隐藏打字指示器
             // showTypingIndicator(show) {
@@ -188,6 +208,7 @@ class WebSocketManager {
             }
             
             // 追加内容到消息元素（更平滑的流式渲染）
+            // TODO:流式参考
             appendMessageContent(messageContentElement, content) {
                 // 按流缓冲起来，使用 requestAnimationFrame 分片追加，避免每次小片段都触发大量重排
                 if (!messageContentElement._streamBuffer) messageContentElement._streamBuffer = '';
