@@ -229,6 +229,29 @@ class ChatModule {
       `;
     }
 
+    /**
+     * 请求数据
+     * 返回数据
+     * 传入add
+     * add渲染元素
+     * 
+     * 
+     * add <div>
+     * 请求数据
+     * 返回数据
+     * if redate.done = ture
+     * break
+     * else
+     * update(content)
+     * 
+     */
+    /**
+     * Ai:今天
+     * AI：天
+     * AI：气
+     * AI：不错
+     * 
+     */
     this.messagesContainer.appendChild(messageElement);
 
     // 滚动到底部
