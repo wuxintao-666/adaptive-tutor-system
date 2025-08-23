@@ -1,4 +1,5 @@
 import logging
+import redis
 from typing import Dict, Any
 from sqlalchemy.orm import Session
 from app.crud.crud_event import event as crud_event
@@ -33,6 +34,7 @@ class StudentProfile:
             # TODO: cxz 补充其他需要跨请求追踪的计数器，如idle_time, focus_changes等
         }
     
+    # TODO: 需要检查实现to_dict和from_dict方法
     def to_dict(self) -> Dict[str, Any]:
         """将StudentProfile序列化为字典"""
         # 序列化BKT模型
@@ -82,10 +84,8 @@ class UserStateService:
     SNAPSHOT_EVENT_INTERVAL = 1
     SNAPSHOT_TIME_INTERVAL = timedelta(minutes=1)
     
-    def __init__(self):
-        self._state_cache: Dict[str, StudentProfile] = {}
-        # 移除循环依赖：不再在初始化时创建 BehaviorInterpreterService 实例
-        # self.interpreter = BehaviorInterpreterService()
+    def __init__(self, redis_client: redis.Redis):
+        self.redis_client = redis_client
     
     def handle_event(self, event: BehaviorEvent, db: Session, background_tasks=None):
         """处理事件，并可能创建快照"""
@@ -114,6 +114,8 @@ class UserStateService:
             
             # 设置挫败状态
             profile.emotion_state['is_frustrated'] = True
+            
+            # TODO：使用set_profile实现修改其中某值
             
             logger.info(f"UserStateService: 标记用户 {participant_id} 为挫败状态")
         except Exception as e:
@@ -186,9 +188,11 @@ class UserStateService:
             tuple: (profile, is_new_user)
         """
         is_new_user = False
-        
+
+        key = f"user_profile:{participant_id}"
+        profile_data = self.redis_client.json().get(key)
         # 获取或创建内存Profile
-        if participant_id not in self._state_cache:
+        if profile_data is None:
             # 只有在提供了数据库会话时才检查和创建数据库记录
             if db is not None:
                 from ..crud.crud_participant import participant
@@ -209,14 +213,15 @@ class UserStateService:
                 # 强制从数据库恢复状态。此方法会处理老用户的状态恢复，也会为新用户创建Profile。
                 self._recover_from_history_with_snapshot(participant_id, db)
             else:
-                # 如果没有数据库会话，创建一个默认的新用户profile
-                self._state_cache[participant_id] = StudentProfile(participant_id, is_new_user=True)
+                # 如果没有数据库会话，创建一个默认的新用户profile存入到redis
+                new_profile = StudentProfile(participant_id, is_new_user=True)
+                self.save_profile(new_profile)
         else:
             # 缓存命中，不是新用户
-            return self._state_cache[participant_id], False
+            return StudentProfile.from_dict(participant_id, profile_data), False
         
         # 返回profile和is_new_user标志
-        profile = self._state_cache[participant_id]
+        profile = StudentProfile.from_dict(participant_id, profile_data)
         # 确保profile的is_new_user属性与数据库判断一致
         # 如果没有数据库会话，我们假设用户不是新的（因为我们无法检查）
         if db is not None:
@@ -241,7 +246,7 @@ class UserStateService:
                 # 兼容旧的快照数据结构
                 profile_data = latest_snapshot.event_data
             temp_profile = StudentProfile.from_dict(participant_id, profile_data)
-            self._state_cache[participant_id] = temp_profile
+            self.save_profile(temp_profile)
             
             # 3a. 获取快照之后的事件
             events_after_snapshot = crud_event.get_after_timestamp(
@@ -262,12 +267,12 @@ class UserStateService:
                 # 如果有历史事件，说明不是新用户
                 logger.info(f"Found {len(all_history_events)} historical events for {participant_id}. Not a new user.")
                 temp_profile = StudentProfile(participant_id, is_new_user=False)
-                self._state_cache[participant_id] = temp_profile
+                self.save_profile(temp_profile)
             else:
                 # 如果没有历史事件，说明是新用户
                 logger.info(f"No history found for {participant_id}. This is a new user.")
                 temp_profile = StudentProfile(participant_id, is_new_user=True)
-                self._state_cache[participant_id] = temp_profile
+                self.save_profile(temp_profile)
             
             # 3b. 获取所有历史事件用于回放
             events_after_snapshot = all_history_events or []
@@ -313,8 +318,9 @@ class UserStateService:
 
     def _maybe_create_snapshot(self, participant_id: str, db: Session, background_tasks=None):
         """根据策略判断是否需要创建快照"""
-        profile = self._state_cache.get(participant_id)
-        if not profile:
+        key = f"user_profile:{participant_id}"
+        profile_data = self.redis_client.json().get(key)
+        if profile_data is None:
             return
 
         # 获取最新快照信息
@@ -425,3 +431,11 @@ class UserStateService:
             background_tasks: 后台任务（可选）
         """
         self._maybe_create_snapshot(participant_id, db, background_tasks)
+        
+    def save_profile(self, profile: StudentProfile):
+        key = f"user_profile:{profile.participant_id}"
+        self.redis_client.json().set(key, '.', profile.to_dict())
+
+    def set_profile(self, profile: StudentProfile, set_dict: dict):
+        # TODO: 修改profile中某个字段
+        pass
