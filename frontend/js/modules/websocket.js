@@ -1,247 +1,13 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebSocket 用户通信</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        body {
-            background: linear-gradient(135deg, #6e8efb, #a777e3);
-            color: #333;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 800px;
-            overflow: hidden;
-        }
-        .header {
-            background: #6e8efb;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .content {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f1f5ff;
-            padding: 15px;
-            border-radius: 8px;
-        }
-        .user-id {
-            font-weight: bold;
-            color: #6e8efb;
-        }
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #e74c3c;
-        }
-        .status-dot.connected {
-            background: #2ecc71;
-        }
-        .controls {
-            display: flex;
-            gap: 10px;
-        }
-        button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-        .connect-btn {
-            background: #2ecc71;
-            color: white;
-        }
-        .connect-btn:hover {
-            background: #27ae60;
-        }
-        .disconnect-btn {
-            background: #e74c3c;
-            color: white;
-        }
-        .disconnect-btn:hover {
-            background: #c0392b;
-        }
-        .send-btn {
-            background: #3498db;
-            color: white;
-        }
-        .send-btn:hover {
-            background: #2980b9;
-        }
-        .message-form {
-            display: flex;
-            gap: 10px;
-        }
-        input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-        .messages {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            height: 300px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .message {
-            padding: 10px;
-            border-radius: 8px;
-            max-width: 80%;
-        }
-        .message.received {
-            background: #e3f2fd;
-            align-self: flex-start;
-        }
-        .message.sent {
-            background: #d1ecf1;
-            align-self: flex-end;
-        }
-        .message.ai {
-            background: #e8f5e9;
-            align-self: flex-start;
-        }
-        .message-info {
-            font-size: 12px;
-            color: #777;
-            margin-bottom: 5px;
-        }
-        .message-content {
-            word-break: break-word;
-        }
-        .system-message {
-            text-align: center;
-            color: #777;
-            font-style: italic;
-            margin: 10px 0;
-        }
-        .typing-indicator {
-            display: none;
-            align-self: flex-start;
-            background: #e3f2fd;
-            padding: 10px;
-            border-radius: 8px;
-        }
-        .typing-indicator span {
-            height: 10px;
-            width: 10px;
-            float: left;
-            margin: 0 2px;
-            background-color: #9E9EA1;
-            display: block;
-            border-radius: 50%;
-            opacity: 0.4;
-        }
-        .typing-indicator span:nth-of-type(1) {
-            animation: typing 1s infinite;
-        }
-        .typing-indicator span:nth-of-type(2) {
-            animation: typing 1s infinite 0.2s;
-        }
-        .typing-indicator span:nth-of-type(3) {
-            animation: typing 1s infinite 0.4s;
-        }
-        @keyframes typing {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-            100% { transform: translateY(0px); }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>WebSocket 用户通信</h1>
-            <p>每个用户独立ID的实时通信演示</p>
-        </div>
-        <div class="content">
-            <div class="user-info">
-                <span>用户ID:</span>
-                <span class="user-id" id="userId">未生成</span>
-                <div class="connection-status">
-                    <div class="status-dot" id="statusDot"></div>
-                    <span id="statusText">未连接</span>
-                </div>
-            </div>
-            
-            <div class="controls">
-                <button class="connect-btn" id="connectBtn">连接WebSocket</button>
-                <button class="disconnect-btn" id="disconnectBtn">断开连接</button>
-            </div>
-            
-            <div class="message-form">
-                <input type="text" id="messageInput" placeholder="输入要发送的消息..." disabled>
-                <button class="send-btn" id="sendBtn" disabled>发送</button>
-            </div>
-            
-            <div class="messages" id="messagesContainer">
-                <div class="system-message">消息将显示在这里</div>
-            </div>
-            <!-- <div class="typing-indicator" id="typingIndicator">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div> -->
-        </div>
-    </div>
-
-    <script>
-        class WebSocketManager {
+class WebSocketManager {
             constructor() {
                 this.socket = null;
-                this.userId = this.generateUserId();
+                this.userId = null;
                 this.reconnectAttempts = 0;
                 this.maxReconnectAttempts = 5;
                 this.currentAiMessageElement = null;
                 
                 // 更新页面显示的userId
-                document.getElementById('userId').textContent = this.userId;
-            }
-            
-            // 生成唯一用户ID
-            generateUserId() {
-                // 检查是否已有用户ID，如果没有则生成一个新的
-                let userId = localStorage.getItem('websocketUserId');
-                if (!userId) {
-                    userId = 'user_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('websocketUserId', userId);
-                }
-                return userId;
+                //document.getElementById('userId').textContent = this.userId;
             }
             
             // 连接WebSocket
@@ -262,13 +28,13 @@
                     
                     this.socket.onopen = () => {
                     
-                        this.updateConnectionStatus(true);
-                        this.addMessage('WebSocket 连接已建立', 'system');
+                        //this.updateConnectionStatus(true);
+                        //this.addMessage('WebSocket 连接已建立', 'system');
                         this.reconnectAttempts = 0; // 重置重连尝试次数
                         
                         // 启用发送消息的输入框和按钮
-                        document.getElementById('messageInput').disabled = false;
-                        document.getElementById('sendBtn').disabled = false;
+                        //document.getElementById('messageInput').disabled = false;
+                        //document.getElementById('sendBtn').disabled = false;
                     };
                     
                     this.socket.onmessage = (event) => {
@@ -305,7 +71,8 @@
                                 this.addMessage(data.message, 'received', data.sender);
                             }
                         } catch (e) {
-                            this.addMessage(event.data, 'received', '系统');
+                            //this.addMessage(event.data, 'received', '系统');
+                            console.error('解析消息错误:', e);
                         }
                     };
                     
@@ -384,11 +151,11 @@
             addMessage(message, type, sender = '系统') {
                 const messagesContainer = document.getElementById('messagesContainer');
                 
-                // 移除初始系统消息（如果存在）
-                const systemMessage = messagesContainer.querySelector('.system-message');
-                if (systemMessage && messagesContainer.children.length > 1) {
-                    systemMessage.remove();
-                }
+                // // 移除初始系统消息（如果存在）
+                // const systemMessage = messagesContainer.querySelector('.system-message');
+                // if (systemMessage && messagesContainer.children.length > 1) {
+                //     systemMessage.remove();
+                // }
                 
                 let messageContent; // 在函数作用域顶部声明变量
                 
@@ -403,7 +170,7 @@
                     
                     const messageInfo = document.createElement('div');
                     messageInfo.className = 'message-info';
-                    messageInfo.textContent = `${sender} • ${new Date().toLocaleTimeString()}`;
+                    //messageInfo.textContent = `${sender} • ${new Date().toLocaleTimeString()}`;
                     
                     messageContent = document.createElement('div');
                     messageContent.className = 'message-content';
@@ -477,33 +244,6 @@
                 requestAnimationFrame(flush);
             }
         }
-
-        // 创建全局WebSocket管理器实例
-        const websocketManager = new WebSocketManager();
-
-        // 添加事件监听器
-        document.getElementById('connectBtn').addEventListener('click', () => {
-            websocketManager.connect();
-        });
-
-        document.getElementById('disconnectBtn').addEventListener('click', () => {
-            websocketManager.disconnect();
-        });
-
-        document.getElementById('sendBtn').addEventListener('click', () => {
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value.trim();
-            if (message) {
-                websocketManager.sendMessage(message);
-                messageInput.value = '';
-            }
-        });
-
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('sendBtn').click();
-            }
-        });
-    </script>
-</body>
-</html>
+// 导出单例
+const websocket = new WebSocketManager();
+export default websocket;
