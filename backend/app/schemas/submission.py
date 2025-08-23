@@ -42,3 +42,7 @@ class TestSubmissionResponse(BaseModel):
     passed: bool = Field(..., description="是否所有检查点都通过")
     message: str = Field(..., description="总体评测信息")
     details: List[str] = Field(..., description="详细的失败反馈列表")
+
+class TestSubmissionAsyncResponse(BaseModel):
+    """异步测试提交响应模型"""
+    task_id: str = Field(..., description="异步评测任务的ID")

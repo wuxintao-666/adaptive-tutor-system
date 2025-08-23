@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
+from celery.result import AsyncResult
 
 from app.config.dependency_injection import get_db
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.schemas.response import StandardResponse
 from app.tasks.chat_tasks import process_chat_request
+from app.celery_app import celery_app
 
 router = APIRouter()
 
@@ -97,3 +99,26 @@ async def chat_with_ai2(
         message="Task submitted successfully",
         data={"task_id": task.id}
     )
+
+
+@router.get("/ai/chat2/result/{task_id}", response_model=StandardResponse[ChatResponse])
+def get_chat_result(task_id: str) -> StandardResponse[ChatResponse]:
+    """
+    获取异步聊天任务的结果。
+    
+    Args:
+        task_id: 异步任务的ID
+        
+    Returns:
+        StandardResponse[ChatResponse]: AI回复结果
+    """
+    task_result = AsyncResult(task_id, app=celery_app)
+    
+    if not task_result.ready():
+        raise HTTPException(status_code=202, detail={"status": task_result.status})
+    
+    result = task_result.get()
+    if task_result.failed():
+        raise HTTPException(status_code=500, detail=str(result))
+        
+    return StandardResponse(data=result)

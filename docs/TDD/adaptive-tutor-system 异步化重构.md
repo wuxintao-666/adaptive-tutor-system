@@ -299,17 +299,26 @@
         2.  调用 `process_chat_request.apply_async()` 将核心聊天任务分派到 `chat_queue`。
         3.  API 立即返回 `202 Accepted`，并在响应体中包含任务 ID。
 
--   **`/submission` 和 `/behavior` (数据记录 API)**
-    -   **路径**: 例如 `POST /api/v1/submission/`
+-   **`/submit-test2` (代码提交 API)**
+    -   **路径**: `POST /api/v1/submission/submit-test2`
     -   **逻辑变更**:
-        1.  这两个端点原本可能包含一些数据库写入逻辑。
-        2.  这些写入操作将被封装在新的、轻量级的 Celery 任务中（例如 `save_submission_task`）。
-        3.  API 将调用 `save_submission_task.apply_async()` 将任务分派到 `db_writer_queue`。
-        4.  由于这些操作是“即发即忘”(fire-and-forget)，API 可以选择立即返回 `200 OK` 或 `202 Accepted`，而不需要客户端后续查询结果。
+        1.  执行输入验证和代码评测。
+        2.  将代码评测和BKT模型更新操作封装在新的、重量级的 Celery 任务中（例如 `process_submission_task`）。
+        3.  API 将调用 `process_submission_task.apply_async()` 将任务分派到 `chat_queue`。
+        4.  API 立即返回 `202 Accepted`，并在响应体中包含任务 ID。
+        5.  保留原有的 `/submit-test` 端点以确保向后兼容性。
 
--   **新增结果查询端点 (用于聊天)**
-    -   **路径**: `GET /ai/chat/result/{task_id}`
-    -   **逻辑**: 保持不变。它用于轮询 `chat_queue` 中任务的结果。
+-   **`/log` (行为事件记录 API)**
+    -   **路径**: `POST /api/v1/behavior/log`
+    -   **逻辑变更**:
+        1.  将原始事件持久化操作封装在轻量级的 Celery 任务中（例如 `save_behavior_task`）。
+        2.  API 将调用 `save_behavior_task.apply_async()` 将任务分派到 `db_writer_queue`。
+        3.  行为解释服务的调用保持同步执行，因为它需要立即处理事件。
+        4.  API 立即返回 `202 Accepted`，表示事件已接收并开始处理。
+
+-   **新增结果查询端点 (用于聊天和代码提交)**
+    -   **路径**: `GET /ai/chat/result/{task_id}` 和 `GET /submission/result/{task_id}`
+    -   **逻辑**: 用于轮询 `chat_queue` 中任务的结果。
 
 ## 5. 详细实现步骤 (Roadmap)
 
@@ -326,19 +335,24 @@
 4.  **创建 Celery 任务 (Sprint 2)**:
     -   创建 `app/tasks/chat_tasks.py`。
     -   定义 `process_chat_request` 任务。将 `DynamicController.generate_adaptive_response` 的核心逻辑迁移到此任务中。
+    -   创建 `app/tasks/submission_tasks.py`。
+    -   定义 `process_submission_task` 任务。将代码评测和BKT模型更新的核心逻辑迁移到此任务中。
     -   解决任务内部的依赖注入和数据库会话问题。
-4.  **API 端点改造 (Sprint 2)**:
+5.  **API 端点改造 (Sprint 2)**:
     -   添加 `/ai/chat2` 端点以分派任务。
     -   创建 `/ai/chat/result/{task_id}` 端点。
-5.  **前端适配 (Sprint 3)**:
-    -   前端需要调整交互逻辑，在发送聊天请求后，轮询结果查询端点，直到获得最终的 AI 响应。(暂时不做)
-6.  **部署与测试 (Sprint 4)**:
+    -   添加 `/submit-test2` 端点以分派任务。
+    -   创建 `/submission/result/{task_id}` 端点。
+    -   修改 `/log` 端点以使用异步持久化。
+6.  **前端适配 (Sprint 3)**:
+    -   前端需要调整交互逻辑，在发送聊天请求和代码提交后，轮询结果查询端点，直到获得最终结果。(暂时不做)
+7.  **部署与测试 (Sprint 4)**:
     -   更新 `Dockerfile` 和部署脚本，以包含 Redis 和 Celery Worker 服务。(暂时不做)
     -   进行压力测试，验证系统是否满足设定的成功指标。
 
 ## 6. 数据流和组件交互 (重构后)
 
-新架构下存在两个主要的异步数据流：
+新架构下存在三个主要的异步数据流：
 
 **工作流 1: AI 聊天交互 (需要结果查询)**
 
@@ -352,10 +366,22 @@
 8.  **Client** -> `GET /ai/chat/result/{task_id}` -> **FastAPI** -> (查询结果) -> **Redis (Backend)**
 9.  **FastAPI** -> (返回结果) -> **Client**
 
-**工作流 2: 后台数据写入 (即发即忘)**
+**工作流 2: 代码提交处理 (需要结果查询)**
 
-1.  **Client** -> `POST /api/v1/submission/` -> **FastAPI**
-2.  **FastAPI** -> (验证请求) -> `save_submission_task.apply_async(queue='db_writer_queue')` -> **Redis (Broker)**
+1.  **Client** -> `POST /api/v1/submission/submit-test2` -> **FastAPI**
+2.  **FastAPI** -> (验证请求) -> `process_submission_task.apply_async(queue='chat_queue')` -> **Redis (Broker)**
+3.  **FastAPI** -> `202 Accepted` with `task_id` -> **Client**
+4.  **Redis (Broker)** -> (分派任务) -> **AI Worker (监听 chat_queue)**
+5.  **AI Worker** -> (执行任务, 调用 `sandbox_service`) -> **Sandbox**
+6.  **AI Worker** -> (获取评测结果) -> (更新BKT模型) -> (可选) `save_submission_task.apply_async(queue='db_writer_queue')` -> **Redis (Broker)**
+7.  **AI Worker** -> (任务完成) -> (存储结果) -> **Redis (Backend)**
+8.  **Client** -> `GET /submission/result/{task_id}` -> **FastAPI** -> (查询结果) -> **Redis (Backend)**
+9.  **FastAPI** -> (返回结果) -> **Client**
+
+**工作流 3: 后台数据写入 (即发即忘)**
+
+1.  **Client** -> `POST /api/v1/behavior/log` -> **FastAPI**
+2.  **FastAPI** -> (验证请求) -> `save_behavior_task.apply_async(queue='db_writer_queue')` -> **Redis (Broker)**
 3.  **FastAPI** -> `202 Accepted` -> **Client** (操作立即完成，无需等待)
 4.  **Redis (Broker)** -> (分派任务) -> **DB Worker (监听 db_writer_queue)**
 5.  **DB Worker** -> (执行轻量级任务) -> **SQLite DB** (写入数据)
