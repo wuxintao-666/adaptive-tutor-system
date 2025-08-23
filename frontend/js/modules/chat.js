@@ -163,7 +163,7 @@ class ChatModule {
                 if (messageContentElement._rafScheduled) return;
                 messageContentElement._rafScheduled = true;
 
-                const messagesContainer = document.getElementById('messagesContainer');
+                const messagesContainer = this.messagesContainer
 
                 const FLUSH_CHUNK = 2; // 每帧最多追加的字符数，调大或调小以平衡流畅度与实时性
 
