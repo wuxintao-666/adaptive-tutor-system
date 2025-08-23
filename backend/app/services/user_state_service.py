@@ -113,9 +113,13 @@ class UserStateService:
             profile, _ = self.get_or_create_profile(participant_id, None)
             
             # 设置挫败状态
-            profile.emotion_state['is_frustrated'] = True
+            # profile.emotion_state['is_frustrated'] = True
             
-            # TODO：使用set_profile实现修改其中某值
+            # 使用 set_profile 方法更新 Redis 中的挫败状态
+            set_dict = {
+                'emotion_state.is_frustrated': True
+            }
+            self.set_profile(profile, set_dict)
             
             logger.info(f"UserStateService: 标记用户 {participant_id} 为挫败状态")
         except Exception as e:
@@ -133,15 +137,50 @@ class UserStateService:
             # 获取用户档案
             profile, _ = self.get_or_create_profile(participant_id, None)
             
-            # 增加求助计数
-            profile.behavior_counters.setdefault("help_requests", 0)
-            profile.behavior_counters["help_requests"] += 1
-
-            # 增加特定内容的提问计数
+            set_dict = {}
+            
+            # 使用 RedisJSON 实现类似 setdefault 的逻辑
+            key = f"user_profile:{participant_id}"
+            
+            # 检查 help_requests 字段是否存在，如果不存在则设置为0
+            try:
+                current_help_requests = self.redis_client.json().get(key, '.behavior_counters.help_requests')
+            except Exception:
+                # 字段不存在，设置为0
+                self.redis_client.json().set(key, '.behavior_counters.help_requests', 0)
+                current_help_requests = 0
+            
+            # 递增求助计数
+            new_help_requests = current_help_requests + 1
+            set_dict['behavior_counters.help_requests'] = new_help_requests
+            
+            # 如果有特定内容标题，也增加对应的提问计数
             if content_title:
                 counter_key = f"question_count_{content_title}"
-                profile.behavior_counters.setdefault(counter_key, 0)
-                profile.behavior_counters[counter_key] += 1
+                try:
+                    current_question_count = self.redis_client.json().get(key, f'.behavior_counters.{counter_key}')
+                except Exception:
+                    # 字段不存在，设置为0
+                    self.redis_client.json().set(key, f'.behavior_counters.{counter_key}', 0)
+                    current_question_count = 0
+                
+                # 递增提问计数
+                new_question_count = current_question_count + 1
+                set_dict[f'behavior_counters.{counter_key}'] = new_question_count
+            
+            # 使用 set_profile 批量更新 Redis 中的字段
+            self.set_profile(profile, set_dict)
+            
+            # 注释掉旧的实现方式
+            # # 增加求助计数
+            # profile.behavior_counters.setdefault("help_requests", 0)
+            # profile.behavior_counters["help_requests"] += 1
+            # 
+            # # 增加特定内容的提问计数
+            # if content_title:
+            #     counter_key = f"question_count_{content_title}"
+            #     profile.behavior_counters.setdefault(counter_key, 0)
+            #     profile.behavior_counters[counter_key] += 1
             
             logger.info(f"UserStateService: 增加用户 {participant_id} 的求助计数")
         except Exception as e:
@@ -169,8 +208,31 @@ class UserStateService:
             
             counter_key = key_map.get(event_type)
             if counter_key:
-                profile.behavior_counters.setdefault(counter_key, 0)
-                profile.behavior_counters[counter_key] += 1
+                # 使用 RedisJSON 实现类似 setdefault 的逻辑
+                key = f"user_profile:{participant_id}"
+                
+                # 检查字段是否存在，如果不存在则设置为0
+                try:
+                    current_count = self.redis_client.json().get(key, f'.behavior_counters.{counter_key}')
+                except Exception:
+                    # 字段不存在，设置为0
+                    self.redis_client.json().set(key, f'.behavior_counters.{counter_key}', 0)
+                    current_count = 0
+                
+                # 递增计数
+                new_count = current_count + 1
+                self.redis_client.json().set(key, f'.behavior_counters.{counter_key}', new_count)
+                
+                # 注释掉旧的实现方式
+                # profile.behavior_counters.setdefault(counter_key, 0)
+                # profile.behavior_counters[counter_key] += 1
+                # 
+                # # 使用 set_profile 方法更新 Redis 中的计数
+                # set_dict = {
+                #     f'behavior_counters.{counter_key}': profile.behavior_counters[counter_key]
+                # }
+                # self.set_profile(profile, set_dict)
+                
                 logger.info(f"UserStateService: 增加用户 {participant_id} 的 {counter_key} 计数")
         except Exception as e:
             logger.error(f"UserStateService: 处理轻量级事件时发生错误: {e}")
@@ -360,7 +422,7 @@ class UserStateService:
             snapshot_event = BehaviorEvent(
                 participant_id=participant_id,
                 event_type=EventType.STATE_SNAPSHOT,
-                event_data=StateSnapshotData(profile_data=profile.to_dict()),
+                event_data=StateSnapshotData(profile_data=profile_data.to_dict()),
                 timestamp=datetime.now(UTC)
             )
             
@@ -410,11 +472,38 @@ class UserStateService:
         profile, _ = self.get_or_create_profile(participant_id, None)  # 注意：这里可能需要传入db参数
         
         # 获取或创建该知识点的BKT模型
-        if topic_id not in profile.bkt_model:
-            profile.bkt_model[topic_id] = BKTModel()
-            
+        # if topic_id not in profile.bkt_model:
+        #     profile.bkt_model[topic_id] = BKTModel()
+        
+        # 使用 RedisJSON 操作 Redis 中的 BKT 模型
+        key = f"user_profile:{participant_id}"
+        
+        # 检查该知识点的BKT模型是否存在
+        try:
+            bkt_model_data = self.redis_client.json().get(key, f'.bkt_model.{topic_id}')
+        except Exception:
+            # 如果字段不存在，创建新的BKT模型
+            new_bkt_model = BKTModel()
+            self.redis_client.json().set(key, f'.bkt_model.{topic_id}', new_bkt_model.to_dict())
+            bkt_model_data = new_bkt_model.to_dict()
+        
+        # 从数据恢复BKT模型对象
+        if isinstance(bkt_model_data, dict):
+            bkt_model = BKTModel.from_dict(bkt_model_data)
+        else:
+            bkt_model = bkt_model_data
+        
         # 更新BKT模型
-        mastery_prob = profile.bkt_model[topic_id].update(is_correct)
+        # mastery_prob = profile.bkt_model[topic_id].update(is_correct)
+        
+        # 更新BKT模型
+        mastery_prob = bkt_model.update(is_correct)
+        
+        # 使用 set_profile 函数更新字段
+        set_dict = {
+            f'bkt_model.{topic_id}': bkt_model.to_dict()
+        }
+        self.set_profile(profile, set_dict)
         
         logger.info(f"Updated BKT model for participant {participant_id}, topic {topic_id}. "
               f"Correct: {is_correct}, New mastery probability: {mastery_prob:.3f}")
@@ -437,5 +526,41 @@ class UserStateService:
         self.redis_client.json().set(key, '.', profile.to_dict())
 
     def set_profile(self, profile: StudentProfile, set_dict: dict):
-        # TODO: 修改profile中某个字段
-        pass
+        """
+        使用 RedisJSON 技术直接修改 Redis 中用户档案的特定字段
+        
+        Args:
+            profile: 用户档案对象
+            set_dict: 要修改的字段字典，键为字段路径，值为新值
+                    例如: {
+                        'emotion_state.current_sentiment': 'HAPPY',
+                        'behavior_counters.error_count': 5,
+                        'bkt_model.topic_1.mastery_prob': 0.8
+                    }
+        """
+        if not set_dict:
+            logger.warning("set_dict is empty, no fields to update")
+            return
+            
+        key = f"user_profile:{profile.participant_id}"
+        
+        try:
+            # 使用 RedisJSON 的 JSON.SET 命令逐个更新字段
+            for field_path, new_value in set_dict.items():
+                # 确保字段路径以 '.' 开头，符合 RedisJSON 的路径格式
+                if not field_path.startswith('.'):
+                    field_path = '.' + field_path
+                
+                # 使用 JSON.SET 命令更新特定字段
+                result = self.redis_client.json().set(key, field_path, new_value)
+                
+                if result:
+                    logger.debug(f"Successfully updated field '{field_path}' to '{new_value}' for user {profile.participant_id}")
+                else:
+                    logger.warning(f"Failed to update field '{field_path}' for user {profile.participant_id}")
+            
+            logger.info(f"Profile fields updated successfully for user {profile.participant_id}")
+            
+        except Exception as e:
+            logger.error(f"Error updating profile fields for user {profile.participant_id}: {str(e)}")
+            raise
