@@ -226,6 +226,7 @@ class DynamicController:
             # 更新用户状态
             self.user_state_service.handle_ai_help_request(request.participant_id, content_title)
 
+            # 准备事件数据
             event = BehaviorEvent(
                 participant_id=request.participant_id,
                 event_type=EventType.AI_HELP_REQUEST,
@@ -248,18 +249,36 @@ class DynamicController:
                 raw_prompt_to_llm=system_prompt
             )
 
-            if background_tasks:
-                # 异步执行
+            # 检查是否在Celery Worker环境中运行（background_tasks为None）
+            if background_tasks is None:
+                # 在Celery Worker中，将数据库写入操作作为独立任务分派到db_writer_queue
+                from app.tasks.db_tasks import log_ai_event_task, save_chat_message_task
+                
+                # 分派事件记录任务
+                log_ai_event_task.apply_async(
+                    args=[event.model_dump()], 
+                    queue='db_writer_queue'
+                )
+                
+                # 分派用户消息记录任务
+                save_chat_message_task.apply_async(
+                    args=[user_chat.model_dump()], 
+                    queue='db_writer_queue'
+                )
+                
+                # 分派AI消息记录任务
+                save_chat_message_task.apply_async(
+                    args=[ai_chat.model_dump()], 
+                    queue='db_writer_queue'
+                )
+                
+                print(f"INFO: AI interaction for {request.participant_id} queued for async DB write.")
+            else:
+                # 在FastAPI应用中，使用FastAPI的BackgroundTasks进行异步处理
                 background_tasks.add_task(crud_event.create_from_behavior, db=db, obj_in=event)
                 background_tasks.add_task(crud_chat_history.create, db=db, obj_in=user_chat)
                 background_tasks.add_task(crud_chat_history.create, db=db, obj_in=ai_chat)
-                print(f"INFO: AI interaction for {request.participant_id} logged asynchronously.")
-            else:
-                # 同步执行 (备用)
-                crud_event.create_from_behavior(db=db, obj_in=event)
-                crud_chat_history.create(db=db, obj_in=user_chat)
-                crud_chat_history.create(db=db, obj_in=ai_chat)
-                print(f"WARNING: AI interaction for {request.participant_id} logged synchronously.")
+                print(f"INFO: AI interaction for {request.participant_id} logged asynchronously via FastAPI.")
 
         except Exception as e:
             # 数据保存失败必须报错，科研数据完整性优先
