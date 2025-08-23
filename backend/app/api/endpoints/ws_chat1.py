@@ -1,4 +1,4 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect,Depends
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Dict
 import uuid
@@ -6,6 +6,12 @@ import json
 import time
 import asyncio
 from app.services.llm_gateway import llm_gateway
+from app.services.dynamic_controller import DynamicController
+from app.schemas.chat import ChatRequest, ChatResponse
+from sqlalchemy.orm import Session
+
+from app.config.dependency_injection import get_db
+from app.schemas.chat import ChatRequest, ChatResponse
 
 ws_router = APIRouter()
 
@@ -103,7 +109,18 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 # 处理普通消息
                 sender_id = message_data.get("userId", user_id)
                 message = message_data.get("message", "")
-                
+                '''
+                request = ChatRequest(user_message=message.get("user_message", ""),
+                                      conversation_history=message_data.get("conversation_history", []),
+                                      code_context=message_data.get("code_context", None),
+                                      mode=message_data.get("mode", None),
+                                      content_id=message_data.get("content_id", None)
+                                     )
+                response = await DynamicController.generate_adaptive_response(
+                    request=request,
+                    db=Session=Depends(get_db),
+                )
+                '''
                 # 流式发送开始信号
                 start_response = {
                     "sender": "AI",
