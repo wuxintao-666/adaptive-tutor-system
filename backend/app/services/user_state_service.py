@@ -249,47 +249,40 @@ class UserStateService:
         Returns:
             tuple: (profile, is_new_user)
         """
-        is_new_user = False
-
         key = f"user_profile:{participant_id}"
         profile_data = self.redis_client.json().get(key)
-        # 获取或创建内存Profile
-        if profile_data is None:
-            # 只有在提供了数据库会话时才检查和创建数据库记录
-            if db is not None:
-                from ..crud.crud_participant import participant
-                from ..schemas.participant import ParticipantCreate
-                
-                # 检查数据库中是否存在参与者记录
-                participant_obj = participant.get(db, obj_id=participant_id)
-                
-                if not participant_obj:
-                    # 创建新用户记录
-                    create_schema = ParticipantCreate(id=participant_id, group=group)
-                    participant_obj = participant.create(db, obj_in=create_schema)
-                    is_new_user = True
-        
-            logger.info(f"Cache miss for {participant_id}. Attempting recovery from history.")
-            # 只有在提供了数据库会话时才从数据库恢复状态
-            if db is not None:
-                # 强制从数据库恢复状态。此方法会处理老用户的状态恢复，也会为新用户创建Profile。
-                self._recover_from_history_with_snapshot(participant_id, db)
-            else:
-                # 如果没有数据库会话，创建一个默认的新用户profile存入到redis
-                new_profile = StudentProfile(participant_id, is_new_user=True)
-                self.save_profile(new_profile)
-        else:
-            # 缓存命中，不是新用户
+
+        if profile_data:
+            # 缓存命中
             return StudentProfile.from_dict(participant_id, profile_data), False
-        
-        # 返回profile和is_new_user标志
-        profile = StudentProfile.from_dict(participant_id, profile_data)
-        # 确保profile的is_new_user属性与数据库判断一致
-        # 如果没有数据库会话，我们假设用户不是新的（因为我们无法检查）
-        if db is not None:
-            profile.is_new_user = is_new_user
-        
-        return profile, is_new_user
+
+        # 缓存未命中
+        is_new_user = False
+        if db:
+            from ..crud.crud_participant import participant
+            from ..schemas.participant import ParticipantCreate
+            
+            participant_obj = participant.get(db, obj_id=participant_id)
+            if not participant_obj:
+                create_schema = ParticipantCreate(id=participant_id, group=group)
+                participant.create(db, obj_in=create_schema)
+                is_new_user = True
+
+            logger.info(f"Cache miss for {participant_id}. Attempting recovery from history.")
+            self._recover_from_history_with_snapshot(participant_id, db)
+            
+            # 再次从Redis获取数据，因为_recover_from_history_with_snapshot会写入Redis
+            profile_data = self.redis_client.json().get(key)
+            if profile_data:
+                profile = StudentProfile.from_dict(participant_id, profile_data)
+                profile.is_new_user = is_new_user
+                return profile, is_new_user
+
+        # 如果没有数据库会话或恢复失败，创建一个新的Profile
+        logger.info(f"Creating a new default profile for {participant_id}.")
+        new_profile = StudentProfile(participant_id, is_new_user=True)
+        self.save_profile(new_profile)
+        return new_profile, True
 
     def _recover_from_history_with_snapshot(self, participant_id: str, db: Session):
         # 1. 查找最新的快照
@@ -422,7 +415,7 @@ class UserStateService:
             snapshot_event = BehaviorEvent(
                 participant_id=participant_id,
                 event_type=EventType.STATE_SNAPSHOT,
-                event_data=StateSnapshotData(profile_data=profile_data.to_dict()),
+                event_data=StateSnapshotData(profile_data=profile_data),
                 timestamp=datetime.now(UTC)
             )
             

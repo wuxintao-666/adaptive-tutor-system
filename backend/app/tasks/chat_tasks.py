@@ -18,6 +18,6 @@ def process_chat_request(request_data: dict):
             background_tasks=None  # Celery任务中不使用FastAPI的BackgroundTasks
         )
         # 注意：响应结果会自动存储在Celery的result backend中
-        return response.dict()
+        return response.model_dump()
     finally:
         db.close()
