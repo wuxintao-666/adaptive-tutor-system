@@ -1,95 +1,101 @@
-# # app/api/endpoints/chat_ws.py
-# from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
-# from sqlalchemy.orm import Session
-# import json
-# import logging
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect,Depends
+import json
+import asyncio
+from app.services.llm_gateway import llm_gateway
+from sqlalchemy.orm import Session
+from app.config.dependency_injection import get_db
+from app.services.SocketManager import manager
 
-# from app.config.dependency_injection import get_db, get_dynamic_controller
-# from app.services.socket_connection import manager
-# from app.services.dynamic_controller import DynamicController
-# #from app.schemas.socket_message import ChatMessage
+router = APIRouter()
 
-# logger = logging.getLogger(__name__)
-# ws_router = APIRouter()
-
-# @ws_router.websocket("/chat")
-# async def websocket_chat(
-#     websocket: WebSocket,
-#     participant_id: str,
-#     db: Session = Depends(get_db),
-#     controller: DynamicController = Depends(get_dynamic_controller)
-# ):
-#     """WebSocket 端点用于流式 AI 聊天"""
-#     async def reconnect_callback():
-#         """
-#         重连回调函数
-#         当连接断开时，此函数将被调用来尝试重新建立连接
-#         """
-#         try:
-#             # 尝试建立新的WebSocket连接
-#             await websocket.accept()
-#             return websocket
-#         except Exception as e:
-#             logger.error(f"Failed to reconnect for participant {participant_id}: {str(e)}")
-#             return None
-
-#     # 注册重连回调函数
-#     manager.register_reconnect_callback(participant_id, reconnect_callback)
+@router.websocket("/{user_id}")
+async def chat__endpoint(websocket: WebSocket, user_id: str, db: Session = Depends(get_db)):
+    async def handle_chat(message_data: str,websocket: WebSocket):#TODO:类型要改
+        """处理 LLM 流式消息"""
+        ...
+        # 流式发送开始信号
+        start_response = {
+            "sender": "AI",
+            "message": "",
+            "type": "stream_start"
+        }
+        await websocket.send_text(json.dumps(start_response))
+        # 调用LLM服务获取流式响应
+        async for chunk in llm_gateway.get_stream_completion(
+            system_prompt="You are a helpful AI programming tutor.",
+            messages=[{"role": "user", "content": message_data}]
+        ):
+            # 构建流式响应消息
+            stream_response = {
+                "sender": "AI",
+                "message": chunk,
+                "type": "stream"
+            }
+            await websocket.send_text(json.dumps(stream_response))
+            # 添加延迟以控制流式输出速度，避免生成过快
+            #await asyncio.sleep(0.05)  # 50ms延迟，可以根据需要调整
         
-#     # 将连接加入管理器
-#     await manager.connect(websocket, participant_id)
-    
-#     try:
-#         while True:
-#             # 接收客户端消息
-#             data = await websocket.receive_text()
-#             message_data = json.loads(data)
-            
-#             # 验证消息格式
-#             #message = ChatMessage(**message_data)
-#             message = message_data
-#             logger.info(f"Received message from participant {participant_id}")
-            
-#             # 创建聊天请求对象（类似于 HTTP 端点中的 ChatRequest）
-#             from app.schemas.chat import ChatRequest
-#             chat_request = ChatRequest(
-#                 participant_id=participant_id,
-#                 user_message=,
-#                 session_id=message.session_id,
-#                 # 其他可能需要从消息中提取的字段
-#             )
-            
-#             # 调用流式生成响应
-#             async for chunk in controller.generate_streaming_response(
-#                 request=chat_request,
-#                 db=db
-#             ):
-#                 # 发送流式块
-#                 await websocket.send_text(json.dumps({
-#                     "content": chunk,
-#                     "type": "chunk",
-#                     "session_id": message.session_id
-#                 }))
+        # 流式发送结束信号
+        end_response = {
+            "sender": "AI",
+            "message": "",
+            "type": "stream_end"
+        }
+        await websocket.send_text(json.dumps(end_response))
+
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            manager.update_activity(user_id)
+            print(f"收到用户 {user_id} 的消息: {data}")
+            print(f"使用的socket: {websocket}")
+            # 解析前端发送的JSON数据
+            try:
+                message_data = json.loads(data)
                 
-#             # 发送结束信号
-#             await websocket.send_text(json.dumps({
-#                 "type": "end",
-#                 "session_id": message.session_id
-#             }))
+                # 处理心跳消息
+                # if message_data.get("type") == "ping":
+                #     pong_response = {
+                #         "type": "pong",
+                #         "timestamp": message_data.get("timestamp")
+                #     }
+                #     await websocket.send_text(json.dumps(pong_response))
+                #     continue
                 
-#     except WebSocketDisconnect:
-#         logger.info(f"WebSocket disconnected for participant {participant_id}")
-#         await manager.handle_connection_error(participant_id)
-#     except Exception as e:
-#         logger.error(f"WebSocket error for participant {participant_id}: {str(e)}")
-#         # 发送错误信息
-#         try:
-#             await websocket.send_text(json.dumps({
-#                 "type": "error",
-#                 "content": f"发生错误: {str(e)}",
-#                 "session_id": message.session_id if 'message' in locals() else "unknown"
-#             }))
-#         except:
-#             pass
-#         finally:
-#             await connection_manager.handle_connection_error(participant_id)
+                # 处理普通消息
+                sender_id = message_data.get("userId", user_id)
+                message = message_data.get("message", "")
+                type = message_data.get("type", "")
+                '''
+                request = ChatRequest(user_message=message.get("user_message", ""),
+                                      conversation_history=message_data.get("conversation_history", []),
+                                      code_context=message_data.get("code_context", None),
+                                      mode=message_data.get("mode", None),
+                                      content_id=message_data.get("content_id", None)
+                                     )
+                response = await DynamicController.generate_adaptive_response(
+                    request=request,
+                    db=Session=db
+                )
+                '''
+                if(type == "ai_message"):
+                    task= asyncio.create_task(handle_chat(message,websocket))
+                    task.add_done_callback(lambda t: print(f"Task finished: {t.exception()}"))
+                
+                
+            except json.JSONDecodeError:
+                # 如果消息不是JSON格式，直接广播
+                response = {
+                    "sender": user_id,
+                    "message": data,
+                    "type": "message"
+                }
+                #await manager.broadcast(json.dumps(response))
+                
+    except WebSocketDisconnect:
+        manager.disconnect(user_id)
+
+@router.get("/")
+async def root():
+    return {"message": "WebSocket Server is running"}

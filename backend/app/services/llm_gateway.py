@@ -105,7 +105,7 @@ class LLMGateway:
             
             # 调用LLM API - OpenAI客户端是同步的
             # 使用 asyncio.to_thread 来在异步环境中运行同步代码
-
+            
             response = await asyncio.to_thread(
                 self.client.chat.completions.create,
                 model=self.model,
@@ -121,11 +121,23 @@ class LLMGateway:
                     delta = chunk.choices[0].delta
                     if delta.content:
                         yield delta.content
-
+            
+            '''
+            # 直接异步流式
+            async with self.client.chat.completions.stream(
+                model=self.model,
+                messages=full_messages,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            ) as stream:
+                async for event in stream:
+                    if event.type == "message.delta" and event.delta.get("content"):
+                        yield event.delta["content"]
+            '''
         except Exception as e:
             print(f"Error calling LLM API: {e}")
             yield f"I apologize, but I encountered an error: {str(e)}"
-    
+       
     
 
 

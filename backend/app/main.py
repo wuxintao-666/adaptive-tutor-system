@@ -5,7 +5,7 @@ from app.api.api import api_router
 from app.core.config import settings
 import asyncio
 from contextlib import asynccontextmanager
-from app.api.endpoints.ws_chat1 import manager, ws_router
+from app.api import socket_router 
 
 # @asynccontextmanager
 # async def lifespan(app: FastAPI):
@@ -32,7 +32,7 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
-app.include_router(ws_router)
+app.include_router(socket_router.ws_router, prefix="/ws", tags=["ws"])
 
 if __name__ == '__main__':
     uvicorn.run(

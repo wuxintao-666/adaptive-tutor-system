@@ -1,5 +1,6 @@
 //TODO:Aeolyn:对接chat.js
 //TODO:Aeolyn:对接上chat.js后将manager和connector逻辑分离
+import {AppConfig} from './config.js'
 class WebSocketManager {
             constructor() {
                 this.socket = null;
@@ -33,8 +34,13 @@ class WebSocketManager {
                     //alert('开始连接WebSocket');
                     // 构建WebSocket URL，包含用户ID作为查询参数
                     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                    const wsUrl = `${protocol}//localhost:8000/ws/${this.userId}`;
-                    //alert('WebSocket URL: ' + wsUrl);
+                    // 分开写 host 和 port
+                    const host = window.location.hostname;  // 只拿到域名或IP，不带端口
+                    const port =  AppConfig.backend_port;
+                    // 没有 port 时用默认 80/443
+                    const wsUrl = `${protocol}//${host}:${port}/ws/chat/${this.userId}`;
+                    //const wsUrl = `${protocol}//localhost:8000/ws/chat/${this.userId}`;
+                    alert('WebSocket URL: ' + wsUrl);
                     this.socket = new WebSocket(wsUrl);
                     
                     this.socket.onopen = () => {
