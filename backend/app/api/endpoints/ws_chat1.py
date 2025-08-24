@@ -29,7 +29,6 @@ class ConnectionManager:
     #websocket.
     async def connect(self, websocket: WebSocket, user_id: str):
         await websocket.accept()
-        
         self.active_connections[user_id] = websocket
         self.last_activity[user_id] = time.time()
         print(f"用户 {user_id} 已连接。当前活跃连接数: {len(self.active_connections)}")
@@ -87,12 +86,45 @@ manager = ConnectionManager()
 
 @ws_router.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    async def handle_chat(message_data: str):#TODO:类型要改
+        """处理 LLM 流式消息"""
+        ...
+        # 流式发送开始信号
+        start_response = {
+            "sender": "AI",
+            "message": "",
+            "type": "stream_start"
+        }
+        await websocket.send_text(json.dumps(start_response))
+        # 调用LLM服务获取流式响应
+        async for chunk in llm_gateway.get_stream_completion(
+            system_prompt="You are a helpful AI programming tutor.",
+            messages=[{"role": "user", "content": message}]
+        ):
+            # 构建流式响应消息
+            stream_response = {
+                "sender": "AI",
+                "message": chunk,
+                "type": "stream"
+            }
+            await websocket.send_text(json.dumps(stream_response))
+            # 添加延迟以控制流式输出速度，避免生成过快
+            #await asyncio.sleep(0.05)  # 50ms延迟，可以根据需要调整
+        
+        # 流式发送结束信号
+        end_response = {
+            "sender": "AI",
+            "message": "",
+            "type": "stream_end"
+        }
+        await websocket.send_text(json.dumps(end_response))
+
     await manager.connect(websocket, user_id)
     try:
         while True:
             data = await websocket.receive_text()
             manager.update_activity(user_id)
-            
+            print(f"收到用户 {user_id} 的消息: {data}")
             # 解析前端发送的JSON数据
             try:
                 message_data = json.loads(data)
@@ -109,6 +141,7 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                 # 处理普通消息
                 sender_id = message_data.get("userId", user_id)
                 message = message_data.get("message", "")
+                type = message_data.get("type", "")
                 '''
                 request = ChatRequest(user_message=message.get("user_message", ""),
                                       conversation_history=message_data.get("conversation_history", []),
@@ -121,35 +154,10 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
                     db=Session=Depends(get_db),
                 )
                 '''
-                # 流式发送开始信号
-                start_response = {
-                    "sender": "AI",
-                    "message": "",
-                    "type": "stream_start"
-                }
-                await websocket.send_text(json.dumps(start_response))
-                # 调用LLM服务获取流式响应
-                async for chunk in llm_gateway.get_stream_completion(
-                    system_prompt="You are a helpful AI programming tutor.",
-                    messages=[{"role": "user", "content": message}]
-                ):
-                    # 构建流式响应消息
-                    stream_response = {
-                        "sender": "AI",
-                        "message": chunk,
-                        "type": "stream"
-                    }
-                    await websocket.send_text(json.dumps(stream_response))
-                    # 添加延迟以控制流式输出速度，避免生成过快
-                    #await asyncio.sleep(0.05)  # 50ms延迟，可以根据需要调整
+                if(type == "ai_message"):
+                     asyncio.create_task(handle_chat(message))
                 
-                # 流式发送结束信号
-                end_response = {
-                    "sender": "AI",
-                    "message": "",
-                    "type": "stream_end"
-                }
-                await websocket.send_text(json.dumps(end_response))
+                
                 
             except json.JSONDecodeError:
                 # 如果消息不是JSON格式，直接广播

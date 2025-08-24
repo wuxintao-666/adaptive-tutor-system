@@ -18,6 +18,7 @@ class ChatModule {
     this.inputElement = null;
     this.sendButton = null;
     this.isLoading = false;
+    websocket.userId = getParticipantId();
     websocket.connect();
   }
 
@@ -99,9 +100,12 @@ class ChatModule {
           requestBody.test_results = testResults;
         }
       }
+    
+
       let block=this.addMessageToUI('ai', "");
       let currentAiMessageElement=block;
       const messageData = {
+                        type: "ai_message",
                         userId: getParticipantId(),
                         message: message
                     };
