@@ -127,22 +127,7 @@ class WebSocketManager {
                     //this.addMessage('连接失败: ' + error.message, 'system');
                 }
             }
-            
-            
-            // // 发送消息
-            // sendMessage(message) {
-            //     if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            //         const messageData = {
-            //             userId: this.userId,
-            //             message: message
-            //         };
-            //         this.socket.send(JSON.stringify(messageData));
-            //         //this.addMessage(message, 'sent', '我');
-            //         //this.showTypingIndicator(true);
-            //     } else {
-            //         this.addMessage('无法发送消息，WebSocket未连接', 'system');
-            //     }
-            // }
+        
             
             // 断开WebSocket连接
             disconnect() {
@@ -153,123 +138,7 @@ class WebSocketManager {
                 //this.updateConnectionStatus(false);
             }
             
-            // 更新连接状态UI
-            // updateConnectionStatus(connected) {
-            //     const statusDot = document.getElementById('statusDot');
-            //     const statusText = document.getElementById('statusText');
-                
-            //     if (connected) {
-            //         statusDot.classList.add('connected');
-            //         statusText.textContent = '已连接';
-            //     } else {
-            //         statusDot.classList.remove('connected');
-            //         statusText.textContent = '未连接';
-            //     }
-            // }
             
-            // 显示/隐藏打字指示器
-            // showTypingIndicator(show) {
-            //     const typingIndicator = document.getElementById('typingIndicator');
-            //     typingIndicator.style.display = show ? 'block' : 'none';
-            // }
-            
-            // 添加消息到消息容器
-            // addMessage(message, type, sender = '系统') {
-            //     const messagesContainer = document.getElementById('messagesContainer');
-                
-            //     // // 移除初始系统消息（如果存在）
-            //     // const systemMessage = messagesContainer.querySelector('.system-message');
-            //     // if (systemMessage && messagesContainer.children.length > 1) {
-            //     //     systemMessage.remove();
-            //     // }
-                
-            //     let messageContent; // 在函数作用域顶部声明变量
-                
-            //     if (type === 'system') {
-            //         const systemMsgElement = document.createElement('div');
-            //         systemMsgElement.className = 'system-message';
-            //         systemMsgElement.textContent = message;
-            //         messagesContainer.appendChild(systemMsgElement);
-            //     } else {
-            //         const messageElement = document.createElement('div');
-            //         messageElement.className = `message ${type}`;
-                    
-            //         const messageInfo = document.createElement('div');
-            //         messageInfo.className = 'message-info';
-            //         //messageInfo.textContent = `${sender} • ${new Date().toLocaleTimeString()}`;
-                    
-            //         messageContent = document.createElement('div');
-            //         messageContent.className = 'message-content';
-            //         messageContent.textContent = message;
-                    
-            //         messageElement.appendChild(messageInfo);
-            //         messageElement.appendChild(messageContent);
-            //         messagesContainer.appendChild(messageElement);
-            //     }
-                
-            //     // 滚动到底部
-            //     messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                
-            //     return messageContent;
-            // }
-            
-            // 追加内容到消息元素（更平滑的流式渲染）
-            // TODO:流式参考
-            // appendMessageContent(messageContentElement, content) {
-            //     // 按流缓冲起来，使用 requestAnimationFrame 分片追加，避免每次小片段都触发大量重排
-            //     if (!messageContentElement._streamBuffer) messageContentElement._streamBuffer = '';
-            //     messageContentElement._streamBuffer += content;
-
-            //     // 如果已有调度则无需重复调度
-            //     if (messageContentElement._rafScheduled) return;
-            //     messageContentElement._rafScheduled = true;
-
-            //     const messagesContainer = document.getElementById('messagesContainer');
-
-            //     const FLUSH_CHUNK = 2; // 每帧最多追加的字符数，调大或调小以平衡流畅度与实时性
-
-            //     const flush = () => {
-            //         messageContentElement._rafScheduled = false;
-
-            //         // 每次从缓冲区取出一段字符追加
-            //         const buffer = messageContentElement._streamBuffer || '';
-            //         if (!buffer) return;
-
-            //         const toAppend = buffer.slice(0, FLUSH_CHUNK);
-            //         // 使用 textContent 追加纯文本，避免 XSS 和重解析
-            //         messageContentElement.textContent += toAppend;
-
-            //         // 剩余写回缓冲区
-            //         messageContentElement._streamBuffer = buffer.slice(FLUSH_CHUNK);
-
-            //         // 平滑滚动到底部，但仅在用户接近底部时使用 smooth，避免用户查看历史消息时被打断
-            //         try {
-            //             const distanceFromBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight;
-            //             const useSmooth = distanceFromBottom < 80; // 阈值可调整
-            //             messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: useSmooth ? 'smooth' : 'auto' });
-            //         } catch (e) {
-            //             // fallback
-            //             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            //         }
-
-            //         // 如果还有缓冲则在下一帧继续刷新
-            //         if (messageContentElement._streamBuffer && messageContentElement._streamBuffer.length > 0) {
-            //             messageContentElement._rafScheduled = true;
-            //             requestAnimationFrame(flush);
-            //         }
-            //     };
-
-            //     // 将 flush 暴露到元素，以便 stream_end 调用时触发分片完成
-            //     messageContentElement._flushFn = () => {
-            //         // 如果已经在调度中，flush 会在当前 rAF 循环中自动完成
-            //         if (messageContentElement._rafScheduled) return;
-            //         messageContentElement._rafScheduled = true;
-            //         requestAnimationFrame(flush);
-            //     };
-
-            //     // 首次调度
-            //     requestAnimationFrame(flush);
-            // }
         }
 // 导出单例
 const websocket = new WebSocketManager();
