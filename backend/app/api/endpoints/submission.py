@@ -27,7 +27,7 @@ def submit_test2(
     """
     task = process_submission_task.apply_async(
         args=[submission_in.model_dump()],
-        queue='chat_queue'
+        queue='submit_queue'
     )
     return StandardResponse(data={"task_id": task.id})
 
