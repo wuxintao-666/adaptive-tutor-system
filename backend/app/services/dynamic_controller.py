@@ -252,22 +252,25 @@ class DynamicController:
             # 检查是否在Celery Worker环境中运行（background_tasks为None）
             if background_tasks is None:
                 # 在Celery Worker中，将数据库写入操作作为独立任务分派到db_writer_queue
-                from app.tasks.db_tasks import log_ai_event_task, save_chat_message_task
+                from app.celery_app import celery_app
                 
                 # 分派事件记录任务
-                log_ai_event_task.apply_async(
+                celery_app.send_task(
+                    'app.tasks.db_tasks.log_ai_event_task',
                     args=[event.model_dump()], 
                     queue='db_writer_queue'
                 )
                 
                 # 分派用户消息记录任务
-                save_chat_message_task.apply_async(
+                celery_app.send_task(
+                    'app.tasks.db_tasks.save_chat_message_task',
                     args=[user_chat.model_dump()], 
                     queue='db_writer_queue'
                 )
                 
                 # 分派AI消息记录任务
-                save_chat_message_task.apply_async(
+                celery_app.send_task(
+                    'app.tasks.db_tasks.save_chat_message_task',
                     args=[ai_chat.model_dump()], 
                     queue='db_writer_queue'
                 )
@@ -283,3 +286,111 @@ class DynamicController:
         except Exception as e:
             # 数据保存失败必须报错，科研数据完整性优先
             raise RuntimeError(f"Failed to log AI interaction for {request.participant_id}: {e}")
+
+    def generate_adaptive_response_sync(
+        self,
+        request: ChatRequest,
+        db: Session,
+        background_tasks = None
+    ) -> ChatResponse:
+        """
+        同步生成自适应AI回复的核心流程（供Celery任务使用）
+        Args:
+            request: 聊天请求
+            db: 数据库会话
+            background_tasks: 后台任务处理器（可选）
+        Returns:
+            ChatResponse: AI回复
+        """
+        try:
+            # 步骤1: 获取或创建用户档案（使用UserStateService）
+            profile, _ = self.user_state_service.get_or_create_profile(request.participant_id, db)
+            # 步骤2: 情感分析
+            if self.sentiment_service:
+                sentiment_result = self.sentiment_service.analyze_sentiment(
+                    request.user_message
+                )
+            else:
+                # 如果情感分析服务未启用，创建一个默认的情感分析结果
+                from app.schemas.chat import SentimentAnalysisResult
+                sentiment_result = SentimentAnalysisResult(
+                    label="neutral",
+                    confidence=0.0,
+                    details={}
+                )
+            # 构建用户状态摘要（同时更新用户情感状态）
+            user_state_summary = self._build_user_state_summary(profile, sentiment_result)
+            # 步骤3: RAG检索
+            retrieved_knowledge = []
+            if self.rag_service:
+                try:
+                    retrieved_knowledge = self.rag_service.retrieve(request.user_message)
+                except Exception as e:
+                    print(f"⚠️ RAG检索失败，使用空知识内容: {e}")
+                    retrieved_knowledge = []
+            # 步骤4: 加载内容（学习内容或测试任务）
+            content_title = None
+            loaded_content_json = None
+            if request.mode and request.content_id:
+                try:
+                    content_type = "learning_content" if request.mode == "learning" else "test_tasks"
+                    loaded_content = load_json_content(content_type, request.content_id)
+                    content_title = getattr(loaded_content, 'title', None) or getattr(loaded_content, 'topic_id', None)
+                    
+                    # 根据模式处理内容
+                    if request.mode == "test":
+                        loaded_content_json = loaded_content.model_dump_json()
+                    elif request.mode == "learning":
+                        # 移除sc_all字段
+                        learning_content_dict = loaded_content.model_dump()
+                        learning_content_dict.pop('sc_all', None)
+                        loaded_content_json = json.dumps(learning_content_dict)
+                except Exception as e:
+                    print(f"⚠️ 内容加载失败: {e}")
+                    loaded_content = None
+                    content_title = None
+            else:
+                loaded_content = None
+            # 步骤5: 生成提示词
+            # 将ConversationMessage转换为字典格式
+            conversation_history_dicts = []
+            if request.conversation_history:
+                for msg in request.conversation_history:
+                    conversation_history_dicts.append({
+                        'role': msg.role,
+                        'content': msg.content
+                    })
+            elif request.conversation_history is None:
+                # 确保即使conversation_history为None也传递空列表
+                conversation_history_dicts = []
+            retrieved_knowledge_content = [item['content'] for item in retrieved_knowledge if isinstance(item, dict) and 'content' in item]
+            system_prompt, messages = self.prompt_generator.create_prompts(
+                user_state=user_state_summary,
+                retrieved_context=retrieved_knowledge_content,
+                conversation_history=conversation_history_dicts,
+                user_message=request.user_message,
+                code_content=request.code_context,
+                mode=request.mode,
+                content_title=content_title,
+                content_json=loaded_content_json,  # 传递加载的内容JSON
+                test_results=request.test_results  # 传递测试结果
+            )
+            # 步骤6: 调用LLM（同步方式）
+            ai_response = self.llm_gateway.get_completion_sync(
+                system_prompt=system_prompt,
+                messages=messages
+            )
+            # 步骤7: 构建响应（只包含AI回复内容，符合TDD-II-10设计）
+            response = ChatResponse(ai_response=ai_response)
+            # 步骤8: 记录AI交互
+            self._log_ai_interaction(request, response, db, background_tasks, system_prompt, content_title)
+            return response
+        except Exception as e:
+            print(f"❌ CRITICAL ERROR in generate_adaptive_response_sync: {e}")
+            import traceback
+            traceback.print_exc()
+            # 返回一个标准的、用户友好的错误响应
+            # 不包含任何可能泄露内部实现的细节
+            return ChatResponse(
+                ai_response="I'm sorry, but a critical error occurred on our end. Please notify the research staff."
+            )

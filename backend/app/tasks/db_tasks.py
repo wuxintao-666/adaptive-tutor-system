@@ -7,7 +7,7 @@ from app.schemas.behavior import BehaviorEvent
 from app.schemas.chat import ChatHistoryCreate
 from app.schemas.user_progress import UserProgressCreate
 
-@celery_app.task(name="tasks.save_submission")
+@celery_app.task(name='app.tasks.db_tasks.save_submission_task')
 def save_submission_task(progress_data: dict):
     """一个专门用于保存 submission 数据的轻量级任务"""
     db = SessionLocal()
@@ -18,7 +18,7 @@ def save_submission_task(progress_data: dict):
     finally:
         db.close()
 
-@celery_app.task(name="tasks.save_behavior")
+@celery_app.task(name='app.tasks.db_tasks.save_behavior_task')
 def save_behavior_task(behavior_data: dict):
     """一个专门用于保存 behavior 数据的轻量级任务"""
     db = SessionLocal()
@@ -29,7 +29,7 @@ def save_behavior_task(behavior_data: dict):
     finally:
         db.close()
 
-@celery_app.task(name="tasks.log_ai_event")
+@celery_app.task(name='app.tasks.db_tasks.log_ai_event_task')
 def log_ai_event_task(event_data: dict):
     """一个专门用于记录AI交互事件的轻量级任务"""
     db = SessionLocal()
@@ -40,7 +40,7 @@ def log_ai_event_task(event_data: dict):
     finally:
         db.close()
 
-@celery_app.task(name="tasks.save_chat_message")
+@celery_app.task(name='app.tasks.db_tasks.save_chat_message_task')
 def save_chat_message_task(chat_data: dict):
     """一个专门用于保存聊天记录的轻量级任务"""
     db = SessionLocal()
