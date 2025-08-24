@@ -1,5 +1,6 @@
 from app.celery_app import celery_app, get_dynamic_controller
 from app.db.database import SessionLocal
+from app.schemas.chat import ChatRequest
 
 @celery_app.task
 def process_chat_request(request_data: dict):
@@ -11,9 +12,10 @@ def process_chat_request(request_data: dict):
             participant_id=request_data['participant_id'],
             db=db
         )
-        # 调用生成回复
-        response = controller.generate_adaptive_response(
-            request=request_data,
+        # 调用生成回复（使用同步函数）
+        request_obj = ChatRequest(**request_data)
+        response = controller.generate_adaptive_response_sync(
+            request=request_obj,
             db=db,
             background_tasks=None  # Celery任务中不使用FastAPI的BackgroundTasks
         )

@@ -12,7 +12,13 @@ celery_app = Celery(
     "adaptive_tutor_system",
     broker=settings.REDIS_URL,
     backend=settings.REDIS_URL,
-    include=["app.tasks"]
+    include=[
+        "app.tasks",
+        "app.tasks.chat_tasks",
+        "app.tasks.behavior_tasks",
+        "app.tasks.db_tasks",
+        "app.tasks.submission_tasks"
+    ]
 )
 
 # 全局变量，用于在单个 Worker 进程中存储依赖实例
@@ -105,7 +111,13 @@ celery_app.conf.update(
     
     # 队列配置
     task_routes={
-        'app.tasks.chat_task': {'queue': 'chat_queue'},
+        'app.tasks.chat_tasks.process_chat_request': {'queue': 'chat_queue'},
+        'app.tasks.behavior_tasks.interpret_behavior_task': {'queue': 'behavior_queue'},
+        'app.tasks.submission_tasks.process_submission_task': {'queue': 'submit_queue'},
+        'app.tasks.db_tasks.save_submission_task': {'queue': 'db_writer_queue'},
+        'app.tasks.db_tasks.save_behavior_task': {'queue': 'db_writer_queue'},
+        'app.tasks.db_tasks.log_ai_event_task': {'queue': 'db_writer_queue'},
+        'app.tasks.db_tasks.save_chat_message_task': {'queue': 'db_writer_queue'},
     },
     task_default_queue='default',
 )
