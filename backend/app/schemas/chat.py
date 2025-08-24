@@ -18,6 +18,51 @@ class ConversationMessage(BaseModel):
     content: str
     timestamp: Optional[datetime] = None
 
+class SocketRequest(BaseModel):
+    """Socket请求模型
+    
+    通过WebSocket发送的请求消息，用于客户端与服务器之间的实时通信。
+    
+    Attributes:
+        type: 消息类型，如 "message"(普通消息), "ping"(心跳检测), "ai_message"(AI请求消息)
+        userId: 用户ID，标识消息发送者
+        message: 消息内容，文本格式
+        timestamp: 时间戳，记录消息发送时间
+        conversation_history: 对话历史，可选字段
+        code_context: 代码上下文，可选字段
+        mode: 模式，标识当前是学习模式还是测试模式 ('learning' 或 'test')
+        content_id: 内容ID，学习内容或测试任务的ID
+    """
+    type: str
+    userId: str
+    message: str
+    conversation_history: Optional[List[ConversationMessage]] = None
+    timestamp: int = None
+    code_context: Optional[CodeContent] = None
+    mode: Optional[str] = None  # "learning" 或 "test"
+    content_id: Optional[str] = None
+
+
+class SocketResponse(BaseModel):
+    """Socket响应模型
+
+    通过WebSocket发送的响应消息，用于服务器向客户端发送实时信息。
+
+    Attributes:
+        type: 消息类型，如 "message"(普通消息), "stream_start"(流式传输开始), 
+              "stream"(流式传输中), "stream_end"(流式传输结束), "pong"(心跳响应)
+        sender: 发送者标识，如 "AI", "system" 或具体的用户ID
+        message: 消息内容，文本格式
+        status: 响应状态，'success'表示成功，'error'表示错误
+        error_message: 错误信息，可选字段
+        timestamp: 时间戳，记录消息发送时间
+    """
+    type: str
+    sender: str
+    message: Optional[str] = None
+    status: str = "success"
+    error_message: Optional[str] = None
+    timestamp: Optional[datetime] = None
 
 class ChatRequest(BaseModel):
     """聊天请求模型

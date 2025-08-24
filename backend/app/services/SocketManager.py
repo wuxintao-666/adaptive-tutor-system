@@ -1,18 +1,15 @@
 from fastapi import WebSocket
-from typing import Dict
-import time
+from typing import Dict, Union
+from pydantic import BaseModel
+import time, json, asyncio
+
 class ConnectionManager:
     def __init__(self):
-        # 存储用户ID与WebSocket连接的映射
         self.active_connections: Dict[str, WebSocket] = {}
-        # 存储用户最后活动时间
         self.last_activity: Dict[str, float] = {}
-        # 心跳检测间隔(秒)
         self.heartbeat_interval = 30
-        # 超时时间(秒)
         self.timeout = 45
 
-    #websocket.
     async def connect(self, websocket: WebSocket, user_id: str):
         await websocket.accept()
         self.active_connections[user_id] = websocket
@@ -26,45 +23,56 @@ class ConnectionManager:
             del self.last_activity[user_id]
         print(f"用户 {user_id} 已断开连接。当前活跃连接数: {len(self.active_connections)}")
 
-    async def send_personal_message(self, message: str, user_id: str):
+    async def send_json(self, user_id: str, message: Union[dict, BaseModel]):
+        """给单个用户发送 JSON 消息"""
         if user_id in self.active_connections:
-            websocket = self.active_connections[user_id]
-            await websocket.send_text(message)
+            ws = self.active_connections[user_id]
+            if isinstance(message, BaseModel):
+                message = message.dict()
+            await ws.send_text(json.dumps(message, default=str))
 
-    async def broadcast(self, message: str):
+    async def send_text(self, user_id: str, message: str):
+        """兼容原来的纯字符串发送"""
+        if user_id in self.active_connections:
+            await self.active_connections[user_id].send_text(message)
+
+    async def broadcast(self, message: Union[dict, BaseModel, str]):
+        """广播 JSON/str 消息"""
         disconnected_users = []
+        if isinstance(message, BaseModel):
+            message = message.dict()
+        if isinstance(message, dict):
+            message = json.dumps(message, default=str)
+
         for user_id, connection in self.active_connections.items():
             try:
                 await connection.send_text(message)
             except Exception:
                 disconnected_users.append(user_id)
-        
-        # 清理已断开的连接
+
         for user_id in disconnected_users:
             self.disconnect(user_id)
 
-    # async def check_heartbeats(self):
-    #     """定期检查心跳，关闭不活跃的连接"""
-    #     while True:
-    #         await asyncio.sleep(self.heartbeat_interval)
-    #         current_time = time.time()
-    #         disconnected_users = []
-            
-    #         for user_id, last_active in self.last_activity.items():
-    #             if current_time - last_active > self.timeout:
-    #                 print(f"用户 {user_id} 心跳超时，强制断开连接")
-    #                 disconnected_users.append(user_id)
-            
-    #         for user_id in disconnected_users:
-    #             if user_id in self.active_connections:
-    #                 try:
-    #                     await self.active_connections[user_id].close()
-    #                 except Exception:
-    #                     pass
-    #                 self.disconnect(user_id)
+    async def check_heartbeats(self):
+        """定期检查心跳，关闭不活跃的连接"""
+        while True:
+            await asyncio.sleep(self.heartbeat_interval)
+            current_time = time.time()
+            disconnected_users = []
+            for user_id, last_active in self.last_activity.items():
+                if current_time - last_active > self.timeout:
+                    print(f"用户 {user_id} 心跳超时，强制断开连接")
+                    disconnected_users.append(user_id)
+
+            for user_id in disconnected_users:
+                if user_id in self.active_connections:
+                    try:
+                        await self.active_connections[user_id].close()
+                    except Exception:
+                        pass
+                    self.disconnect(user_id)
 
     def update_activity(self, user_id: str):
-        """更新用户最后活动时间"""
         if user_id in self.last_activity:
             self.last_activity[user_id] = time.time()
 
