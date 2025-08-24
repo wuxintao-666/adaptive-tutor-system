@@ -321,6 +321,21 @@ class UserStateServiceTester:
         print("\n⚡ 测试轻量级事件处理...")
         
         try:
+            # 先获取当前计数器的值作为基准
+            key = f"user_profile:{self.test_user_id}"
+            current_data = self.redis_client.json().get(key)
+            base_counters = current_data.get('behavior_counters', {})
+            
+            # 记录基准值
+            base_values = {
+                'focus_changes': base_counters.get('focus_changes', 0),
+                'idle_count': base_counters.get('idle_count', 0),
+                'dom_selects': base_counters.get('dom_selects', 0),
+                'code_edits': base_counters.get('code_edits', 0)
+            }
+            
+            print(f"   基准计数器值: {base_values}")
+            
             # 处理多个轻量级事件
             events = [
                 "page_focus_change",
@@ -333,7 +348,6 @@ class UserStateServiceTester:
                 self.user_state_service.handle_lightweight_event(self.test_user_id, event_type)
             
             # 验证计数器是否都增加
-            key = f"user_profile:{self.test_user_id}"
             updated_data = self.redis_client.json().get(key)
             
             if updated_data and updated_data.get('behavior_counters'):
@@ -341,10 +355,10 @@ class UserStateServiceTester:
                 print("   ✅ 轻量级事件处理成功")
                 
                 expected_counters = {
-                    'focus_changes': 1,
-                    'idle_count': 1,
-                    'dom_selects': 1,
-                    'code_edits': 1
+                    'focus_changes': base_values['focus_changes'] + 1,
+                    'idle_count': base_values['idle_count'] + 1,
+                    'dom_selects': base_values['dom_selects'] + 1,
+                    'code_edits': base_values['code_edits'] + 1
                 }
                 
                 all_correct = True

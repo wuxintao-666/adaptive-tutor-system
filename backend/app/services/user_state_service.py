@@ -152,21 +152,21 @@ class UserStateService:
             
             # 递增求助计数
             new_help_requests = current_help_requests + 1
-            set_dict['behavior_counters.help_requests'] = new_help_requests
+            set_dict['.behavior_counters.help_requests'] = new_help_requests
             
             # 如果有特定内容标题，也增加对应的提问计数
             if content_title:
                 counter_key = f"question_count_{content_title}"
                 try:
-                    current_question_count = self.redis_client.json().get(key, f'.behavior_counters.{counter_key}')
+                    current_question_count = self.redis_client.json().get(key, f'.behavior_counters["{counter_key}"]')
                 except Exception:
                     # 字段不存在，设置为0
-                    self.redis_client.json().set(key, f'.behavior_counters.{counter_key}', 0)
+                    self.redis_client.json().set(key, f'.behavior_counters["{counter_key}"]', 0)
                     current_question_count = 0
                 
                 # 递增提问计数
                 new_question_count = current_question_count + 1
-                set_dict[f'behavior_counters.{counter_key}'] = new_question_count
+                set_dict[f'.behavior_counters["{counter_key}"]'] = new_question_count
             
             # 使用 set_profile 批量更新 Redis 中的字段
             self.set_profile(profile, set_dict)
@@ -544,7 +544,10 @@ class UserStateService:
                 if not field_path.startswith('.'):
                     field_path = '.' + field_path
                 
-                # 使用 JSON.SET 命令更新特定字段
+                # 检查并创建必要的中间结构
+                self._ensure_intermediate_structure(key, field_path)
+                
+                # 直接使用 JSON.SET 命令更新特定字段
                 result = self.redis_client.json().set(key, field_path, new_value)
                 
                 if result:
@@ -557,3 +560,34 @@ class UserStateService:
         except Exception as e:
             logger.error(f"Error updating profile fields for user {profile.participant_id}: {str(e)}")
             raise
+    
+    def _ensure_intermediate_structure(self, key: str, field_path: str):
+        """
+        确保嵌套字段的中间结构存在
+        
+        Args:
+            key: Redis键
+            field_path: 字段路径，如 '.behavior_counters.custom_metrics.engagement_score'
+        """
+        try:
+            # 分解路径，获取所有中间路径
+            path_parts = field_path.strip('.').split('.')
+            
+            # 逐级检查并创建中间结构
+            current_path = ""
+            for i, part in enumerate(path_parts[:-1]):  # 除了最后一个部分
+                if current_path:
+                    current_path += "." + part
+                else:
+                    current_path = part
+                
+                # 检查当前路径是否存在
+                try:
+                    self.redis_client.json().get(key, f".{current_path}")
+                except Exception:
+                    # 路径不存在，创建空对象
+                    self.redis_client.json().set(key, f".{current_path}", {})
+                    logger.debug(f"Created intermediate structure at .{current_path}")
+                    
+        except Exception as e:
+            logger.warning(f"Failed to ensure intermediate structure for {field_path}: {e}")
