@@ -13,7 +13,7 @@ from app.config.dependency_injection import get_user_state_service, get_db, get_
 from app.crud.crud_progress import progress as crud_progress
 from app.schemas.user_progress import UserProgressCreate
 from app.schemas.response import StandardResponse
-from app.tasks.db_tasks import save_submission_task
+from app.tasks.db_tasks import save_progress_task, save_code_submission_task
 
 router = APIRouter()
 
@@ -25,6 +25,19 @@ def submit_test2(
     """
     接收用户代码提交，异步进行评测，并返回任务ID。
     """
+    # 使用Celery队列异步保存用户提交的代码到数据库
+    submission_data = {
+        "participant_id": submission_in.participant_id,
+        "topic_id": submission_in.topic_id,
+        "html_code": submission_in.code.html,
+        "css_code": submission_in.code.css,
+        "js_code": submission_in.code.js
+    }
+    save_code_submission_task.apply_async(
+        args=[submission_data],
+        queue='db_writer_queue'
+    )
+    
     task = process_submission_task.apply_async(
         args=[submission_in.model_dump()],
         queue='submit_queue'
@@ -50,7 +63,6 @@ def get_submission_result(task_id: str) -> Any:
 def submit_test(
         *,
         db: Session = Depends(get_db),
-        background_tasks: BackgroundTasks,
         submission_in: TestSubmissionRequest,
         user_state_service: UserStateService = Depends(lambda: get_user_state_service(get_redis_client()))
 ) -> Any:
@@ -60,6 +72,19 @@ def submit_test(
     # 记录提交的代码内容用于调试
     print(f"Received submission for participant {submission_in.participant_id}, topic {submission_in.topic_id}")
     print(f"Submitted code: {submission_in.code}")
+
+    # 使用Celery队列异步保存用户提交的代码到数据库
+    submission_data = {
+        "participant_id": submission_in.participant_id,
+        "topic_id": submission_in.topic_id,
+        "html_code": submission_in.code.html,
+        "css_code": submission_in.code.css,
+        "js_code": submission_in.code.js
+    }
+    save_code_submission_task.apply_async(
+        args=[submission_data],
+        queue='db_writer_queue'
+    )
 
     # 1. 加载测试内容
     try:
@@ -91,13 +116,16 @@ def submit_test(
     # 这确保了BKT模型更新后，状态能及时被保存
     user_state_service.maybe_create_snapshot(submission_in.participant_id, db)
 
-    # 5. 如果测试通过，异步更新用户进度记录
+    # 5. 如果测试通过，使用Celery队列异步更新用户进度记录
     if evaluation_result["passed"]:
         progress_data = UserProgressCreate(
             participant_id=submission_in.participant_id,
             topic_id=submission_in.topic_id
         )
-        background_tasks.add_task(crud_progress.create, db=db, obj_in=progress_data)
+        save_progress_task.apply_async(
+            args=[progress_data.model_dump()],
+            queue='db_writer_queue'
+        )
 
     # 6. 返回评测结果
     return StandardResponse(data=evaluation_result)

@@ -4,7 +4,7 @@ from app.schemas.submission import TestSubmissionRequest
 from app.services.sandbox_service import sandbox_service
 from app.services.content_loader import load_json_content
 from app.schemas.user_progress import UserProgressCreate
-from app.tasks.db_tasks import save_submission_task
+from app.tasks.db_tasks import save_progress_task
 import logging
 
 logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def process_submission_task(self, submission_data: dict):
                 participant_id=submission_in.participant_id,
                 topic_id=submission_in.topic_id
             )
-            save_submission_task.apply_async(
+            save_progress_task.apply_async(
                 args=[progress_data.model_dump()],
                 queue='db_writer_queue'
             )

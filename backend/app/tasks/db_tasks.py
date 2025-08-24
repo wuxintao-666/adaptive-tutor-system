@@ -3,18 +3,31 @@ from app.db.database import SessionLocal
 from app.crud.crud_event import event as crud_event
 from app.crud.crud_chat_history import chat_history as crud_chat_history
 from app.crud.crud_progress import progress as crud_progress
+from app.crud.crud_submission import submission as crud_submission
 from app.schemas.behavior import BehaviorEvent
 from app.schemas.chat import ChatHistoryCreate
 from app.schemas.user_progress import UserProgressCreate
+from app.schemas.submission import SubmissionCreate
 
-@celery_app.task(name='app.tasks.db_tasks.save_submission_task')
-def save_submission_task(progress_data: dict):
-    """一个专门用于保存 submission 数据的轻量级任务"""
+@celery_app.task(name='app.tasks.db_tasks.save_progress_task')
+def save_progress_task(progress_data: dict):
+    """一个专门用于保存用户进度数据的轻量级任务"""
     db = SessionLocal()
     try:
         # 创建用户进度记录
         progress_in = UserProgressCreate(**progress_data)
         crud_progress.create(db=db, obj_in=progress_in)
+    finally:
+        db.close()
+
+@celery_app.task(name='app.tasks.db_tasks.save_code_submission_task')
+def save_code_submission_task(submission_data: dict):
+    """一个专门用于保存代码提交记录的轻量级任务"""
+    db = SessionLocal()
+    try:
+        # 创建代码提交记录
+        submission_in = SubmissionCreate(**submission_data)
+        crud_submission.create(db=db, obj_in=submission_in)
     finally:
         db.close()
 
