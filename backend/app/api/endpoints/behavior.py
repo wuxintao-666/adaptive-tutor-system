@@ -34,7 +34,7 @@ def log_behavior(
     # 任务2: 异步解释事件 (fire-and-forget)
     interpret_behavior_task.apply_async(
         args=[event_in.model_dump()],
-        queue='chat_queue'
+        queue='behavior_queue'
     )
 
     return {"status": "Event received for processing"}
