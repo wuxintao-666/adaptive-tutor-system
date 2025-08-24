@@ -9,7 +9,7 @@ from celery.result import AsyncResult
 from app.services.sandbox_service import sandbox_service
 from app.services.user_state_service import UserStateService
 from app.services.content_loader import load_json_content
-from app.config.dependency_injection import get_user_state_service, get_db
+from app.config.dependency_injection import get_user_state_service, get_db, get_redis_client
 from app.crud.crud_progress import progress as crud_progress
 from app.schemas.user_progress import UserProgressCreate
 from app.schemas.response import StandardResponse
@@ -52,7 +52,7 @@ def submit_test(
         db: Session = Depends(get_db),
         background_tasks: BackgroundTasks,
         submission_in: TestSubmissionRequest,
-        user_state_service: UserStateService = Depends(get_user_state_service)
+        user_state_service: UserStateService = Depends(lambda: get_user_state_service(get_redis_client()))
 ) -> Any:
     """
     接收用户代码提交，进行评测，更新BKT模型，并返回结果。

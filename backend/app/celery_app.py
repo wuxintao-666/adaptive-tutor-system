@@ -1,7 +1,11 @@
+import logging
 from celery import Celery, signals
 from app.core.config import settings
 from app.config.dependency_injection import create_dynamic_controller, get_redis_client, get_user_state_service as create_user_state_service
 import os
+
+# 配置日志记录器
+logger = logging.getLogger(__name__)
 
 # 创建 Celery 应用实例
 celery_app = Celery(
@@ -24,25 +28,46 @@ def init_worker_process(sender=None, **kwargs):
     
     # 1. 初始化所有 Worker 都需要的轻量级服务
     if _user_state_service_instance is None:
-        print(f"Initializing UserStateService for Worker (PID: {os.getpid()})...")
+        logger.info(f"Initializing UserStateService for Worker (PID: {os.getpid()})...")
         redis_client = get_redis_client()
         _user_state_service_instance = create_user_state_service(redis_client=redis_client)
-        print("UserStateService initialized.")
+        logger.info("UserStateService initialized.")
 
     # 2. 获取 Worker 实例正在监听的队列名称集合
-    queues = {q.name for q in sender.options.get('queues', [])}
+    # 通过检查当前进程的命令行参数来确定队列
+    import sys
+    queues = set()
+    
+    # 从命令行参数中提取队列信息
+    for i, arg in enumerate(sys.argv):
+        if arg == '-Q' and i + 1 < len(sys.argv):
+            queues_str = sys.argv[i + 1]
+            queues.update(q.strip() for q in queues_str.split(','))
+        elif arg.startswith('--queues='):
+            queues_str = arg.split('=', 1)[1]
+            queues.update(q.strip() for q in queues_str.split(','))
+    
+    # 如果没有从命令行参数中获取到队列信息，使用默认方法
+    if not queues and sender is not None and hasattr(sender, 'options'):
+        queues = {q.name for q in sender.options.get('queues', [])}
+    
+    # 如果仍然没有队列信息，尝试从环境变量获取
+    if not queues:
+        queue_env = os.environ.get('CELERY_QUEUES')
+        if queue_env:
+            queues.update(q.strip() for q in queue_env.split(','))
     
     # 3. 只有当 Worker 明确服务于 'chat_queue' 时，才初始化重量级依赖
     if 'chat_queue' in queues:
         if _dynamic_controller_instance is None:
-            print(f"Initializing DynamicController for Chat Worker (PID: {os.getpid()})...")
+            logger.info(f"Initializing DynamicController for Chat Worker (PID: {os.getpid()})...")
             # UserStateService 已经初始化，直接从 DynamicController 中使用
             # 注意：create_dynamic_controller 内部会创建自己的 UserStateService 实例
             redis_client = get_redis_client()
             _dynamic_controller_instance = create_dynamic_controller(redis_client=redis_client)
-            print("DynamicController initialized.")
+            logger.info("DynamicController initialized.")
     else:
-        print(f"Worker (PID: {os.getpid()}) is not serving 'chat_queue'. Skipping DynamicController initialization.")
+        logger.info(f"Worker (PID: {os.getpid()}) is not serving 'chat_queue'. Skipping DynamicController initialization.")
 
 def get_dynamic_controller():
     """
@@ -77,4 +102,10 @@ celery_app.conf.update(
     # 时区设置
     timezone="Asia/Shanghai",
     enable_utc=True,
+    
+    # 队列配置
+    task_routes={
+        'app.tasks.chat_task': {'queue': 'chat_queue'},
+    },
+    task_default_queue='default',
 )
