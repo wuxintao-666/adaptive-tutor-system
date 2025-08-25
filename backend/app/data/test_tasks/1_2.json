@@ -1,9 +1,9 @@
 {
   "topic_id": "1_2",
   "title": "应用文本格式（加粗、斜体）",
-  "description_md": "# 任务描述：\n请使用CSS中的`font-weight`属性和`font-style`属性，将下面的`h2`元素设置为粗体和斜体样式。\n\n## 任务要求：\n1. 设置`h2`元素的文本为粗体（使用`font-weight:bold`）\n2. 设置`h2`元素的文本为斜体（使用`font-style:italic`）",
+  "description_md": "# 任务描述：\n请使用CSS样式中的`font-weight`属性和`font-style`属性，分别将下面的`h2`元素设置为粗体和斜体样式。\n\n## 要求：\n1. 使用`font-weight`使标题文字加粗\n2. 使用`font-style`使标题文字变为斜体\n3. 不要修改HTML结构",
   "start_code": {
-    "html": "<h2>编程学习指南</h2>",
+    "html": "<h2>Web开发基础教程</h2>",
     "css": "",
     "js": ""
   },
@@ -22,7 +22,7 @@
       "css_property": "font-weight",
       "assertion_type": "equals",
       "value": "bold",
-      "feedback": "粗体应该使用font-weight:bold来实现。"
+      "feedback": "请使用font-weight:bold来设置粗体样式。"
     },
     {
       "name": "font-style属性检查",
@@ -31,7 +31,12 @@
       "css_property": "font-style",
       "assertion_type": "equals",
       "value": "italic",
-      "feedback": "斜体应该使用font-style:italic来实现。"
+      "feedback": "请使用font-style:italic来设置斜体样式。"
     }
-  ]
+  ],
+  "answer": {
+    "html": "<h2>Web开发基础教程</h2>",
+    "css": "h2 {\n  font-weight: bold;\n  font-style: italic;\n}",
+    "js": ""
+  }
 }

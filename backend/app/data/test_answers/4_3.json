@@ -1,9 +1,0 @@
-{
-  "topic_id": "4_3",
-  "title": "使用 Flex 布局构建响应式导航栏",
-  "answer": {
-    "html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>编程学习导航栏</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: 'Arial', sans-serif;\n      background-color: #f0f8ff;\n      color: #333;\n    }\n    nav {\n      display: flex;\n      justify-content: space-around;\n      flex-wrap: wrap;\n      gap: 20px;\n    }\n    nav a {\n      text-decoration: none;\n      padding: 10px 15px;\n      background-color: #007acc;\n      color: white;\n      border-radius: 5px;\n    }\n  </style>\n</head>\n<body>\n  <header>\n    <h3>编程学习教程</h3>\n    <nav>\n      <a href=\"#\">首页</a>\n      <a href=\"#\">课程</a>\n      <a href=\"#\">资源</a>\n      <a href=\"#\">社区</a>\n      <a href=\"#\">关于我们</a>\n    </nav>\n  </header>\n  <section>\n    <p>欢迎来到编程学习平台，这里提供丰富的编程资源和实战项目。</p>\n  </section>\n  <footer>\n    <p>© 2025 编程学习平台 - 教学用途</p>\n  </footer>\n</body>\n</html>",
-    "css": "",
-    "js": ""
-  }
-}

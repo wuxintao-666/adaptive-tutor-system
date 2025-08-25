@@ -1,48 +1,71 @@
 {
   "topic_id": "4_3",
   "title": "使用 Flex 布局构建响应式导航栏",
-  "description_md": "使用 Flexbox 布局创建一个响应式导航栏。\n\n- 请为 `nav` 元素设置 `display: flex`，并使用 `justify-content: space-around` 实现导航项等间距分布\n- 设置 `gap: 20px` 使导航项之间有统一间距\n- 使用 `flex-wrap: wrap` 允许导航项在小屏幕下自动换行",
+  "description_md": "使用 Flexbox 布局创建一个响应式导航栏。\n\n- 请为 `header` 设置 `display: flex`，并使用 `justify-content: space-between` 让标题与导航链接分列左右\n- 为 `.nav-links` 添加 Flex 布局，使其中链接横向排列、居中显示、自动换行、链接之间有 `gap: 1.5rem`",
   "start_code": {
-    "html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>编程学习导航栏</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: 'Arial', sans-serif;\n      background-color: #f0f8ff;\n      color: #333;\n    }\n    nav a {\n      text-decoration: none;\n      padding: 10px 15px;\n      background-color: #007acc;\n      color: white;\n      border-radius: 5px;\n    }\n  </style>\n</head>\n<body>\n  <header>\n    <h3>编程学习教程</h3>\n    <nav>\n      <a href=\"#\">首页</a>\n      <a href=\"#\">课程</a>\n      <a href=\"#\">资源</a>\n      <a href=\"#\">社区</a>\n      <a href=\"#\">关于我们</a>\n    </nav>\n  </header>\n  <section>\n    <p>欢迎来到编程学习平台，这里提供丰富的编程资源和实战项目。</p>\n  </section>\n  <footer>\n    <p>© 2025 编程学习平台 - 教学用途</p>\n  </footer>\n</body>\n</html>",
+    "html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>编程学习教程</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: 'Arial', sans-serif;\n      background: linear-gradient(to right, #4b6cb7, #182848);\n      color: #fff;\n    }\n    .nav-link {\n      text-decoration: none;\n      color: white;\n      padding: 0.5rem 1rem;\n      border-radius: 5px;\n      background-color: rgba(255, 255, 255, 0.1);\n    }\n  </style>\n</head>\n<body>\n  <header>\n    <h2 style=\"font-weight: bold;\">编程学习教程</h2>\n    <nav class=\"nav-links\">\n      <a href=\"#\" class=\"nav-link\">首页</a>\n      <a href=\"#\" class=\"nav-link\">课程</a>\n      <a href=\"#\" class=\"nav-link\">资源</a>\n      <a href=\"#\" class=\"nav-link\">联系</a>\n    </nav>\n  </header>\n  <section class=\"content\">\n    <p>欢迎来到编程学习教程网站，这里有丰富的编程资源供你学习。</p>\n  </section>\n  <footer>\n    <p>© 2025 编程学习教程 - 教学用途</p>\n  </footer>\n</body>\n</html>",
     "css": "",
     "js": ""
   },
   "checkpoints": [
     {
-      "name": "导航栏使用 Flex 布局",
+      "name": "头部使用 Flex 布局",
       "type": "assert_style",
-      "selector": "nav",
+      "selector": "header",
       "css_property": "display",
       "assertion_type": "equals",
       "value": "flex",
-      "feedback": "请为 nav 设置 display: flex。"
+      "feedback": "请为 header 设置 display: flex。"
     },
     {
-      "name": "导航项等间距分布",
+      "name": "头部左右对齐",
       "type": "assert_style",
-      "selector": "nav",
+      "selector": "header",
       "css_property": "justify-content",
       "assertion_type": "equals",
-      "value": "space-around",
-      "feedback": "请设置 nav 的 justify-content 为 space-around。"
+      "value": "space-between",
+      "feedback": "请设置 header 的 justify-content 为 space-between。"
     },
     {
-      "name": "导航项允许换行",
+      "name": "导航链接容器使用 Flex 布局",
       "type": "assert_style",
-      "selector": "nav",
+      "selector": ".nav-links",
+      "css_property": "display",
+      "assertion_type": "equals",
+      "value": "flex",
+      "feedback": "请将 .nav-links 设置为 flex 布局。"
+    },
+    {
+      "name": "导航链接容器允许换行",
+      "type": "assert_style",
+      "selector": ".nav-links",
       "css_property": "flex-wrap",
       "assertion_type": "equals",
       "value": "wrap",
-      "feedback": "请确保 nav 设置了 flex-wrap: wrap。"
+      "feedback": "请确保 .nav-links 设置了 flex-wrap: wrap。"
     },
     {
-      "name": "导航项间距设置",
+      "name": "导航链接容器居中对齐",
       "type": "assert_style",
-      "selector": "nav",
+      "selector": ".nav-links",
+      "css_property": "justify-content",
+      "assertion_type": "equals",
+      "value": "center",
+      "feedback": "请设置 .nav-links 的 justify-content 为 center。"
+    },
+    {
+      "name": "导航链接间距设置",
+      "type": "assert_style",
+      "selector": ".nav-links",
       "css_property": "gap",
       "assertion_type": "equals",
-      "value": "20px",
-      "feedback": "请为 nav 设置 gap 为 20px。"
+      "value": "1.5rem",
+      "feedback": "请为 .nav-links 设置 gap 为 1.5rem。"
     }
-  ]
+  ],
+  "answer": {
+    "html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>编程学习教程</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: 'Arial', sans-serif;\n      background: linear-gradient(to right, #4b6cb7, #182848);\n      color: #fff;\n    }\n    header {\n      display: flex;\n      justify-content: space-between;\n      align-items: center;\n      padding: 1rem;\n    }\n    .nav-links {\n      display: flex;\n      flex-wrap: wrap;\n      justify-content: center;\n      gap: 1.5rem;\n    }\n    .nav-link {\n      text-decoration: none;\n      color: white;\n      padding: 0.5rem 1rem;\n      border-radius: 5px;\n      background-color: rgba(255, 255, 255, 0.1);\n    }\n  </style>\n</head>\n<body>\n  <header>\n    <h2 style=\"font-weight: bold;\">编程学习教程</h2>\n    <nav class=\"nav-links\">\n      <a href=\"#\" class=\"nav-link\">首页</a>\n      <a href=\"#\" class=\"nav-link\">课程</a>\n      <a href=\"#\" class=\"nav-link\">资源</a>\n      <a href=\"#\" class=\"nav-link\">联系</a>\n    </nav>\n  </header>\n  <section class=\"content\">\n    <p>欢迎来到编程学习教程网站，这里有丰富的编程资源供你学习。</p>\n  </section>\n  <footer>\n    <p>© 2025 编程学习教程 - 教学用途</p>\n  </footer>\n</body>\n</html>",
+    "css": "",
+    "js": ""
+  }
 }

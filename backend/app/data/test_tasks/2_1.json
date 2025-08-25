@@ -1,9 +1,9 @@
 {
   "topic_id": "2_1",
   "title": "使用盒子元素进行内容划分",
-  "description_md": "# 任务描述：\n请使用div标签将以下内容包裹起来，并为该div设置id属性值为content-wrapper。",
+  "description_md": "# 任务描述：\n请使用 `div` 标签将以下内容包裹起来，并为该 `div` 元素设置 `id` 属性值为 `main-content`，用于划分页面的主要内容区域。",
   "start_code": {
-    "html": "<h3>网页设计基础</h3>\n<p>学习网页设计需要掌握HTML、CSS和JavaScript等核心技术。</p>\n<h3>响应式布局</h3>\n<p>现代网页设计必须考虑不同设备的显示效果，响应式设计是关键。</p>",
+    "html": "<h3>学习HTML的重要性</h3>\n<p>掌握HTML是网页开发的基础，它帮助我们构建结构清晰的网页内容。</p>\n<h3>常见的HTML标签</h3>\n<p>常用的标签包括标题标签、段落标签和列表标签等。</p>",
     "css": "",
     "js": ""
   },
@@ -21,14 +21,19 @@
       "selector": "div",
       "attribute": "id",
       "assertion_type": "equals",
-      "value": "content-wrapper",
-      "feedback": "div元素的id属性应设置为'content-wrapper'。"
+      "value": "main-content",
+      "feedback": "div元素的id属性应该设置为'main-content'。"
     },
     {
-      "name": "div元素包含所有内容检查",
+      "name": "div元素包含内容检查",
       "type": "custom_script",
-      "script": "const div = document.querySelector('div'); return div && div.querySelectorAll('h3').length === 2 && div.querySelectorAll('p').length === 2;",
+      "script": "const div = document.querySelector('div'); return div && div.children.length >= 4;",
       "feedback": "div元素应该包含所有的h3和p元素。"
     }
-  ]
+  ],
+  "answer": {
+    "html": "<div id=\"main-content\">\n  <h3>学习HTML的重要性</h3>\n  <p>掌握HTML是网页开发的基础，它帮助我们构建结构清晰的网页内容。</p>\n  <h3>常见的HTML标签</h3>\n  <p>常用的标签包括标题标签、段落标签和列表标签等。</p>\n</div>",
+    "css": "",
+    "js": ""
+  }
 }

@@ -1,9 +1,0 @@
-{
-  "topic_id": "3_1",
-  "title": "创建用户登录表单",
-  "answer": {
-    "html": "<input type=\"text\" placeholder=\"请输入用户名\">\n<button>登录</button>",
-    "css": "",
-    "js": ""
-  }
-}

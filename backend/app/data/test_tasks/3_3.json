@@ -1,9 +1,9 @@
 {
   "topic_id": "3_3",
   "title": "表单提交机制",
-  "description_md": "# 表单提交机制\n## 任务描述：\n请创建一个用户反馈表单，包含用户名和建议内容两个输入项，并使用<form>元素包裹。设置onsubmit属性为handleFeedback(event)函数，以实现表单提交控制。\n\n## 任务一：\n添加一个<form>元素，包裹所有表单控件。\n\n## 任务二：\n为<form>元素添加onsubmit属性，并赋值为handleFeedback(event)。\n\n## 任务三：\n确保表单中包含一个提交按钮（<button type=\"submit\">）。",
+  "description_md": "# 表单提交机制\n## 任务描述：\n请为下面的用户注册表单添加表单提交机制。要求使用<form>元素包裹所有表单控件，并通过onsubmit属性绑定一个名为handleRegister的JavaScript函数来处理提交事件。确保提交时阻止默认行为并在控制台输出“注册信息已处理”。",
   "start_code": {
-    "html": "<label>用户名：<input type=\"text\" name=\"username\"></label>\n<label>建议内容：<textarea name=\"suggestion\"></textarea></label>\n<button type=\"submit\">提交反馈</button>",
+    "html": "<label>用户名：<input type=\"text\" name=\"username\"></label>\n<label>邮箱：<input type=\"email\" name=\"email\"></label>\n<button type=\"submit\">注册</button>",
     "css": "",
     "js": ""
   },
@@ -21,15 +21,22 @@
       "selector": "form",
       "attribute": "onsubmit",
       "assertion_type": "equals",
-      "value": "handleFeedback(event)",
-      "feedback": "请为<form>元素添加onsubmit属性，并赋值为handleFeedback(event)。"
+      "value": "return handleRegister(event)",
+      "feedback": "请为form元素添加onsubmit属性，并赋值return handleRegister(event)。"
     },
     {
-      "name": "提交按钮检查",
-      "type": "assert_element",
-      "selector": "button[type='submit']",
-      "assertion_type": "exists",
-      "feedback": "请确保表单中包含一个提交按钮（<button type=\"submit\">）。"
+      "name": "提交按钮类型检查",
+      "type": "assert_attribute",
+      "selector": "button",
+      "attribute": "type",
+      "assertion_type": "equals",
+      "value": "submit",
+      "feedback": "请确保提交按钮的type属性为submit。"
     }
-  ]
+  ],
+  "answer": {
+    "html": "<form onsubmit=\"return handleRegister(event)\">\n  <label>用户名：<input type=\"text\" name=\"username\"></label>\n  <label>邮箱：<input type=\"email\" name=\"email\"></label>\n  <button type=\"submit\">注册</button>\n</form>",
+    "css": "",
+    "js": "function handleRegister(event) {\n  event.preventDefault();\n  console.log('注册信息已处理');\n  return false;\n}"
+  }
 }

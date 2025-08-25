@@ -1,7 +1,7 @@
 {
   "topic_id": "3_1",
-  "title": "创建用户登录表单",
-  "description_md": "# 用户登录表单\n## 任务一：\n请创建一个文本框，提示文本是：请输入用户名。\n## 任务二：\n在文本框下方创建一个按钮，按钮的文本是：登录。",
+  "title": "创建登录表单的文本框与按钮",
+  "description_md": "# 创建登录表单的文本框与按钮\n## 任务一：\n请创建一个文本框，提示文本是：请输入用户名。\n## 任务二：\n在文本框下方创建一个按钮，按钮的文本是：登录。",
   "start_code": {
     "html": "",
     "css": "",
@@ -22,7 +22,7 @@
       "attribute": "type",
       "assertion_type": "equals",
       "value": "text",
-      "feedback": "请检查input元素type属性为text。"
+      "feedback": "请检查input元素type属性是否为text。"
     },
     {
       "name": "input表单提示文本检查",
@@ -31,7 +31,7 @@
       "attribute": "placeholder",
       "assertion_type": "equals",
       "value": "请输入用户名",
-      "feedback": "请检查input元素的placeholder属性是否与要求不同。"
+      "feedback": "请检查input元素的placeholder属性是否正确。"
     },
     {
       "name": "button按钮元素检查",
@@ -46,13 +46,18 @@
       "selector": "button",
       "assertion_type": "equals",
       "value": "登录",
-      "feedback": "请检查button按钮文本是否为登录。"
+      "feedback": "请检查button按钮的文本内容是否为登录。"
     },
     {
       "name": "button按钮位置检查",
       "type": "custom_script",
-      "script": "const input = document.querySelector('input'); const button = document.querySelector('button'); return input && button && input.getBoundingClientRect().top < button.getBoundingClientRect().top;",
-      "feedback": "button元素应该在input元素下方。"
+      "script": "const inputTop = document.querySelector('input').getBoundingClientRect().top; const buttonTop = document.querySelector('button').getBoundingClientRect().top; return inputTop < buttonTop;",
+      "feedback": "请确保button元素位于input元素下方。"
     }
-  ]
+  ],
+  "answer": {
+    "html": "<input type=\"text\" placeholder=\"请输入用户名\">\n<button>登录</button>",
+    "css": "",
+    "js": ""
+  }
 }

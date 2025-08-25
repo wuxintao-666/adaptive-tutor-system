@@ -1,9 +1,0 @@
-{
-  "topic_id": "1_2",
-  "title": "应用文本格式（加粗、斜体）",
-  "answer": {
-    "html": "<h2>编程学习指南</h2>",
-    "css": "h2 {\n  font-weight: bold;\n  font-style: italic;\n}",
-    "js": ""
-  }
-}

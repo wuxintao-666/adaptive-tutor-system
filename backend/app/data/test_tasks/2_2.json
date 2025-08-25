@@ -1,7 +1,7 @@
 {
   "topic_id": "2_2",
   "title": "创建有序与无序列表",
-  "description_md": "# 创建有序与无序列表\n## 任务1：\n请在h3元素下方创建一个无序列表，并在其中添加三个项目：· 购买食材，· 准备厨具，· 开始烹饪\n",
+  "description_md": "# 创建有序与无序列表\n## 任务1：\n请在h3元素下方创建一个无序列表，并在其中添加三个项目：• 购买食材，• 准备厨具，• 开始烹饪\n",
   "start_code": {
     "html": "<h3> 烹饪准备工作 </h3>\n",
     "css": "",
@@ -38,5 +38,10 @@
       "script": "return document.querySelector('ul li:nth-child(3)').textContent == '开始烹饪'",
       "feedback": "无序列表中第三个li元素的内容应该是'开始烹饪'。"
     }
-  ]
+  ],
+  "answer": {
+    "html": "<h3> 烹饪准备工作 </h3>\n<ul>\n  <li>购买食材</li>\n  <li>准备厨具</li>\n  <li>开始烹饪</li>\n</ul>",
+    "css": "",
+    "js": ""
+  }
 }

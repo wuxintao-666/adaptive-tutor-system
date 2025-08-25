@@ -1,9 +1,0 @@
-{
-  "topic_id": "2_1",
-  "title": "使用盒子元素进行内容划分",
-  "answer": {
-    "html": "<div id=\"content-wrapper\">\n  <h3>网页设计基础</h3>\n  <p>学习网页设计需要掌握HTML、CSS和JavaScript等核心技术。</p>\n  <h3>响应式布局</h3>\n  <p>现代网页设计必须考虑不同设备的显示效果，响应式设计是关键。</p>\n</div>",
-    "css": "",
-    "js": ""
-  }
-}

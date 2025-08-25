@@ -1,69 +1,46 @@
 {
   "topic_id": "6_3",
   "title": "修改页面元素内容与样式（DOM 操作）",
-  "description_md": "使用 JavaScript 实现一个动态颜色展示器：\n\n- 页面包含一个颜色选择器 `<input type=\"color\">` 和一个用于显示颜色的 `<div id=\"colorDisplay\">`\n- 当用户通过颜色选择器更改颜色时，实时更新 `colorDisplay` 的背景色\n- 同时在 `<p id=\"colorCode\">` 中显示当前选中的颜色值（格式如 `#ff0000`）\n- 禁止表单默认提交行为",
+  "description_md": "使用 JavaScript 修改页面内容：\n\n- 获取表单中的复选框和单选框值；\n- 使用 `event.preventDefault()` 阻止默认提交；\n- 将结果以文本形式展示在 `<div id=\"result\">` 中；\n- 格式示例：`爱好：阅读, 游泳；性别：女`",
   "start_code": {
-    "html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>颜色展示器 Demo</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: 'Arial', sans-serif;\n      background: linear-gradient(to bottom, #333, #666);\n      color: #fff;\n      text-align: center;\n      padding: 2rem;\n    }\n    .color-demo {\n      background: #ffffff;\n      color: #000;\n      padding: 1.5rem;\n      border-radius: 10px;\n      box-shadow: 0 0 8px rgba(0,0,0,0.1);\n      max-width: 500px;\n      margin: 2rem auto;\n    }\n    #colorDisplay {\n      width: 200px;\n      height: 200px;\n      margin: 1rem auto;\n      border: 1px solid #ccc;\n    }\n  </style>\n</head>\n<body>\n  <section class=\"color-demo\">\n    <h3>颜色展示器</h3>\n    <form id=\"colorForm\">\n      <label for=\"colorPicker\">选择颜色：</label>\n      <input type=\"color\" id=\"colorPicker\" name=\"colorPicker\" value=\"#3366ff\">\n      <button type=\"submit\">提交</button>\n    </form>\n    <div id=\"colorDisplay\"></div>\n    <p id=\"colorCode\"></p>\n  </section>\n\n  <script>\n    // 在此处添加 JS 代码实现功能\n  </script>\n</body>\n</html>",
+    "html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>用户偏好调查 Demo</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: 'Arial', sans-serif;\n      background: linear-gradient(to bottom, #006400, #00aa00);\n      color: #fff;\n    }\n    .form-demo {\n      background: #ffffff;\n      color: #000;\n      padding: 1.5rem;\n      border-radius: 10px;\n      box-shadow: 0 0 8px rgba(0,0,0,0.1);\n      max-width: 600px;\n      margin: 2rem auto;\n    }\n    .form-demo h3 {\n      margin-top: 0;\n    }\n    .form-demo label {\n      display: block;\n      margin-top: 1rem;\n    }\n  </style>\n</head>\n<body>\n  <section class=\"form-demo\">\n    <h3>用户偏好调查</h3>\n    <form id=\"userForm\">\n      <label><input type=\"checkbox\" name=\"hobbies\" value=\"阅读\"> 爱好阅读</label>\n      <label><input type=\"checkbox\" name=\"hobbies\" value=\"游泳\"> 喜欢游泳</label>\n\n      <label>性别：</label>\n      <label><input type=\"radio\" name=\"gender\" value=\"男\"> 男</label>\n      <label><input type=\"radio\" name=\"gender\" value=\"女\"> 女</label>\n\n      <button type=\"submit\">提交</button>\n    </form>\n    <div id=\"result\"></div>\n  </section>\n\n  <script>\n    // 在此处添加 JS 代码实现功能\n  </script>\n</body>\n</html>",
     "css": "",
     "js": ""
   },
   "checkpoints": [
     {
-      "name": "颜色展示区域存在",
-      "type": "assert_element",
-      "selector": "#colorDisplay",
-      "assertion_type": "exists",
-      "feedback": "请确保页面中存在一个 id 为 `colorDisplay` 的 div 元素。"
-    },
-    {
-      "name": "颜色代码文本区域存在",
-      "type": "assert_element",
-      "selector": "#colorCode",
-      "assertion_type": "exists",
-      "feedback": "请确保页面中存在一个 id 为 `colorCode` 的 p 元素。"
-    },
-    {
-      "name": "颜色选择器交互后更新背景色和文本",
+      "name": "表单提交后更新页面内容",
       "type": "interaction_and_assert",
-      "action_selector": "#colorPicker",
-      "action_type": "type_text",
-      "value": "#ff0000",
-      "assertion": {
-        "type": "assert_style",
-        "name": "验证背景色更新",
-        "selector": "#colorDisplay",
-        "css_property": "background-color",
-        "assertion_type": "contains",
-        "value": "rgb(255, 0, 0)",
-        "feedback": "颜色选择器更改后，应同步更新 `#colorDisplay` 的背景色。"
-      }
-    },
-    {
-      "name": "颜色代码文本同步更新",
-      "type": "interaction_and_assert",
-      "action_selector": "#colorPicker",
-      "action_type": "type_text",
-      "value": "#00ff00",
-      "assertion": {
-        "type": "assert_text_content",
-        "name": "验证颜色代码显示",
-        "selector": "#colorCode",
-        "assertion_type": "equals",
-        "value": "#00ff00",
-        "feedback": "颜色选择器更改后，应在 `#colorCode` 中显示当前颜色值。"
-      }
-    },
-    {
-      "name": "提交按钮点击不刷新页面",
-      "type": "interaction_and_assert",
-      "action_selector": "form#colorForm button[type=\"submit\"]",
+      "feedback": "验证表单提交功能是否正确",
+      "action_selector": "form#userForm button[type=\"submit\"]",
       "action_type": "click",
       "assertion": {
-        "type": "custom_script",
-        "name": "验证阻止默认提交",
-        "script": "return window.location.hash !== '#submit';",
-        "feedback": "请使用 `event.preventDefault()` 阻止表单默认提交行为。"
+        "type": "assert_text_content",
+        "name": "验证表单功能",
+        "selector": "#result",
+        "assertion_type": "contains",
+        "value": "爱好：阅读, 游泳；性别：女",
+        "feedback": "请将用户爱好与性别结果写入页面中的 `#result` 区域中，格式应包含“爱好”和“性别”两部分内容。"
       }
+    },
+    {
+      "name": "验证结果区域存在",
+      "type": "assert_element",
+      "selector": "#result",
+      "assertion_type": "exists",
+      "feedback": "请确保页面中存在一个 id 为 `result` 的 div 元素。"
+    },
+    {
+      "name": "验证表单元素存在",
+      "type": "assert_element",
+      "selector": "form#userForm",
+      "assertion_type": "exists",
+      "feedback": "请确保页面中存在一个 id 为 `userForm` 的 form 表单元素。"
     }
-  ]
+  ],
+  "answer": {
+    "html": "<!DOCTYPE html>\n<html lang=\"zh\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>用户偏好调查 Demo</title>\n  <style>\n    body {\n      margin: 0;\n      font-family: 'Arial', sans-serif;\n      background: linear-gradient(to bottom, #006400, #00aa00);\n      color: #fff;\n    }\n    .form-demo {\n      background: #ffffff;\n      color: #000;\n      padding: 1.5rem;\n      border-radius: 10px;\n      box-shadow: 0 0 8px rgba(0,0,0,0.1);\n      max-width: 600px;\n      margin: 2rem auto;\n    }\n    .form-demo h3 {\n      margin-top: 0;\n    }\n    .form-demo label {\n      display: block;\n      margin-top: 1rem;\n    }\n  </style>\n</head>\n<body>\n  <section class=\"form-demo\">\n    <h3>用户偏好调查</h3>\n    <form id=\"userForm\">\n      <label><input type=\"checkbox\" name=\"hobbies\" value=\"阅读\"> 爱好阅读</label>\n      <label><input type=\"checkbox\" name=\"hobbies\" value=\"游泳\"> 喜欢游泳</label>\n\n      <label>性别：</label>\n      <label><input type=\"radio\" name=\"gender\" value=\"男\"> 男</label>\n      <label><input type=\"radio\" name=\"gender\" value=\"女\"> 女</label>\n\n      <button type=\"submit\">提交</button>\n    </form>\n    <div id=\"result\"></div>\n  </section>\n\n  <script>\n    document.getElementById('userForm').addEventListener('submit', function(e) {\n      e.preventDefault();\n      \n      const hobbies = [];\n      document.querySelectorAll('input[name=\"hobbies\"]:checked').forEach(checkbox => {\n        hobbies.push(checkbox.value);\n      });\n      \n      const gender = document.querySelector('input[name=\"gender\"]:checked')?.value || '';\n      \n      const resultText = `爱好：${hobbies.join(', ')}；性别：${gender}`;\n      document.getElementById('result').textContent = resultText;\n    });\n  </script>\n</body>\n</html>",
+    "css": "",
+    "js": "document.getElementById('userForm').addEventListener('submit', function(e) {\n  e.preventDefault();\n  \n  const hobbies = [];\n  document.querySelectorAll('input[name=\"hobbies\"]:checked').forEach(checkbox => {\n    hobbies.push(checkbox.value);\n  });\n  \n  const gender = document.querySelector('input[name=\"gender\"]:checked')?.value || '';\n  \n  const resultText = `爱好：${hobbies.join(', ')}；性别：${gender}`;\n  document.getElementById('result').textContent = resultText;\n});"
+  }
 }
