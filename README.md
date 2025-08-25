@@ -25,6 +25,8 @@
 
 ## 启动
 
+### Mac/Linux
+
 ```zsh
 cd backend
 python -m app.main
@@ -52,4 +54,35 @@ celery -A app.celery_app worker -l info -Q db_writer_queue --pool=gevent -n db_w
 ```zsh
 cd backend
 celery -A app.celery_app worker -l info -Q behavior_queue --pool=prefork -n behavior_worker@%h
+```
+
+### Windows
+
+```zsh
+cd backend
+python -m app.main
+```
+
+```zsh
+docker run -d --name redis-stack -p 6380:6379 redis/redis-stack:latest
+```
+
+```zsh
+cd backend
+celery -A app.celery_app worker -l info -Q chat_queue --pool=solo -n ai_worker@%h
+```
+
+```zsh
+cd backend
+celery -A app.celery_app worker -l info -Q submit_queue --pool=solo -n submit_worker@%h
+```
+
+```zsh
+cd backend
+celery -A app.celery_app worker -l info -Q db_writer_queue --pool=solo -n db_worker@%h
+```
+
+```zsh
+cd backend
+celery -A app.celery_app worker -l info -Q behavior_queue --pool=solo -n behavior_worker@%h
 ```
