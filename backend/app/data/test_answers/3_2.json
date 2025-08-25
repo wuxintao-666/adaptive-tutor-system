@@ -1,0 +1,9 @@
+{
+  "topic_id": "3_2",
+  "title": "复选框与单选框练习",
+  "answer": {
+    "html": "<div>\n  <label><input type=\"checkbox\" name=\"skills\" value=\"HTML\">掌握HTML</label>\n  <label><input type=\"checkbox\" name=\"skills\" value=\"CSS\">掌握CSS</label>\n</div>\n<div>\n  <label><input type=\"radio\" name=\"level\" value=\"初级\">初级工程师</label>\n  <label><input type=\"radio\" name=\"level\" value=\"高级\">高级工程师</label>\n</div>",
+    "css": "",
+    "js": ""
+  }
+}

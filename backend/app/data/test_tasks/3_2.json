@@ -1,7 +1,7 @@
 {
-  "topic_id":"3.2",
-  "title": "复选框与单选框",
-  "description_md": "# 复选框与单选框\n##任务一：\n请创建一个复选框，name值是：likes，value值分别是是：晒太阳和抓老鼠，选择内容是：喜欢晒太阳和爱抓老鼠。\n##任务二：\n在复选框下方创建一个单选框，name值是：gender，value值分别是公和母，选择内容分别为公猫和母猫。",
+  "topic_id": "3_2",
+  "title": "复选框与单选框练习",
+  "description_md": "# 复选框与单选框练习\n## 任务一：\n请创建两个复选框，name值为：skills，value值分别为：HTML 和 CSS，对应的显示文本为：掌握HTML 和 掌握CSS。\n## 任务二：\n在复选框下方创建两个单选框，name值为：level，value值分别为：初级 和 高级，对应的显示文本为：初级工程师 和 高级工程师。",
   "start_code": {
     "html": "",
     "css": "",
@@ -11,99 +11,98 @@
     {
       "name": "复选框type属性检查",
       "type": "assert_attribute",
-      "selector": "label",
+      "selector": "input[type=\"checkbox\"]",
       "attribute": "type",
       "assertion_type": "equals",
       "value": "checkbox",
-      "feedback": "复选框的type属性应该为checkbox"
+      "feedback": "复选框的type属性应为checkbox"
     },
     {
-        "name": "复选框name属性检查",
-        "type": "assert_attribute",
-        "selector": "input",
-        "attribute": "name",
-        "assertion_type": "equals",
-        "value": "likes",
-        "feedback": "name属性应该为likes"
+      "name": "复选框name属性检查",
+      "type": "assert_attribute",
+      "selector": "input[type=\"checkbox\"]",
+      "attribute": "name",
+      "assertion_type": "equals",
+      "value": "skills",
+      "feedback": "name属性应为skills"
     },
     {
-        "name": "复选框数量检查",
-        "type": "custom_script",
-        "script": "document.querySelectorAll('input[name=\"likes\"][type=\"checkbox\"]').length === 2",
-        "feedback": "复选框数量应该为2"
+      "name": "复选框数量检查",
+      "type": "custom_script",
+      "script": "document.querySelectorAll('input[name=\"skills\"][type=\"checkbox\"]').length === 2",
+      "feedback": "应有2个复选框"
     },
     {
       "name": "第一个复选框value属性检查",
       "type": "custom_script",
-      "script": "document.querySelector('input[name=\"likes\"][type=\"checkbox\"]:nth-child(1)').value === '晒太阳'",
-      "feedback": "第一个复选框的value属性应该为：晒太阳"
+      "script": "document.querySelector('input[name=\"skills\"][type=\"checkbox\"]:nth-of-type(1)').value === 'HTML'",
+      "feedback": "第一个复选框的value应为HTML"
     },
     {
-        "name": "第一个复选框内容检查",
-        "type": "custom_script",
-        "script": "document.querySelector('input[name=\"likes\"][type=\"checkbox\"]:nth-child(1)+label').innerText === '喜欢晒太阳'",
-        "feedback": "第一个复选框内容应该为：喜欢晒太阳"
+      "name": "第一个复选框文本内容检查",
+      "type": "custom_script",
+      "script": "document.querySelector('input[name=\"skills\"][type=\"checkbox\"]:nth-of-type(1) + label').innerText === '掌握HTML'",
+      "feedback": "第一个复选框的标签文本应为掌握HTML"
     },
     {
-        "name": "第二复选框value属性检查",
-        "type": "custom_script",
-        "script": "document.querySelector('input[name=\"likes\"][type=\"checkbox\"]:nth-child(2)').value === '抓老鼠'",
-        "feedback": "第二个复选框的value属性应该为抓老鼠"
+      "name": "第二个复选框value属性检查",
+      "type": "custom_script",
+      "script": "document.querySelector('input[name=\"skills\"][type=\"checkbox\"]:nth-of-type(2)').value === 'CSS'",
+      "feedback": "第二个复选框的value应为CSS"
     },
     {
-        "name": "第二个复选框内容检查",
-        "type": "custom_script",
-        "script": "document.querySelector('input[name=\"likes\"][type=\"checkbox\"]:nth-child(2)+label').innerText === '抓老鼠'",
-        "feedback": "第二个复选框内容应该为：爱抓老鼠"
+      "name": "第二个复选框文本内容检查",
+      "type": "custom_script",
+      "script": "document.querySelector('input[name=\"skills\"][type=\"checkbox\"]:nth-of-type(2) + label').innerText === '掌握CSS'",
+      "feedback": "第二个复选框的标签文本应为掌握CSS"
     },
     {
-        "name": "单选框type属性检查",
-        "type": "assert_attribute",
-        "selector": "label",
-        "attribute": "type",
-        "assertion_type": "equals",
-        "value": "radio",
-        "feedback": "单选框的type属性应该为radio"
+      "name": "单选框type属性检查",
+      "type": "assert_attribute",
+      "selector": "input[type=\"radio\"]",
+      "attribute": "type",
+      "assertion_type": "equals",
+      "value": "radio",
+      "feedback": "单选框的type属性应为radio"
     },
     {
-        "name": "单选框name属性检查",
-        "type": "assert_attribute",
-        "selector": "input",
-        "attribute": "name",
-        "assertion_type": "equals",
-        "value": "gender",
-        "feedback": "name属性应该为gender"
+      "name": "单选框name属性检查",
+      "type": "assert_attribute",
+      "selector": "input[type=\"radio\"]",
+      "attribute": "name",
+      "assertion_type": "equals",
+      "value": "level",
+      "feedback": "name属性应为level"
     },
     {
-        "name": "单选框数量检查",
-        "type": "custom_script",
-        "script": "document.querySelectorAll('input[name=\"gender\"][type=\"radio\"]').length === 2",
-        "feedback": "单选框数量应为2"
+      "name": "单选框数量检查",
+      "type": "custom_script",
+      "script": "document.querySelectorAll('input[name=\"level\"][type=\"radio\"]').length === 2",
+      "feedback": "应有2个单选框"
     },
     {
-        "name": "第一个单选框value属性检查",
-        "type": "custom_script",
-        "script": "document.querySelector('input[name=\"gender\"][type=\"radio\"]:nth-child(1)').value === '公'",
-        "feedback": "第一个单选框的value属性应该为：公"
+      "name": "第一个单选框value属性检查",
+      "type": "custom_script",
+      "script": "document.querySelector('input[name=\"level\"][type=\"radio\"]:nth-of-type(1)').value === '初级'",
+      "feedback": "第一个单选框的value应为初级"
     },
     {
-        "name": "第一个单选框内容检查",
-        "type": "custom_script",
-        "script": "document.querySelector('input[name=\"gender\"][type=\"radio\"]:nth-child(1)+label').innerText === '公猫'",
-        "feedback": "第一个单选框的value属性应该为：公猫"
+      "name": "第一个单选框文本内容检查",
+      "type": "custom_script",
+      "script": "document.querySelector('input[name=\"level\"][type=\"radio\"]:nth-of-type(1) + label').innerText === '初级工程师'",
+      "feedback": "第一个单选框的标签文本应为初级工程师"
     },
     {
-        "name": "第二个单选框value属性检查",
-        "type": "custom_script",
-        "script": "document.querySelector('input[name=\"gender\"][type=\"radio\"]:nth-child(2)').value === '母'",
-        "feedback": "第二个单选框的value属性应该为：母"
+      "name": "第二个单选框value属性检查",
+      "type": "custom_script",
+      "script": "document.querySelector('input[name=\"level\"][type=\"radio\"]:nth-of-type(2)').value === '高级'",
+      "feedback": "第二个单选框的value应为高级"
     },
     {
-        "name": "第二个单选框内容检查",
-        "type": "custom_script",
-        "script": "document.querySelector('input[name=\"gender\"][type=\"radio\"]:nth-child(2)+label').innerText === '母猫'",
-        "feedback": "第二个单选框的value属性应该为：母猫"
+      "name": "第二个单选框文本内容检查",
+      "type": "custom_script",
+      "script": "document.querySelector('input[name=\"level\"][type=\"radio\"]:nth-of-type(2) + label').innerText === '高级工程师'",
+      "feedback": "第二个单选框的标签文本应为高级工程师"
     }
   ]
 }
-

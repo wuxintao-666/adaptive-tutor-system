@@ -1,0 +1,9 @@
+{
+  "topic_id": "3_3",
+  "title": "表单提交机制",
+  "answer": {
+    "html": "<form onsubmit=\"handleFeedback(event)\">\n  <label>用户名：<input type=\"text\" name=\"username\"></label>\n  <label>建议内容：<textarea name=\"suggestion\"></textarea></label>\n  <button type=\"submit\">提交反馈</button>\n</form>",
+    "css": "",
+    "js": "function handleFeedback(event) {\n  event.preventDefault();\n  console.log('反馈已处理');\n}"
+  }
+}

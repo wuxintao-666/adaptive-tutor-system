@@ -1,17 +1,24 @@
 {
-  "topic_id":"1_2",
+  "topic_id": "1_2",
   "title": "应用文本格式（加粗、斜体）",
-  "description_md": "# 任务描述：\n请使用css样式中的font-weight属性和font-style属性，分别将下面的h1元素变成粗体和斜体。",
+  "description_md": "# 任务描述：\n请使用CSS中的`font-weight`属性和`font-style`属性，将下面的`h2`元素设置为粗体和斜体样式。\n\n## 任务要求：\n1. 设置`h2`元素的文本为粗体（使用`font-weight:bold`）\n2. 设置`h2`元素的文本为斜体（使用`font-style:italic`）",
   "start_code": {
-    "html": "<h1>WCF 猫咪展示 2025</h1>",
+    "html": "<h2>编程学习指南</h2>",
     "css": "",
     "js": ""
   },
   "checkpoints": [
     {
+      "name": "h2元素存在检查",
+      "type": "assert_element",
+      "selector": "h2",
+      "assertion_type": "exists",
+      "feedback": "请确保页面中包含一个h2元素。"
+    },
+    {
       "name": "font-weight属性检查",
       "type": "assert_style",
-      "selector": "h1",
+      "selector": "h2",
       "css_property": "font-weight",
       "assertion_type": "equals",
       "value": "bold",
@@ -20,7 +27,7 @@
     {
       "name": "font-style属性检查",
       "type": "assert_style",
-      "selector": "h1",
+      "selector": "h2",
       "css_property": "font-style",
       "assertion_type": "equals",
       "value": "italic",
@@ -28,4 +35,3 @@
     }
   ]
 }
-
