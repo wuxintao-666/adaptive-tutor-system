@@ -76,10 +76,12 @@ class KnowledgeLevelAccessData(BaseModel):
     """知识点访问事件数据
     
     Attributes:
+        topic_id: 主题ID
         level: 知识点级别
         action: 动作：进入或离开
         duration_ms: 停留时长（毫秒），仅在leave时提供
     """
+    topic_id: str = Field(..., description="主题ID")
     level: int = Field(..., description="知识点级别")
     action: Literal["enter", "leave"] = Field(..., description="动作：进入或离开")
     duration_ms: Optional[int] = Field(None, description="停留时长（毫秒），仅在leave时提供")

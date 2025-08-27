@@ -463,6 +463,7 @@ class KnowledgeModule {
 
     logLevelEnterEvent(level) {
         tracker.logEvent('knowledge_level_access', {
+            topic_id: currentTopicId,
             level: level,
             action: 'enter'
         });
@@ -471,6 +472,7 @@ class KnowledgeModule {
     logLevelLeaveEvent(level) {
         const duration = Date.now() - this.levelEnterTime;
         tracker.logEvent('knowledge_level_access', {
+            topic_id: currentTopicId,
             level: level,
             action: 'leave',
             duration_ms: duration

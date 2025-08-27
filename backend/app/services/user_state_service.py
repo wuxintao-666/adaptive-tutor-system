@@ -316,15 +316,18 @@ class UserStateService:
     def handle_knowledge_level_access(self, participant_id: str, event_data: dict):
         profile, _ = self.get_or_create_profile(participant_id)
         
+        topic_id = event_data.get('topic_id')
         level = event_data.get('level')
         action = event_data.get('action')
         duration_ms = event_data.get('duration_ms')
 
-        if not level or not action:
+        if not topic_id or not level or not action:
             return
 
+        # 按 topic_id 对 history 进行分组
         history = profile.behavior_patterns.setdefault('knowledge_level_history', {})
-        level_stats = history.setdefault(str(level), {'visits': 0, 'total_duration_ms': 0})
+        topic_history = history.setdefault(topic_id, {})
+        level_stats = topic_history.setdefault(str(level), {'visits': 0, 'total_duration_ms': 0})
 
         if action == 'enter':
             level_stats['visits'] += 1
@@ -333,10 +336,10 @@ class UserStateService:
         
         # 使用 set_profile 更新 Redis
         set_dict = {
-            f'behavior_patterns.knowledge_level_history.{level}': level_stats
+            f'behavior_patterns.knowledge_level_history.{topic_id}.{level}': level_stats
         }
         self.set_profile(profile, set_dict)
-        logger.info(f"Updated knowledge level {level} stats for {participant_id}")
+        logger.info(f"Updated knowledge level {level} for topic {topic_id} stats for {participant_id}")
 
     def get_or_create_profile(self, participant_id: str, db: Session = None, group: str = "experimental") -> tuple[StudentProfile, bool]:
         """
