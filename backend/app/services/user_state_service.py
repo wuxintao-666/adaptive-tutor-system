@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.crud.crud_event import event as crud_event
 from app.schemas.behavior import BehaviorEvent
 from datetime import datetime, timedelta, UTC, timezone
+import json
 
 # 导入BKT模型
 from ..models.bkt import BKTModel
@@ -21,17 +22,26 @@ class StudentProfile:
         self.is_new_user = is_new_user
         # 认知状态
         self.bkt_model = {}  # { 'topic_id': BKT_instance }  # TODO: cxz 需要实现BKT模型，用于追踪知识点掌握情况
-        # 情感状态
+        # 情感状态 - 连续表示
         self.emotion_state = {
-            'current_sentiment': 'NEUTRAL',
-            # TODO: cxz 改成浮点
-            'is_frustrated': False,
-        }  # TODO: cxz 需要实现情感状态追踪
-        # 行为状态
-        self.behavior_counters = {
-            'submission_timestamps': [],
-            'error_count': 0,
-            # TODO: cxz 补充其他需要跨请求追踪的计数器，如idle_time, focus_changes等
+            'sentiment_confidence': {
+                'positive': 0.0,      # [0,1] 积极情绪置信度
+                'negative': 0.0,      # [0,1] 消极情绪置信度
+                'neutral': 1.0        # [0,1] 中性情绪置信度
+            },
+            'frustration_level': 0.0,     # [0,1] 挫败程度
+            'engagement_level': 0.5,      # [0,1] 参与度
+            'confidence_level': 0.5       # [0,1] 自信程度
+        }
+        # 行为模式 - 连续表示
+        self.behavior_patterns = {
+            'error_frequency': 0.0,        # [0,1] 错误频率（基于滑动窗口）
+            'help_seeking_tendency': 0.0,  # [0,1] 求助倾向
+            'persistence_score': 0.5,      # [0,1] 坚持度
+            'learning_velocity': 0.5,      # [0,1] 学习速度
+            'attention_stability': 0.5,    # [0,1] 注意力稳定性
+            'submission_timestamps': [],    # 保留时间戳用于计算频率
+            'recent_events': []             # 保留最近事件用于滑动窗口计算
         }
     
     # TODO: 需要检查实现to_dict和from_dict方法
@@ -46,11 +56,30 @@ class StudentProfile:
                 # 如果已经是字典形式（从数据库恢复时），直接使用
                 serialized_bkt_models[topic_id] = bkt_model
         
+        # 序列化行为模式中的时间戳
+        serialized_behavior_patterns = self.behavior_patterns.copy()
+        if 'submission_timestamps' in serialized_behavior_patterns:
+            # 将datetime对象转换为ISO字符串
+            serialized_behavior_patterns['submission_timestamps'] = [
+                ts.isoformat() if isinstance(ts, datetime) else ts 
+                for ts in serialized_behavior_patterns['submission_timestamps']
+            ]
+        
+        if 'recent_events' in serialized_behavior_patterns:
+            # 将recent_events中的时间戳转换为ISO字符串
+            serialized_recent_events = []
+            for event in serialized_behavior_patterns['recent_events']:
+                serialized_event = event.copy()
+                if 'timestamp' in serialized_event and isinstance(serialized_event['timestamp'], datetime):
+                    serialized_event['timestamp'] = serialized_event['timestamp'].isoformat()
+                serialized_recent_events.append(serialized_event)
+            serialized_behavior_patterns['recent_events'] = serialized_recent_events
+        
         return {
             'is_new_user': self.is_new_user,
             'bkt_model': serialized_bkt_models,
             'emotion_state': self.emotion_state,
-            'behavior_counters': self.behavior_counters
+            'behavior_patterns': serialized_behavior_patterns
         }
     
     @classmethod
@@ -71,11 +100,54 @@ class StudentProfile:
                 deserialized_bkt_models[topic_id] = bkt_data
         profile.bkt_model = deserialized_bkt_models
         
-        profile.emotion_state = data.get('emotion_state', {'current_sentiment': 'NEUTRAL', 'is_frustrated': False})
-        profile.behavior_counters = data.get('behavior_counters', {
-            'submission_timestamps': [],
-            'error_count': 0,
+        profile.emotion_state = data.get('emotion_state', {
+            'sentiment_confidence': {'positive': 0.0, 'negative': 0.0, 'neutral': 1.0},
+            'frustration_level': 0.0,
+            'engagement_level': 0.5,
+            'confidence_level': 0.5
         })
+        
+        # 反序列化行为模式
+        behavior_patterns = data.get('behavior_patterns', {
+            'error_frequency': 0.0,
+            'help_seeking_tendency': 0.0,
+            'persistence_score': 0.5,
+            'learning_velocity': 0.5,
+            'attention_stability': 0.5,
+            'submission_timestamps': [],
+            'recent_events': []
+        })
+        
+        # 反序列化时间戳
+        if 'submission_timestamps' in behavior_patterns:
+            # 将ISO字符串转换回datetime对象
+            submission_timestamps = []
+            for ts in behavior_patterns['submission_timestamps']:
+                if isinstance(ts, str):
+                    try:
+                        submission_timestamps.append(datetime.fromisoformat(ts))
+                    except ValueError:
+                        # 如果解析失败，使用当前时间
+                        submission_timestamps.append(datetime.now(UTC))
+                else:
+                    submission_timestamps.append(ts or datetime.now(UTC))
+            behavior_patterns['submission_timestamps'] = submission_timestamps
+        
+        if 'recent_events' in behavior_patterns:
+            # 反序列化recent_events中的时间戳
+            recent_events = []
+            for event in behavior_patterns['recent_events']:
+                deserialized_event = event.copy()
+                if 'timestamp' in deserialized_event and isinstance(deserialized_event['timestamp'], str):
+                    try:
+                        deserialized_event['timestamp'] = datetime.fromisoformat(deserialized_event['timestamp'])
+                    except ValueError:
+                        # 如果解析失败，使用当前时间
+                        deserialized_event['timestamp'] = datetime.now(UTC)
+                recent_events.append(deserialized_event)
+            behavior_patterns['recent_events'] = recent_events
+        
+        profile.behavior_patterns = behavior_patterns
         return profile
 
 
@@ -101,27 +173,29 @@ class UserStateService:
         # 事件处理后，检查是否需要创建快照
         self._maybe_create_snapshot(event.participant_id, db, background_tasks)
 
-    def handle_frustration_event(self, participant_id: str):
+    def handle_frustration_event(self, participant_id: str, frustration_increase: float = 0.2):
         """
-        处理挫败事件
+        处理挫败事件 - 连续更新挫败程度
         
         Args:
             participant_id: 参与者ID
+            frustration_increase: 挫败程度增加量 [0,1]
         """
         try:
             # 获取用户档案
             profile, _ = self.get_or_create_profile(participant_id, None)
             
-            # 设置挫败状态
-            # profile.emotion_state['is_frustrated'] = True
+            # 使用指数移动平均更新挫败程度
+            current_frustration = profile.emotion_state['frustration_level']
+            new_frustration = min(current_frustration + frustration_increase, 1.0)
             
             # 使用 set_profile 方法更新 Redis 中的挫败状态
             set_dict = {
-                'emotion_state.is_frustrated': True
+                'emotion_state.frustration_level': new_frustration
             }
             self.set_profile(profile, set_dict)
             
-            logger.info(f"UserStateService: 标记用户 {participant_id} 为挫败状态")
+            logger.info(f"UserStateService: 更新用户 {participant_id} 挫败程度为 {new_frustration:.3f}")
         except Exception as e:
             logger.error(f"UserStateService: 处理挫败事件时发生错误: {e}")
 
@@ -144,29 +218,29 @@ class UserStateService:
             
             # 检查 help_requests 字段是否存在，如果不存在则设置为0
             try:
-                current_help_requests = self.redis_client.json().get(key, '.behavior_counters.help_requests')
+                current_help_requests = self.redis_client.json().get(key, '.behavior_patterns.help_requests')
             except Exception:
                 # 字段不存在，设置为0
-                self.redis_client.json().set(key, '.behavior_counters.help_requests', 0)
+                self.redis_client.json().set(key, '.behavior_patterns.help_requests', 0)
                 current_help_requests = 0
             
             # 递增求助计数
             new_help_requests = current_help_requests + 1
-            set_dict['.behavior_counters.help_requests'] = new_help_requests
+            set_dict['.behavior_patterns.help_requests'] = new_help_requests
             
             # 如果有特定内容标题，也增加对应的提问计数
             if content_title:
                 counter_key = f"question_count_{content_title}"
                 try:
-                    current_question_count = self.redis_client.json().get(key, f'.behavior_counters["{counter_key}"]')
+                    current_question_count = self.redis_client.json().get(key, f'.behavior_patterns["{counter_key}"]')
                 except Exception:
                     # 字段不存在，设置为0
-                    self.redis_client.json().set(key, f'.behavior_counters["{counter_key}"]', 0)
+                    self.redis_client.json().set(key, f'.behavior_patterns["{counter_key}"]', 0)
                     current_question_count = 0
                 
                 # 递增提问计数
                 new_question_count = current_question_count + 1
-                set_dict[f'.behavior_counters["{counter_key}"]'] = new_question_count
+                set_dict[f'.behavior_patterns["{counter_key}"]'] = new_question_count
             
             # 使用 set_profile 批量更新 Redis 中的字段
             self.set_profile(profile, set_dict)
@@ -213,15 +287,15 @@ class UserStateService:
                 
                 # 检查字段是否存在，如果不存在则设置为0
                 try:
-                    current_count = self.redis_client.json().get(key, f'.behavior_counters.{counter_key}')
+                    current_count = self.redis_client.json().get(key, f'.behavior_patterns.{counter_key}')
                 except Exception:
                     # 字段不存在，设置为0
-                    self.redis_client.json().set(key, f'.behavior_counters.{counter_key}', 0)
+                    self.redis_client.json().set(key, f'.behavior_patterns.{counter_key}', 0)
                     current_count = 0
                 
                 # 递增计数
                 new_count = current_count + 1
-                self.redis_client.json().set(key, f'.behavior_counters.{counter_key}', new_count)
+                self.redis_client.json().set(key, f'.behavior_patterns.{counter_key}', new_count)
                 
                 # 注释掉旧的实现方式
                 # profile.behavior_counters.setdefault(counter_key, 0)
@@ -409,6 +483,7 @@ class UserStateService:
             time_since_last_snapshot >= self.SNAPSHOT_TIME_INTERVAL):
             
             logger.info(f"Creating snapshot for {participant_id}...")
+            logger.info(f"Snapshot details - Event count since last snapshot: {event_count_since_snapshot}, Time since last snapshot: {time_since_last_snapshot}")
             
             # 创建快照事件
             from ..schemas.behavior import EventType, StateSnapshotData
@@ -418,6 +493,9 @@ class UserStateService:
                 event_data=StateSnapshotData(profile_data=profile_data),
                 timestamp=datetime.now(UTC)
             )
+            
+            # 输出快照数据到日志（限制长度以避免日志过大）
+            logger.info(f"Snapshot data for {participant_id}: {str(profile_data)[:500]}...")
             
             # 异步保存快照
             if background_tasks:
@@ -437,17 +515,19 @@ class UserStateService:
             self._cleanup_old_snapshots(participant_id, db)
 
     def _cleanup_old_snapshots(self, participant_id: str, db: Session, keep_latest: int = 3):
-        """清理旧的快照，只保留最新的N个"""
-        snapshots = crud_event.get_all_snapshots(db, participant_id=participant_id)
-        
-        if len(snapshots) > keep_latest:
-            # 获取需要删除的快照
-            snapshots_to_delete = snapshots[:-keep_latest]
-            
-            for snapshot in snapshots_to_delete:
-                crud_event.remove(db, obj_id=snapshot.id)
-            
-            logger.info(f"Cleaned up {len(snapshots_to_delete)} old snapshots for {participant_id}.")
+        """科研需求：保留所有快照数据，不进行清理"""
+        # 注释掉原有的清理逻辑，以保留所有快照用于科研分析
+        # snapshots = crud_event.get_all_snapshots(db, participant_id=participant_id)
+        # 
+        # if len(snapshots) > keep_latest:
+        #     # 获取需要删除的快照
+        #     snapshots_to_delete = snapshots[:-keep_latest]
+        #     
+        #     for snapshot in snapshots_to_delete:
+        #         crud_event.remove(db, obj_id=snapshot.id)
+        #     
+        #     logger.info(f"Cleaned up {len(snapshots_to_delete)} old snapshots for {participant_id}.")
+        logger.info(f"Research mode: Keeping all snapshots for {participant_id}. No cleanup performed.")
 
     def update_bkt_on_submission(self, participant_id: str, topic_id: str, is_correct: bool) -> float:
         """
@@ -538,6 +618,9 @@ class UserStateService:
         key = f"user_profile:{profile.participant_id}"
         
         try:
+            # 输出更新前的字段值
+            logger.info(f"UserStateService: 准备更新用户 {profile.participant_id} 的字段: {set_dict}")
+            
             # 使用 RedisJSON 的 JSON.SET 命令逐个更新字段
             for field_path, new_value in set_dict.items():
                 # 确保字段路径以 '.' 开头，符合 RedisJSON 的路径格式
@@ -547,18 +630,24 @@ class UserStateService:
                 # 检查并创建必要的中间结构
                 self._ensure_intermediate_structure(key, field_path)
                 
+                # 获取更新前的值用于日志输出
+                try:
+                    old_value = self.redis_client.json().get(key, field_path)
+                except Exception:
+                    old_value = None
+                
                 # 直接使用 JSON.SET 命令更新特定字段
                 result = self.redis_client.json().set(key, field_path, new_value)
                 
                 if result:
-                    logger.debug(f"Successfully updated field '{field_path}' to '{new_value}' for user {profile.participant_id}")
+                    logger.info(f"UserStateService: 成功更新用户 {profile.participant_id} 的字段 '{field_path}' 从 '{old_value}' 到 '{new_value}'")
                 else:
-                    logger.warning(f"Failed to update field '{field_path}' for user {profile.participant_id}")
+                    logger.warning(f"UserStateService: 更新用户 {profile.participant_id} 的字段 '{field_path}' 失败")
             
-            logger.info(f"Profile fields updated successfully for user {profile.participant_id}")
+            logger.info(f"UserStateService: 用户 {profile.participant_id} 的字段更新完成")
             
         except Exception as e:
-            logger.error(f"Error updating profile fields for user {profile.participant_id}: {str(e)}")
+            logger.error(f"UserStateService: 更新用户 {profile.participant_id} 的字段时发生错误: {str(e)}")
             raise
     
     def _ensure_intermediate_structure(self, key: str, field_path: str):
@@ -591,3 +680,180 @@ class UserStateService:
                     
         except Exception as e:
             logger.warning(f"Failed to ensure intermediate structure for {field_path}: {e}")
+
+    def update_emotional_state(self, participant_id: str, sentiment_update: Dict[str, float], weight: float = 0.3):
+        """
+        使用指数移动平均更新情感状态
+        
+        Args:
+            participant_id: 参与者ID
+            sentiment_update: 情感更新字典，如 {'positive': 0.1, 'negative': -0.1}
+            weight: 更新权重 [0,1]
+        """
+        try:
+            profile, _ = self.get_or_create_profile(participant_id, None)
+            
+            # 获取当前情感状态
+            current_sentiment = profile.emotion_state['sentiment_confidence']
+            
+            # 应用指数移动平均更新
+            new_sentiment = {}
+            for sentiment_type, current_value in current_sentiment.items():
+                update_value = sentiment_update.get(sentiment_type, 0.0)
+                new_value = current_value * (1 - weight) + update_value * weight
+                new_sentiment[sentiment_type] = max(0.0, min(1.0, new_value))
+            
+            # 归一化确保总和为1
+            total = sum(new_sentiment.values())
+            if total > 0:
+                for sentiment_type in new_sentiment:
+                    new_sentiment[sentiment_type] /= total
+            
+            # 更新挫败程度（基于消极情绪）
+            profile.emotion_state['frustration_level'] = new_sentiment['negative']
+            
+            # 更新参与度（基于积极情绪）
+            profile.emotion_state['engagement_level'] = new_sentiment['positive']
+            
+            # 保存更新
+            set_dict = {
+                'emotion_state.sentiment_confidence': new_sentiment,
+                'emotion_state.frustration_level': new_sentiment['negative'],
+                'emotion_state.engagement_level': new_sentiment['positive']
+            }
+            self.set_profile(profile, set_dict)
+            
+            logger.info(f"更新用户 {participant_id} 情感状态: {new_sentiment}")
+            
+        except Exception as e:
+            logger.error(f"更新情感状态时发生错误: {e}")
+
+    def update_behavior_patterns(self, participant_id: str, event_type: str, event_data: Dict = None):
+        """
+        更新行为模式指标
+        
+        Args:
+            participant_id: 参与者ID
+            event_type: 事件类型
+            event_data: 事件数据
+        """
+        try:
+            profile, _ = self.get_or_create_profile(participant_id, None)
+            key = f"user_profile:{participant_id}"
+            
+            # 添加事件时间戳
+            current_time = datetime.now(UTC)
+            
+            # 更新最近事件列表（保留最近100个事件）
+            recent_events = profile.behavior_patterns['recent_events']
+            recent_events.append({
+                'event_type': event_type,
+                'timestamp': current_time,
+                'event_data': event_data or {}
+            })
+            
+            # 保持列表长度限制
+            if len(recent_events) > 100:
+                recent_events = recent_events[-100:]
+            
+            # 计算滑动窗口指标
+            window_start = current_time - timedelta(minutes=10)  # 10分钟窗口
+            window_events = [e for e in recent_events if e['timestamp'] >= window_start]
+            
+            # 计算错误频率
+            error_events = [e for e in window_events if e['event_type'] == 'test_submission' 
+                          and e['event_data'].get('is_correct') is False]
+            error_frequency = len(error_events) / max(len(window_events), 1)
+            
+            # 计算求助频率
+            help_events = [e for e in window_events if e['event_type'] == 'ai_help_request']
+            help_frequency = len(help_events) / max(len(window_events), 1)
+            
+            # 更新行为模式
+            set_dict = {
+                'behavior_patterns.recent_events': recent_events,
+                'behavior_patterns.error_frequency': error_frequency,
+                'behavior_patterns.help_seeking_tendency': help_frequency
+            }
+            
+            # 更新提交时间戳
+            if event_type == 'test_submission':
+                submission_timestamps = profile.behavior_patterns['submission_timestamps']
+                submission_timestamps.append(current_time)
+                
+                # 保持最近50个提交
+                if len(submission_timestamps) > 50:
+                    submission_timestamps = submission_timestamps[-50:]
+                
+                set_dict['behavior_patterns.submission_timestamps'] = submission_timestamps
+                
+                # 计算学习速度（基于提交间隔）
+                if len(submission_timestamps) >= 2:
+                    intervals = []
+                    for i in range(1, len(submission_timestamps)):
+                        interval = (submission_timestamps[i] - submission_timestamps[i-1]).total_seconds()
+                        intervals.append(interval)
+                    
+                    if intervals:
+                        avg_interval = sum(intervals) / len(intervals)
+                        # 将间隔转换为学习速度（间隔越短，速度越快）
+                        learning_velocity = min(1.0, 300.0 / max(avg_interval, 30.0))  # 30秒=1.0, 300秒=0.0
+                        set_dict['behavior_patterns.learning_velocity'] = learning_velocity
+            
+            self.set_profile(profile, set_dict)
+            
+            logger.debug(f"更新用户 {participant_id} 行为模式: error_freq={error_frequency:.3f}, help_freq={help_frequency:.3f}")
+            
+        except Exception as e:
+            logger.error(f"更新行为模式时发生错误: {e}")
+
+    def calculate_frustration_index(self, participant_id: str) -> float:
+        """
+        计算综合挫败指数
+        
+        Args:
+            participant_id: 参与者ID
+            
+        Returns:
+            挫败指数 [0,1]
+        """
+        try:
+            profile, _ = self.get_or_create_profile(participant_id, None)
+            
+            # 获取各个指标
+            emotional_frustration = profile.emotion_state['frustration_level']
+            error_frequency = profile.behavior_patterns['error_frequency']
+            help_seeking = profile.behavior_patterns['help_seeking_tendency']
+            
+            # 计算时间压力（基于提交频率）
+            submission_timestamps = profile.behavior_patterns['submission_timestamps']
+            time_pressure = 0.0
+            
+            if len(submission_timestamps) >= 2:
+                recent_submissions = [t for t in submission_timestamps 
+                                    if t >= datetime.now(UTC) - timedelta(minutes=5)]
+                
+                if len(recent_submissions) >= 2:
+                    intervals = []
+                    for i in range(1, len(recent_submissions)):
+                        interval = (recent_submissions[i] - recent_submissions[i-1]).total_seconds()
+                        intervals.append(interval)
+                    
+                    if intervals:
+                        avg_interval = sum(intervals) / len(intervals)
+                        # 间隔越短，时间压力越大
+                        time_pressure = min(1.0, 60.0 / max(avg_interval, 10.0))
+            
+            # 加权综合计算挫败指数
+            frustration_index = (
+                emotional_frustration * 0.4 +      # 情感挫败权重40%
+                error_frequency * 0.3 +            # 错误频率权重30%
+                help_seeking * 0.2 +              # 求助倾向权重20%
+                time_pressure * 0.1               # 时间压力权重10%
+            )
+            
+            return min(1.0, max(0.0, frustration_index))
+            
+        except Exception as e:
+            logger.error(f"计算挫败指数时发生错误: {e}")
+            return 0.0

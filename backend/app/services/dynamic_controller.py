@@ -199,10 +199,13 @@ class DynamicController:
             # 如果emotion_state为None，创建一个新的字典
             profile.emotion_state = emotion_state
 
+        # behavior_patterns 替代了 behavior_counters
+        behavior_counters = profile.behavior_patterns if hasattr(profile, 'behavior_patterns') else {}
+        
         return UserStateSummary(
             participant_id=profile.participant_id,
             emotion_state=emotion_state,
-            behavior_counters=profile.behavior_counters,
+            behavior_counters=behavior_counters,
             bkt_models=profile.bkt_model,
             is_new_user=profile.is_new_user,
         )

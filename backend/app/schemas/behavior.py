@@ -15,8 +15,9 @@ class EventType(str, Enum):
     TEST_SUBMISSION = "test_submission"
     DOM_ELEMENT_SELECT = "dom_element_select"
     USER_IDLE = "user_idle"
-    LEVEL_KNOWN="level_known"
     CLICK="click"
+    KNOWLEDGE_LEVEL_ACCESS = "knowledge_level_access"
+    STATE_SNAPSHOT = "state_snapshot"
 
 
 
@@ -71,12 +72,36 @@ class UserIdleData(BaseModel):
     duration_ms: int = Field(..., gt=0, description="闲置时长（毫秒）")
 
 
+class KnowledgeLevelAccessData(BaseModel):
+    """知识点访问事件数据
+    
+    Attributes:
+        level: 知识点级别
+        action: 动作：进入或离开
+        duration_ms: 停留时长（毫秒），仅在leave时提供
+    """
+    level: int = Field(..., description="知识点级别")
+    action: Literal["enter", "leave"] = Field(..., description="动作：进入或离开")
+    duration_ms: Optional[int] = Field(None, description="停留时长（毫秒），仅在leave时提供")
+
+
+class StateSnapshotData(BaseModel):
+    """状态快照数据
+    
+    Attributes:
+        profile_data: 用户档案数据
+    """
+    profile_data: Dict[str, Any] = Field(..., description="用户档案数据")
+
+
 EventDataType = Union[
     CodeEditData,
     AiHelpRequestData,
     SubmissionData,
     DomElementSelectData,
     UserIdleData,
+    KnowledgeLevelAccessData,
+    StateSnapshotData,
     # todo:
 
 ]
