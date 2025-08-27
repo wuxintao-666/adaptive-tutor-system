@@ -15,8 +15,9 @@ class EventType(str, Enum):
     TEST_SUBMISSION = "test_submission"
     DOM_ELEMENT_SELECT = "dom_element_select"
     USER_IDLE = "user_idle"
-    PAGE_FOCUS_CHANGE = "page_focus_change"
-    STATE_SNAPSHOT = "state_snapshot"
+    LEVEL_KNOWN="level_known"
+    CLICK="click"
+
 
 
 class CodeEditData(BaseModel):
@@ -70,32 +71,14 @@ class UserIdleData(BaseModel):
     duration_ms: int = Field(..., gt=0, description="闲置时长（毫秒）")
 
 
-class PageFocusChangeData(BaseModel):
-    """页面焦点变化数据
-    
-    Attributes:
-        status: 焦点状态，'focus' 或 'blur'
-    """
-    status: Literal["focus", "blur"] = Field(..., description="焦点状态")
-
-
-class StateSnapshotData(BaseModel):
-    """状态快照数据
-    
-    Attributes:
-        profile_data: 用户档案数据
-    """
-    profile_data: Dict[str, Any] = Field(..., description="用户档案数据")
-
-
 EventDataType = Union[
     CodeEditData,
     AiHelpRequestData,
     SubmissionData,
     DomElementSelectData,
     UserIdleData,
-    PageFocusChangeData,
-    StateSnapshotData
+    # todo:
+
 ]
 
 
