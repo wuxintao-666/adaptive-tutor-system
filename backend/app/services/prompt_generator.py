@@ -148,7 +148,6 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         elif mode == "test":
             prompt_parts.append("MODE: The student is in test mode. Guide them to find the answer themselves. Do not give the answer directly.")
             # 分阶段debug逻辑
-            # TODO：使用统一提示词模版
             question_count = user_state.behavior_counters.get(f"question_count_{content_title}", 0)
             if question_count == 0:
                 prompt_parts.append("DEBUGGING STRATEGY: This is the first time the student is asking about this. Provide a small hint.")
