@@ -116,8 +116,15 @@ class ChatModule {
           requestBody.test_results = testResults;
         }
       }
-
+      const participantId = getParticipantId();
+      console.log("Participant ID:", participantId);
       api_client.post('/ai/chat2', requestBody)
+      .then(response => {
+          console.log('AI Response:', response);
+      })
+      .catch(error => {
+          console.error('API Error:', error);
+      });
 
 
       // let block=this.addMessageToUI('ai', "");

@@ -4,7 +4,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from app.core.websocket_manager import ws_manager
 
 router = APIRouter()
-@router.websocket("/ws/user/{participant_id}")
+@router.websocket("/user/{participant_id}")
 async def websocket_endpoint(websocket: WebSocket, participant_id: str, token: str = None):
    
     await ws_manager.connect(participant_id, websocket)

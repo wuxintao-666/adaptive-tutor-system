@@ -64,16 +64,8 @@ class WebSocketManager {
                     alert('WebSocket URL: ' + wsUrl);
                     this.socket = new WebSocket(wsUrl);
                     this.socket.onopen = () => {
-                        if (this.onOpenCallback) {
-                               this.onOpenCallback();
-                            }
-                        this.updateConnectionStatus(tue);
-                        this.addMessage('WebSocket 连接已建立', 'system');
                         this.reconnectAttempts = 0; // 重置重连尝试次数
-                        
-                        // 启用发送消息的输入框和按钮
-                        document.getElementById('messageInput').disabled = false;
-                        document.getElementById('sendBtn').disabled = false;
+                       
                     };
                     this.socket.onmessage = (event) => {
                         try {
