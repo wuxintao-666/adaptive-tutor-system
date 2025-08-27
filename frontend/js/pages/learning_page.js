@@ -272,6 +272,15 @@ async function initializeModules(topicId) {
         console.error('[MainApp] 聊天模块初始化失败:', error);
     }
     
+    //初始化websocket模块
+    try{
+        websocket.connect();
+        console.log('[MainApp] WebSocket模块初始化完成');
+    }
+    catch(error){
+        console.error('[MainApp] WebSocket模块初始化失败:', error);
+    }
+    
     // 更新页面标题为实际内容标题
     const topicContent = AppDataStore.getData('topicContent');
     if (topicContent?.title) {

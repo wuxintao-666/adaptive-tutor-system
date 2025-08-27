@@ -20,7 +20,7 @@ class ChatModule {
     this.sendButton = null;
     this.isLoading = false;
     //websocket.userId = getParticipantId();
-    websocket.connect();
+    //websocket.connect();
      // 订阅 WebSocket 消息
     websocket.subscribe("chat_result", (msg) => {
       console.log("[ChatModule] 收到AI结果:", msg);
