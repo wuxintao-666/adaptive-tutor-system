@@ -26,27 +26,19 @@ class BehaviorTracker {
   }
 
   // -------------------- 核心发送函数 --------------------
-  // 优先使用 navigator.sendBeacon，否则使用 fetch keepalive（并在控制台打印错误）
+  // 使用 window.apiClient.postWithoutAuth 发送请求到后端
   _sendPayload(payload) {
-    const url = '/api/v1/behavior/log';
-    try {
-      if (navigator && typeof navigator.sendBeacon === 'function') {
-        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-        navigator.sendBeacon(url, blob);
-      } else {
-        // fallback: fetch keepalive（注意：并非所有浏览器都支持 keepalive）
-        fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          keepalive: true
-        }).catch(err => {
-          console.warn('[BehaviorTracker] fetch fallback 发送失败：', err);
-        });
-      }
-    } catch (e) {
-      console.warn('[BehaviorTracker] 发送日志时异常：', e);
+    // 检查 window.apiClient 是否存在
+    if (typeof window.apiClient === 'undefined' || typeof window.apiClient.postWithoutAuth !== 'function') {
+      console.error('[BehaviorTracker] window.apiClient.postWithoutAuth 不可用');
+      return;
     }
+
+    // 使用 apiClient 发送 POST 请求
+    window.apiClient.postWithoutAuth('/behavior/log', payload)
+      .catch(err => {
+        console.warn('[BehaviorTracker] 发送日志失败：', err);
+      });
   }
 
   // 公共上报接口：组装标准 payload 并发送

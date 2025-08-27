@@ -41,7 +41,8 @@ class StudentProfile:
             'learning_velocity': 0.5,      # [0,1] 学习速度
             'attention_stability': 0.5,    # [0,1] 注意力稳定性
             'submission_timestamps': [],    # 保留时间戳用于计算频率
-            'recent_events': []             # 保留最近事件用于滑动窗口计算
+            'recent_events': [],             # 保留最近事件用于滑动窗口计算
+            'knowledge_level_history': {}  # { 'level_id': {'visits': 0, 'total_duration_ms': 0} }
         }
     
     # TODO: 需要检查实现to_dict和from_dict方法
@@ -115,7 +116,8 @@ class StudentProfile:
             'learning_velocity': 0.5,
             'attention_stability': 0.5,
             'submission_timestamps': [],
-            'recent_events': []
+            'recent_events': [],
+            'knowledge_level_history': {}
         })
         
         # 反序列化时间戳
@@ -310,6 +312,31 @@ class UserStateService:
                 logger.info(f"UserStateService: 增加用户 {participant_id} 的 {counter_key} 计数")
         except Exception as e:
             logger.error(f"UserStateService: 处理轻量级事件时发生错误: {e}")
+
+    def handle_knowledge_level_access(self, participant_id: str, event_data: dict):
+        profile, _ = self.get_or_create_profile(participant_id)
+        
+        level = event_data.get('level')
+        action = event_data.get('action')
+        duration_ms = event_data.get('duration_ms')
+
+        if not level or not action:
+            return
+
+        history = profile.behavior_patterns.setdefault('knowledge_level_history', {})
+        level_stats = history.setdefault(str(level), {'visits': 0, 'total_duration_ms': 0})
+
+        if action == 'enter':
+            level_stats['visits'] += 1
+        elif action == 'leave' and duration_ms is not None:
+            level_stats['total_duration_ms'] += duration_ms
+        
+        # 使用 set_profile 更新 Redis
+        set_dict = {
+            f'behavior_patterns.knowledge_level_history.{level}': level_stats
+        }
+        self.set_profile(profile, set_dict)
+        logger.info(f"Updated knowledge level {level} stats for {participant_id}")
 
     def get_or_create_profile(self, participant_id: str, db: Session = None, group: str = "experimental") -> tuple[StudentProfile, bool]:
         """

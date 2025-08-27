@@ -271,12 +271,10 @@ class BehaviorInterpreterService:
         
         logger.info(f"Participant {participant_id} accessed knowledge level {level}, action: {action}, duration: {duration_ms}ms")
         
-        # 在这里可以添加调用user_state_service的逻辑来更新用户模型
-        # 例如:
-        # if action == 'enter':
-        #     user_state_service.handle_knowledge_enter(participant_id, level)
-        # elif action == 'leave':
-        #     user_state_service.handle_knowledge_leave(participant_id, level, duration_ms)
+        # 调用UserStateService更新用户模型
+        if user_state_service and not is_replay:
+            # Pydantic模型需要转换为字典才能传递
+            user_state_service.handle_knowledge_level_access(participant_id, event_data.__dict__)
 
 
 # 单例导出
