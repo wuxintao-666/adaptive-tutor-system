@@ -21,8 +21,8 @@ class WebSocketManager {
                 this.subscribers[type] = this.subscribers[type].filter(cb => cb !== callback);
             }}
 
-            _dispatch_message(message){
-                const { type, task_id, timestamp, data, error } = message;
+            _dispatch_message(rawMessage){
+                const { type, taskid, message, error, timestamp } = rawMessage;
                 // if (error) {
                 //     this.handleError(message);
                 //     return;

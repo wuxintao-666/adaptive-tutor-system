@@ -60,7 +60,7 @@ class SocketResponse2(BaseModel):
     """
     type: str
     taskid:str
-    message: Optional[str] = None
+    message: Any = None
     error: Optional[Error] = None
     timestamp: Optional[datetime] = None
 

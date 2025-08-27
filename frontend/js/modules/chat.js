@@ -24,7 +24,7 @@ class ChatModule {
      // 订阅 WebSocket 消息
     websocket.subscribe("chat_result", (msg) => {
       console.log("[ChatModule] 收到AI结果:", msg);
-      this.addMessageToUI('ai', msg.data.message);
+      this.addMessageToUI('ai', msg.ai_response);
     });
 
     websocket.subscribe("submission_progress", (msg) => {
@@ -116,9 +116,7 @@ class ChatModule {
           requestBody.test_results = testResults;
         }
       }
-      const participantId = getParticipantId();
-      console.log("Participant ID:", participantId);
-      api_client.post('/ai/chat2', requestBody)
+      api_client.post('/chat/ai/chat2', requestBody)
       .then(response => {
           console.log('AI Response:', response);
       })
@@ -264,7 +262,7 @@ class ChatModule {
       messageElement.innerHTML = `
         <div class="ai-avatar">AI</div>
         <div class="ai-content">
-          <div class="markdown-content">${content}</div>
+          <div class="markdown-content">${marked(content)}</div>
         </div>
       `;
       aiContent = messageElement.querySelector('.ai-content');
