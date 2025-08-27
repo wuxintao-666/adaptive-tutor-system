@@ -2,13 +2,9 @@
 import { getParticipantId } from './modules/session.js';
 import { buildBackendUrl } from './modules/config.js';
 import {AppConfig} from './modules/config.js';
-//Aeolyn:现有的方法是http用的，ws用不了
-export  function buildWebSocketUrl(id='') {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.hostname;
-    const port = AppConfig.backend_port;
-    const backendurl = AppConfig.api_base_url;
-    return `${protocol}//${host}:${port}${backendurl}/ws/user/${id}`;
+
+export function buildWebSocketUrl(id='') {
+    return `${buildBackendUrl('/ws/user/')}${id}`;
 }
 // --- 新增：不带 participant_id 的通用请求方法 ---
 async function _requestWithoutAuth(endpoint, options = {}) {

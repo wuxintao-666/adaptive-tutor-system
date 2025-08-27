@@ -1,6 +1,7 @@
 //TODO:Aeolyn:对接chat.js
 //TODO:Aeolyn:对接上chat.js后将manager和connector逻辑分离
-import { buildWebSocketUrl } from '../api_client.js';
+//import { buildWebSocketUrl } from '../api_client.js';
+import { buildBackendUrl } from './config.js';
 import { getParticipantId } from './session.js';
 class WebSocketManager {
             constructor() {
@@ -59,7 +60,8 @@ class WebSocketManager {
                     return;
                 }
                 try {
-                    const wsUrl = buildWebSocketUrl(getParticipantId());
+                    //const wsUrl = buildWebSocketUrl(getParticipantId());
+                    const wsUrl = `${buildBackendUrl('/ws/user/')}${id}`
                     //const wsUrl = `${protocol}//localhost:8000/ws/chat/${this.userId}`;
                     alert('WebSocket URL: ' + wsUrl);
                     this.socket = new WebSocket(wsUrl);

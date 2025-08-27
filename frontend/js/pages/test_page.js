@@ -4,6 +4,7 @@ import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
 import { setupHeaderTitle, setupBackButton, getUrlParam, debugUrlParams, getReturnUrl  } from '../modules/navigation.js';
 import tracker from '../modules/behavior_tracker.js';
 import chatModule from '../modules/chat.js';
+import websocket from '../modules/websocket_client.js';
 
 // 初始化函数
 async function initializePage() {
@@ -74,6 +75,14 @@ async function initializePage() {
     } catch (error) {
         console.error('初始化页面时出错:', error);
         alert('无法加载测试任务: ' + (error.message || '未知错误'));
+    }
+
+    try{
+        websocket.connect();
+        console.log('[MainApp] WebSocket模块初始化完成');
+    }
+    catch(error){
+        console.error('[MainApp] WebSocket模块初始化失败:', error);
     }
 }
 
