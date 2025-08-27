@@ -54,7 +54,7 @@ class WebSocketManager {
             //      this.onCloseCallback = callback;
             // }
             // 连接WebSocket
-            connect() {
+            async connect() {
                 if (this.socket && this.socket.readyState === WebSocket.OPEN) {
                     return;
                 }

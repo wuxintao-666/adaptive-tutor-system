@@ -30,6 +30,9 @@ import chatModule from '../modules/chat.js';
 // 导入API客户端
 import '../api_client.js';
 
+//导入websocket模块
+import websocket from '../modules/websocket_client.js';
+
 console.log('learning_page.js 开始加载...');
 
 // ==================== 变量定义 ====================
@@ -283,7 +286,7 @@ async function initializeModules(topicId) {
     if (topicContent?.levels) {
         setTopicData(topicContent);
         renderTopicContent();
-    }
+}
 }
 
 // 初始化UI事件

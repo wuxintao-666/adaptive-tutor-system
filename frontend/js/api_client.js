@@ -11,7 +11,7 @@ export  function buildWebSocketUrl(id='') {
     return `${protocol}//${host}:${port}${backendurl}/ws/user/${id}`;
 }
 // --- 新增：不带 participant_id 的通用请求方法 ---
-async function _requestWithoutAuth(endpoint, options = {}) {hkm
+async function _requestWithoutAuth(endpoint, options = {}) {
     const defaultOptions = {
         headers: { 'Content-Type': 'application/json' },
         ...options
