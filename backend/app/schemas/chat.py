@@ -3,6 +3,9 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, UTC
 from app.schemas.content import CodeContent, TestTask
 
+class Error(BaseModel):
+    code: str 
+    message: str  
 
 class ConversationMessage(BaseModel):
     """对话消息模型
@@ -42,6 +45,24 @@ class SocketRequest(BaseModel):
     mode: Optional[str] = None  # "learning" 或 "test"
     content_id: Optional[str] = None
 
+class SocketResponse2(BaseModel):
+    """Socket响应模型
+
+    通过WebSocket发送的响应消息，用于服务器向客户端发送实时信息。
+
+    Attributes:
+        type: 消息类型，如 "message"(普通消息), "stream_start"(流式传输开始), 
+              "stream"(流式传输中), "stream_end"(流式传输结束), "pong"(心跳响应)
+        message: 消息内容，文本格式
+        status: 响应状态，'success'表示成功，'error'表示错误
+        error_message: 错误信息，可选字段
+        timestamp: 时间戳，记录消息发送时间
+    """
+    type: str
+    taskid:str
+    message: Optional[str] = None
+    error: Optional[Error] = None
+    timestamp: Optional[datetime] = None
 
 class SocketResponse(BaseModel):
     """Socket响应模型
@@ -63,7 +84,6 @@ class SocketResponse(BaseModel):
     status: str = "success"
     error_message: Optional[str] = None
     timestamp: Optional[datetime] = None
-
 class ChatRequest(BaseModel):
     """聊天请求模型
 
@@ -84,6 +104,9 @@ class ChatRequest(BaseModel):
     mode: Optional[str] = None  # "learning" 或 "test"
     content_id: Optional[str] = None
     test_results: Optional[List[Dict[str, Any]]] = None
+
+
+
 
 
 class ChatResponse(BaseModel):

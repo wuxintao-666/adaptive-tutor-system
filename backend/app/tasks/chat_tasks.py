@@ -1,9 +1,11 @@
 from app.celery_app import celery_app, get_dynamic_controller
 from app.db.database import SessionLocal
-from app.schemas.chat import ChatRequest
-
-@celery_app.task
-def process_chat_request(request_data: dict):
+from app.schemas.chat import ChatRequest,SocketResponse2
+from app.config.dependency_injection import get_redis_client
+from datetime import datetime, timezone as UTC
+import json
+@celery_app.task(bind=True)
+def process_chat_request(self,request_data: dict):
     db = SessionLocal()
     try:
         controller = get_dynamic_controller()
@@ -20,6 +22,15 @@ def process_chat_request(request_data: dict):
             background_tasks=None  # Celery任务中不使用FastAPI的BackgroundTasks
         )
         # 注意：响应结果会自动存储在Celery的result backend中
+        redis_client = get_redis_client()
+        #TODO: 修改
+        message = SocketResponse2(
+            type="chat_result",
+            taskid=self.request.id,
+            timestamp=datetime.now(UTC),
+            message= response.model_dump(),
+        )
+        redis_client.publish(f"ws:user:{request_data['participant_id']}", message.model_dump())
         return response.model_dump()
     finally:
         db.close()

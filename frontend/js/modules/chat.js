@@ -10,7 +10,8 @@
 
 import { getParticipantId } from './session.js';
 import { marked } from "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js";
-import websocket from './socket.js';
+import websocket from './websocket_client.js';
+import api_client from '../api_client.js'
 class ChatModule {
   constructor() {
     this.chatContainer = null;
@@ -18,8 +19,23 @@ class ChatModule {
     this.inputElement = null;
     this.sendButton = null;
     this.isLoading = false;
-    websocket.userId = getParticipantId();
+    //websocket.userId = getParticipantId();
     websocket.connect();
+     // 订阅 WebSocket 消息
+    websocket.subscribe("chat_result", (msg) => {
+      console.log("[ChatModule] 收到AI结果:", msg);
+      this.addMessageToUI('ai', msg.data.message);
+    });
+
+    websocket.subscribe("submission_progress", (msg) => {
+      console.log("[ChatModule] 收到进度:", msg);
+      this.addMessageToUI('ai', `进度: ${msg.data.progress * 100}%`);
+    });
+
+    websocket.subscribe("submission_result", (msg) => {
+      console.log("[ChatModule] 收到最终结果:", msg);
+      this.addMessageToUI('ai', msg.data.message);
+    });
   }
 
   /**
@@ -100,46 +116,49 @@ class ChatModule {
           requestBody.test_results = testResults;
         }
       }
-    
 
-      let block=this.addMessageToUI('ai', "");
-      let currentAiMessageElement=block;
-      const messageData = {
-                        type: "ai_message",
-                        userId: getParticipantId(),
-                        message: message
-                    };
-      websocket.socket.send(JSON.stringify(messageData))
-      websocket.onMessage((data, rawEvent) => {
-                    //console.log("外部捕获消息:", data);
-                    if (data.type === "stream_start") {
-                        // 开始流式传输
-                        //this.showTypingIndicator(false);
-                        //currentAiMessageElement = addMessage('', 'ai', 'AI');
-                    } else if (data.type === "stream") {
-                        // 流式传输中
-                        if (currentAiMessageElement) {
-                            this.appendMessageContent(currentAiMessageElement, data.message);
-                        }
-                    } else if (data.type === "stream_end") {
-                                // 流式传输结束：如果 stream_end 携带最后一段文本，先通过 appendMessageContent 入缓冲，
-                                // 然后调用元素的分片 flush 函数完成剩余内容，避免一次性大块追加
-                                if (currentAiMessageElement) {
-                                    const el = currentAiMessageElement;
-                                    if (data.message) {
-                                        this.appendMessageContent(el, data.message);
-                                    }
-                                    if (el._flushFn) {
-                                        el._flushFn();
-                                    } else if (el._streamBuffer && el._streamBuffer.length > 0) {
-                                        el.textContent += el._streamBuffer;
-                                        el._streamBuffer = '';
-                                    }
-                                }
-                                currentAiMessageElement = null;
-                    } 
+      api_client.post('/ai/chat2', requestBody)
+
+
+      // let block=this.addMessageToUI('ai', "");
+      // let currentAiMessageElement=block;
+      // const messageData = {
+      //                   type: "ai_message",
+      //                   userId: getParticipantId(),
+      //                   message: message
+      //               };
+      // websocket.socket.send(JSON.stringify(messageData))
+      // websocket.onMessage((data, rawEvent) => {
+      //               //console.log("外部捕获消息:", data);
+      //               if (data.type === "stream_start") {
+      //                   // 开始流式传输
+      //                   //this.showTypingIndicator(false);
+      //                   //currentAiMessageElement = addMessage('', 'ai', 'AI');
+      //               } else if (data.type === "stream") {
+      //                   // 流式传输中
+      //                   if (currentAiMessageElement) {
+      //                       this.appendMessageContent(currentAiMessageElement, data.message);
+      //                   }
+      //               } else if (data.type === "stream_end") {
+      //                           // 流式传输结束：如果 stream_end 携带最后一段文本，先通过 appendMessageContent 入缓冲，
+      //                           // 然后调用元素的分片 flush 函数完成剩余内容，避免一次性大块追加
+      //                           if (currentAiMessageElement) {
+      //                               const el = currentAiMessageElement;
+      //                               if (data.message) {
+      //                                   this.appendMessageContent(el, data.message);
+      //                               }
+      //                               if (el._flushFn) {
+      //                                   el._flushFn();
+      //                               } else if (el._streamBuffer && el._streamBuffer.length > 0) {
+      //                                   el.textContent += el._streamBuffer;
+      //                                   el._streamBuffer = '';
+      //                               }
+      //                           }
+      //                           currentAiMessageElement = null;
+      //               } 
                     
-            });
+      //       }
+         // );
 
 
 

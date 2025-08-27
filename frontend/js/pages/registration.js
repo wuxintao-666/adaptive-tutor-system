@@ -2,7 +2,7 @@
 import { saveParticipantId, checkAndRedirect } from '../modules/session.js';
 import { AppConfig, initializeConfig } from '../modules/config.js';
 import { setupHeaderTitle } from '../modules/navigation.js';
-import websocket from '../modules/socket.js';
+import websocket from '../modules/websocket_client.js';
 // 页面加载时先检查是否已有会话
 // checkAndRedirect(); // 暂时注释掉，避免在注册页面直接跳转
 
