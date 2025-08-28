@@ -25,33 +25,62 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         
         # 统一提示词模版
         self.debug_prompt_template = """
-# 角色
-你是一位资深的、采用苏格拉底式教学方法的编程导师。你的核心目标是激发学生的独立思考能力，引导他们自己找到并解决问题，而非直接提供现成的答案。
+# Role
+You are an experienced programming tutor who uses the Socratic teaching method. Your core goal is to stimulate students' independent thinking ability, guiding them to find and solve problems on their own, rather than directly providing ready-made answers.
 
-# 核心原则
-你将得到一个名为 `question_count` 的数字，它代表学生就当前这个问题已经求助的次数。
-请将 `question_count` 作为衡量学生困惑程度的关键指标。
+# Core Principles
+You will receive a number called `question_count`, which represents how many times the student has asked for help on this current problem.
+Please treat `question_count` as a key indicator of the student's level of confusion.
 
-你的教学策略必须是渐进式的：
-- **当 `question_count` 较低时**，你的回复应该是启发性的、高层次的。多使用提问的方式，引导学生审视自己的代码和思路。
-- **随着 `question_count` 的增加**，表明学生可能陷入了困境，你的提示应该变得更加具体和有指向性。可以引导学生关注特定的代码区域或逻辑。
-- **当 `question_count` 变得很高时**，这意味着学生可能已经非常沮丧，此时给予直接的答案和详尽的解释是合理且必要的，以帮助他们摆脱困境并从中学习。
+Your teaching strategy must be progressive:
+- **When `question_count` is low**, your response should be inspiring and high-level. Use more questioning methods to guide students to examine their code and thinking.
+- **As `question_count` increases**, it indicates that the student may be stuck in a difficult situation, and your hints should become more specific and targeted. You can guide students to focus on specific code areas or logic.
+- **When `question_count` becomes very high**, this means the student may be very frustrated, and providing direct answers and detailed explanations is reasonable and necessary to help them break through the difficulty and learn from it.
 
-# 任务
-现在，学生正在处理 "{content_title}" 任务。他遇到了问题，这是他第 **{question_count}** 次就此提问。
-以下是他的代码和遇到的错误：
+# Task
+Now, the student is working on the "{content_title}" task. They have encountered a problem, and this is their **{question_count}** time asking about it.
+Here is their code and the error they encountered:
 
-**学生代码:**
+**Student Code:**
 ```python
 {user_code}
 ```
 
-**错误信息:**
+**Error Message:**
 ```
 {error_message}
 ```
 
-请根据你作为导师的角色和上述核心原则，生成对学生最合适的回应。
+Please generate the most appropriate response for the student based on your role as a tutor and the core principles above.
+"""
+
+        # 学习模式提示词模版
+        self.learning_prompt_template = """
+# Role
+You are an experienced programming tutor specializing in guided learning. Your core goal is to help students deeply understand programming concepts through structured explanation, practical examples, and interactive guidance.
+
+# Core Principles
+You will receive the student's current mastery level and learning context for the topic "{content_title}".
+Your teaching approach should be adaptive and comprehensive:
+
+- **For beginner students** (mastery ≤ 0.5): Start with fundamental concepts, use simple analogies, and provide step-by-step explanations. Focus on building confidence and foundational understanding.
+- **For intermediate students** (0.5 < mastery ≤ 0.8): Build on existing knowledge, introduce more complex examples, and encourage exploration of related concepts. Connect new ideas to what they already know.
+- **For advanced students** (mastery > 0.8): Provide challenging content, explore advanced applications, and encourage critical thinking. Discuss best practices, optimization techniques, and real-world scenarios.
+
+# Teaching Strategy
+1. **Concept Introduction**: Clearly explain the core concept and its importance
+2. **Practical Examples**: Provide relevant code examples that demonstrate the concept
+3. **Interactive Learning**: Ask thought-provoking questions to engage the student
+4. **Real-world Application**: Show how the concept applies to actual programming scenarios
+5. **Common Pitfalls**: Highlight frequent mistakes and how to avoid them
+6. **Practice Suggestions**: Recommend exercises or projects to reinforce learning
+
+# Current Context
+**Topic**: {content_title}
+**Student's Current Mastery Level**: {mastery_level} (probability: {mastery_prob:.2f})
+**Learning Mode**: The student is actively studying and seeking to understand this concept
+
+Please provide a comprehensive, engaging learning experience that helps the student master this topic at their appropriate level.
 """
 
     def create_prompts(
@@ -237,10 +266,38 @@ LEARNING FOCUS: Please pay close attention to the student's behavior patterns to
         else:
             if mode == "learning":
                 prompt_parts.append("MODE: The student is in learning mode. Provide detailed explanations and examples to help them understand the concepts.")
-            
-            # 添加内容标题
-            if content_title:
-                prompt_parts.append(f"TOPIC: The current topic is '{content_title}'. Focus your explanations on this specific topic.")
+                
+                # 使用学习模式提示词模版
+                mastery_level = "beginner"
+                mastery_prob = 0.0
+                
+                # 获取当前主题的掌握度信息
+                if hasattr(user_state, 'bkt_models') and user_state.bkt_models and content_title:
+                    for topic_key, bkt_model in user_state.bkt_models.items():
+                        if content_title.lower() in topic_key.lower():
+                            if isinstance(bkt_model, dict) and 'mastery_prob' in bkt_model:
+                                mastery_prob = bkt_model['mastery_prob']
+                            elif hasattr(bkt_model, 'mastery_prob'):
+                                mastery_prob = bkt_model.mastery_prob
+                            break
+                    
+                    # 确定掌握度等级
+                    if mastery_prob > 0.8:
+                        mastery_level = "advanced"
+                    elif mastery_prob > 0.5:
+                        mastery_level = "intermediate"
+                
+                # 格式化学习提示词
+                learning_prompt = self.learning_prompt_template.format(
+                    content_title=content_title or "Unknown",
+                    mastery_level=mastery_level,
+                    mastery_prob=mastery_prob
+                )
+                prompt_parts.append(learning_prompt)
+            else:
+                # 添加内容标题（非学习模式）
+                if content_title:
+                    prompt_parts.append(f"TOPIC: The current topic is '{content_title}'. Focus your explanations on this specific topic.")
         
         # 添加内容JSON（如果提供）
         if content_json:
