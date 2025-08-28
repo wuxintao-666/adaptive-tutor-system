@@ -1,4 +1,6 @@
-from app.celery_app import celery_app
+import logging
+
+from app.celery_app import celery_app, get_user_state_service
 from app.db.database import SessionLocal
 from app.crud.crud_event import event as crud_event
 from app.crud.crud_chat_history import chat_history as crud_chat_history
@@ -8,6 +10,26 @@ from app.schemas.behavior import BehaviorEvent
 from app.schemas.chat import ChatHistoryCreate
 from app.schemas.user_progress import UserProgressCreate
 from app.schemas.submission import SubmissionCreate
+
+logger = logging.getLogger(__name__)
+
+@celery_app.task(name='app.tasks.db_tasks.update_bkt_and_snapshot_task')
+def update_bkt_and_snapshot_task(participant_id: str, topic_id: str, is_correct: bool):
+    """一个专门用于更新BKT模型并可能创建快照的任务"""
+    db = SessionLocal()
+    user_state_service = get_user_state_service()
+    try:
+        # 更新BKT模型
+        user_state_service.update_bkt_on_submission(
+            participant_id=participant_id,
+            topic_id=topic_id,
+            is_correct=is_correct
+        )
+        # 触发快照检查
+        user_state_service.maybe_create_snapshot(participant_id, db)
+    finally:
+        db.close()
+
 
 @celery_app.task(name='app.tasks.db_tasks.save_progress_task')
 def save_progress_task(progress_data: dict):
@@ -38,7 +60,12 @@ def save_behavior_task(behavior_data: dict):
     try:
         # 创建行为事件记录
         behavior_event = BehaviorEvent(**behavior_data)
+        logger.info(f"DB Task: Saving behavior event - participant_id: {behavior_event.participant_id}, event_type: {behavior_event.event_type}, event_data: {behavior_event.event_data}")
         crud_event.create_from_behavior(db=db, obj_in=behavior_event)
+        logger.info(f"DB Task: Successfully saved behavior event for participant {behavior_event.participant_id}")
+    except Exception as e:
+        logger.error(f"DB Task: Error saving behavior event: {e}")
+        raise
     finally:
         db.close()
 

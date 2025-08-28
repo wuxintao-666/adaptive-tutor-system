@@ -38,17 +38,14 @@ def process_submission_task(self, submission_data: dict):
             checkpoints=checkpoints
         )
 
-        # 3. 更新学生模型
-        user_state_service.update_bkt_on_submission(
-            participant_id=submission_in.participant_id,
-            topic_id=submission_in.topic_id,
-            is_correct=evaluation_result["passed"]
+        # 3. 异步更新学生模型和快照
+        from app.tasks.db_tasks import update_bkt_and_snapshot_task
+        update_bkt_and_snapshot_task.apply_async(
+            args=[submission_in.participant_id, submission_in.topic_id, evaluation_result["passed"]],
+            queue='db_writer_queue'
         )
 
-        # 4. 触发一次快照检查
-        user_state_service.maybe_create_snapshot(submission_in.participant_id, db)
-
-        # 5. 如果测试通过，异步更新用户进度记录
+        # 4. 如果测试通过，异步更新用户进度记录
         if evaluation_result["passed"]:
             progress_data = UserProgressCreate(
                 participant_id=submission_in.participant_id,
@@ -68,7 +65,7 @@ def process_submission_task(self, submission_data: dict):
         redis_client.publish(f"ws:user:{submission_data['participant_id']}",  message.model_dump_json())
         print("发布完毕")
 
-        # 6. 返回评测结果
+        # 5. 返回评测结果
         return evaluation_result
 
     except Exception as e:

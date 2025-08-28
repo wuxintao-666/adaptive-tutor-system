@@ -184,9 +184,10 @@ function getRequiredDOMElements() {
 
 // 从URL获取topicId
 function getTopicIdFromURL() {
-    const topicId = getUrlParam('topic') || '1_1'; // 使用默认值
-    currentTopicId = topicId.id;
-    return topicId.id;
+    const urlParams = new URLSearchParams(window.location.search);
+    const topicId = urlParams.get('topic') || '1_1'; // 使用默认值
+    currentTopicId = topicId;
+    return topicId;
 }
 
 // 更新页面标题
@@ -340,6 +341,8 @@ class KnowledgeModule {
     constructor(options = {}) {
         this.levelCards = [];
         this.knowledgePanel = null;
+        this.activeLevel = null;
+        this.levelEnterTime = null;
         this.options = {
             ...options
         };
@@ -416,51 +419,38 @@ class KnowledgeModule {
     
     // 处理卡片点击事件
     handleCardClick(clickedCard) {
-        console.log('[KnowledgeModule] 处理卡片点击事件');
-        console.log('[KnowledgeModule] 被点击的卡片:', clickedCard);
-        console.log('[KnowledgeModule] 卡片当前类名:', clickedCard.className);
-        console.log('[KnowledgeModule] 卡片等级:', clickedCard.dataset.level);
-        
+        const level = parseInt(clickedCard.dataset.level, 10);
         const isExpanded = this.knowledgePanel.classList.contains('expanded');
-        console.log('[KnowledgeModule] 知识点面板是否已展开:', isExpanded);
-        
+
         if (!isExpanded) {
-            // 进入单卡片展开模式
-            console.log('[KnowledgeModule] 进入单卡片展开模式');
-            
-            // 先收起所有卡片
+            // Entering a new level
+            if (this.activeLevel !== null && this.activeLevel !== level) {
+                this.logLevelLeaveEvent(this.activeLevel);
+            }
+            this.logLevelEnterEvent(level);
+            this.activeLevel = level;
+            this.levelEnterTime = Date.now();
+
             this.levelCards.forEach(card => {
                 card.classList.remove('expanded');
                 card.classList.add('collapsed');
-                console.log(`[KnowledgeModule] 收起卡片 ${card.dataset.level}:`, card.className);
             });
-            
-            // 展开被点击的卡片
             clickedCard.classList.remove('collapsed');
             clickedCard.classList.add('expanded');
-            console.log(`[KnowledgeModule] 展开卡片 ${clickedCard.dataset.level}:`, clickedCard.className);
-            
-            // 展开整个知识点面板
             this.knowledgePanel.classList.add('expanded');
-            console.log('[KnowledgeModule] 知识点面板类名:', this.knowledgePanel.className);
-            
-            console.log('[KnowledgeModule] 单卡片展开模式已激活');
         } else {
-            // 退出单卡片展开模式
-            console.log('[KnowledgeModule] 退出单卡片展开模式');
-            
-            // 收起所有卡片
+            // Leaving the current level
+            if (this.activeLevel !== null) {
+                this.logLevelLeaveEvent(this.activeLevel);
+                this.activeLevel = null;
+                this.levelEnterTime = null;
+            }
+
             this.levelCards.forEach(card => {
                 card.classList.remove('expanded');
                 card.classList.add('collapsed');
-                console.log(`[KnowledgeModule] 收起卡片 ${card.dataset.level}:`, card.className);
             });
-            
-            // 收起知识点面板
             this.knowledgePanel.classList.remove('expanded');
-            console.log('[KnowledgeModule] 知识点面板类名:', this.knowledgePanel.className);
-            
-            console.log('[KnowledgeModule] 已退出单卡片展开模式，返回选择界面');
         }
     }
     
@@ -482,6 +472,24 @@ class KnowledgeModule {
         if (this.knowledgePanel) {
             this.knowledgePanel.classList.remove('expanded');
         }
+    }
+
+    logLevelEnterEvent(level) {
+        tracker.logEvent('knowledge_level_access', {
+            topic_id: currentTopicId,
+            level: level,
+            action: 'enter'
+        });
+    }
+
+    logLevelLeaveEvent(level) {
+        const duration = Date.now() - this.levelEnterTime;
+        tracker.logEvent('knowledge_level_access', {
+            topic_id: currentTopicId,
+            level: level,
+            action: 'leave',
+            duration_ms: duration
+        });
     }
 }
 
