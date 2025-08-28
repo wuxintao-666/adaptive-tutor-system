@@ -178,9 +178,9 @@ BEHAVIOR METRICS: {pattern_info}
 
 ---
 
-## 7. 学习历史提示词
+## 7. 知识渐进分析提示词
 
-### 7.1 学习焦点提示词
+### 7.1 引导AI分析提示词
 
 ```text
 LEARNING FOCUS: Please pay close attention to the student's behavior patterns to better understand their learning state. Remember that higher knowledge levels are more difficult.
@@ -188,7 +188,7 @@ LEARNING FOCUS: Please pay close attention to the student's behavior patterns to
 {full_history_summary}
 ```
 
-### 7.2 主题历史详情模板
+### 7.2 知识渐进历史详情模板
 
 ```text
 For Topic '{topic_id}':
@@ -215,25 +215,28 @@ REFERENCE KNOWLEDGE: No relevant knowledge was retrieved from the knowledge base
 
 ---
 
-## 9. 模式特定提示词
+## 9. 模式特定说明
 
-### 9.1 测试模式提示词
+### 9.1 测试模式说明
 
 ```text
 MODE: The student is in test mode. Guide them to find the answer themselves. Do not give the answer directly.
 ```
 
-### 9.2 学习模式提示词
+### 9.2 学习模式说明
 
 ```text
 MODE: The student is in learning mode. Provide detailed explanations and examples to help them understand the concepts.
 ```
 
-### 9.3 主题特定提示词
+说明： 后面还会加上前面第二章或第三章的内容
+
+### 9.3 主题特定说明
 
 ```text
 TOPIC: The current topic is '{content_title}'. Focus your explanations on this specific topic.
 ```
+
 
 ---
 
