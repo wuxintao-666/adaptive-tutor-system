@@ -23,7 +23,7 @@ def process_chat_request(self,request_data: dict):
         )
         # 注意：响应结果会自动存储在Celery的result backend中
         redis_client = get_redis_client()
-        #TODO: 修改
+       
         message = SocketResponse2(
             type="chat_result",
             taskid=self.request.id,

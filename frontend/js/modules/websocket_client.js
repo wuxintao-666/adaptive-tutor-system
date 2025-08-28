@@ -61,9 +61,9 @@ class WebSocketManager {
                 }
                 try {
                     //const wsUrl = buildWebSocketUrl(getParticipantId());
-                    const wsUrl = `${buildBackendUrl('/ws/user/')}${id}`
+                    const wsUrl = `${buildBackendUrl('/ws/user/')}${getParticipantId()}`
                     //const wsUrl = `${protocol}//localhost:8000/ws/chat/${this.userId}`;
-                    alert('WebSocket URL: ' + wsUrl);
+                    //alert('WebSocket URL: ' + wsUrl);
                     this.socket = new WebSocket(wsUrl);
                     this.socket.onopen = () => {
                         this.reconnectAttempts = 0; // 重置重连尝试次数

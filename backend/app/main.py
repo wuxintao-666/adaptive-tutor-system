@@ -7,7 +7,7 @@ from app.api.api import api_router
 from app.core.config import settings
 import asyncio
 from contextlib import asynccontextmanager
-from app.api import socket_router 
+#from app.api import socket_router 
 from app.core.redis_subscriber import redis_subscriber
 import logging
 
@@ -54,7 +54,7 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
-app.include_router(socket_router.ws_router, prefix="/ws", tags=["ws"])
+#app.include_router(socket_router.ws_router, prefix="/ws", tags=["ws"])
 
 
 if __name__ == '__main__':

@@ -10,4 +10,6 @@ api_router.include_router(config.router, prefix="/config", tags=["config"])
 api_router.include_router(progress.router, prefix="/progress", tags=["progress"])
 api_router.include_router(knowledge_graph.router, prefix="/knowledge-graph", tags=["knowledge-graph"])
 api_router.include_router(behavior.router, prefix="/behavior", tags=["behavior"])
+
+
 api_router.include_router(websocket.router, prefix="/ws", tags=["websocket"])
