@@ -8,7 +8,7 @@ from app.tasks.db_tasks import save_progress_task
 from app.config.dependency_injection import get_redis_client
 from app.schemas.chat import ChatRequest,SocketResponse2
 from datetime import datetime, timezone
-import json
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ def process_submission_task(self, submission_data: dict):
     处理代码提交的重量级任务：评测、更新BKT、触发快照。
     """
     submission_in = TestSubmissionRequest(**submission_data)
-    print("处理代码提交任务:", submission_in)
+    logger.info("处理代码提交任务:", submission_in)
     db = SessionLocal()
     user_state_service = get_user_state_service()
 
@@ -63,7 +63,7 @@ def process_submission_task(self, submission_data: dict):
         )
         redis_client = get_redis_client()
         redis_client.publish(f"ws:user:{submission_data['participant_id']}",  message.model_dump_json())
-        print("发布完毕")
+        logger.info("测评结果已Publish到Redis")
 
         # 5. 返回评测结果
         return evaluation_result

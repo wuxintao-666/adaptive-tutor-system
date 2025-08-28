@@ -1,9 +1,14 @@
+import logging
 from app.celery_app import celery_app, get_dynamic_controller
 from app.db.database import SessionLocal
 from app.schemas.chat import ChatRequest,SocketResponse2
 from app.config.dependency_injection import get_redis_client
 from datetime import datetime, timezone
 import json
+
+logger=logging.getLogger(__name__)
+
+
 @celery_app.task(bind=True)
 def process_chat_request(self,request_data: dict):
     db = SessionLocal()
@@ -31,7 +36,7 @@ def process_chat_request(self,request_data: dict):
             message=response.model_dump(),
         )
         redis_client.publish(f"ws:user:{request_data['participant_id']}",  message.model_dump_json() )
-        print("发布完毕")
+        logger.info("已public到Redis")
         return response.model_dump()
     finally:
         db.close()
