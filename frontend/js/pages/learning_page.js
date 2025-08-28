@@ -181,9 +181,10 @@ function getRequiredDOMElements() {
 
 // 从URL获取topicId
 function getTopicIdFromURL() {
-    const topicId = getUrlParam('topic') || '1_1'; // 使用默认值
-    currentTopicId = topicId.id;
-    return topicId.id;
+    const urlParams = new URLSearchParams(window.location.search);
+    const topicId = urlParams.get('topic') || '1_1'; // 使用默认值
+    currentTopicId = topicId;
+    return topicId;
 }
 
 // 更新页面标题
