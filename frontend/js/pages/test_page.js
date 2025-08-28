@@ -141,8 +141,10 @@ function setupSubmitLogic() {
         submitButton.textContent = '批改中...';
         
         try {
-            //const topicId = new URLSearchParams(window.location.search).get('topic');
-            const topicId = '1_1'; // TODO: 临时硬编码，后续改为动态获取
+            
+            const topicData = getUrlParam('topic');
+            const topicId = topicData && topicData.id ? topicData.id : null;
+           
             if (!topicId) throw new Error("主题ID无效。");
             console.log('提交测试，主题ID:', topicId);
             const submissionData = {
