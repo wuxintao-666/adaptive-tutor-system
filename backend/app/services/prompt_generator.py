@@ -22,6 +22,37 @@ Be an approachable-yet-dynamic teacher, who helps the user learn by guiding them
 
 Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions - help the user find the answer, by working with them collaboratively and building from what they already know.
 """
+        
+        # 统一提示词模版
+        self.debug_prompt_template = """
+# 角色
+你是一位资深的、采用苏格拉底式教学方法的编程导师。你的核心目标是激发学生的独立思考能力，引导他们自己找到并解决问题，而非直接提供现成的答案。
+
+# 核心原则
+你将得到一个名为 `question_count` 的数字，它代表学生就当前这个问题已经求助的次数。
+请将 `question_count` 作为衡量学生困惑程度的关键指标。
+
+你的教学策略必须是渐进式的：
+- **当 `question_count` 较低时**，你的回复应该是启发性的、高层次的。多使用提问的方式，引导学生审视自己的代码和思路。
+- **随着 `question_count` 的增加**，表明学生可能陷入了困境，你的提示应该变得更加具体和有指向性。可以引导学生关注特定的代码区域或逻辑。
+- **当 `question_count` 变得很高时**，这意味着学生可能已经非常沮丧，此时给予直接的答案和详尽的解释是合理且必要的，以帮助他们摆脱困境并从中学习。
+
+# 任务
+现在，学生正在处理 "{content_title}" 任务。他遇到了问题，这是他第 **{question_count}** 次就此提问。
+以下是他的代码和遇到的错误：
+
+**学生代码:**
+```python
+{user_code}
+```
+
+**错误信息:**
+```
+{error_message}
+```
+
+请根据你作为导师的角色和上述核心原则，生成对学生最合适的回应。
+"""
 
     def create_prompts(
         self,
@@ -58,7 +89,8 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
             mode=mode,
             content_title=content_title,
             content_json=content_json,
-            test_results=test_results
+            test_results=test_results,
+            code_content=code_content
         )
 
         # 构建消息列表
@@ -77,7 +109,8 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
         mode: str = None,
         content_title: str = None,
         content_json: str = None,
-        test_results: List[Dict[str, Any]] = None
+        test_results: List[Dict[str, Any]] = None,
+        code_content: CodeContent = None
     ) -> str:
         """构建系统提示词"""
         prompt_parts = [self.base_system_prompt]
@@ -147,8 +180,8 @@ Above all: DO NOT DO THE USER'S WORK FOR THEM. Don't answer homework questions -
                             continue
                         
                         topic_details = [f"  For Topic '{topic_id}':"]
-                        # Sort levels for consistent ordering
-                        sorted_levels = sorted(topic_history.keys(), key=lambda x: int(x))
+                        # Sort levels for consistent ordering, filtering out non-numeric keys
+                        sorted_levels = sorted([k for k in topic_history.keys() if k.isdigit()], key=lambda x: int(x))
                         
                         for level in sorted_levels:
                             stats = topic_history[level]
@@ -174,28 +207,41 @@ LEARNING FOCUS: Please pay close attention to the student's behavior patterns to
             prompt_parts.append("REFERENCE KNOWLEDGE: No relevant knowledge was retrieved from the knowledge base. Answer based on your general knowledge.")
 
         # 添加任务上下文和分阶段debug逻辑
-        if mode == "learning":
-            prompt_parts.append("MODE: The student is in learning mode. Provide detailed explanations and examples to help them understand the concepts.")
-        elif mode == "test":
+        if mode == "test":
             prompt_parts.append("MODE: The student is in test mode. Guide them to find the answer themselves. Do not give the answer directly.")
-            # 分阶段debug逻辑
-            # TODO：使用统一提示词模版
+            
+            # 使用统一提示词模版
             question_count = 0
+            user_code = ""
+            error_message = ""
+            
             if hasattr(user_state, 'behavior_patterns'):
                 question_count = user_state.behavior_patterns.get(f"question_count_{content_title}", 0)
-            if question_count == 0:
-                prompt_parts.append("DEBUGGING STRATEGY: This is the first time the student is asking about this. Provide a small hint.")
-            elif question_count == 1:
-                prompt_parts.append("DEBUGGING STRATEGY: The student is asking again. Provide a more specific hint or a guiding question.")
-            elif question_count == 2:
-                prompt_parts.append("DEBUGGING STRATEGY: The student is still stuck. Provide a code snippet with a small modification, but not the complete answer.")
-            else:
-                prompt_parts.append("DEBUGGING STRATEGY: The student is asking multiple times. It's time to provide the correct answer, but also explain why it is correct.")
-        
-        # 添加内容标题
-        if content_title:
-            prompt_parts.append(f"TOPIC: The current topic is '{content_title}'. Focus your explanations on this specific topic.")
             
+            # 获取代码和错误信息
+            if code_content and hasattr(code_content, 'js'):
+                user_code = code_content.js
+            
+            if test_results:
+                # 将测试结果转换为错误信息字符串
+                error_message = json.dumps(test_results, indent=2, ensure_ascii=False)
+            
+            # 格式化调试提示词
+            debug_prompt = self.debug_prompt_template.format(
+                content_title=content_title or "Unknown",
+                question_count=question_count,
+                user_code=user_code,
+                error_message=error_message
+            )
+            prompt_parts.append(debug_prompt)
+        else:
+            if mode == "learning":
+                prompt_parts.append("MODE: The student is in learning mode. Provide detailed explanations and examples to help them understand the concepts.")
+            
+            # 添加内容标题
+            if content_title:
+                prompt_parts.append(f"TOPIC: The current topic is '{content_title}'. Focus your explanations on this specific topic.")
+        
         # 添加内容JSON（如果提供）
         if content_json:
             # 确保JSON内容正确编码，避免Unicode转义序列问题
@@ -208,12 +254,6 @@ LEARNING FOCUS: Please pay close attention to the student's behavior patterns to
             except json.JSONDecodeError:
                 # 如果解析失败，使用原始内容
                 prompt_parts.append(f"CONTENT DATA: Here is the detailed content data for the current topic. Use this to provide more specific and accurate guidance.\n{content_json}")
-            
-        # 添加测试结果（如果提供且在测试模式下）
-        if mode == "test" and test_results:
-            # 将测试结果转换为格式化的字符串
-            test_results_str = json.dumps(test_results, indent=2, ensure_ascii=False)
-            prompt_parts.append(f"TEST RESULTS: Here are the test results for the student's current code. Use this information to help diagnose problems and provide targeted guidance.\n{test_results_str}")
 
         return "\n\n".join(prompt_parts)
 

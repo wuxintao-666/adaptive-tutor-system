@@ -206,6 +206,7 @@ class DynamicController:
             participant_id=profile.participant_id,
             emotion_state=emotion_state,
             behavior_counters=behavior_counters,
+            behavior_patterns=behavior_counters,
             bkt_models=profile.bkt_model,
             is_new_user=profile.is_new_user,
         )
