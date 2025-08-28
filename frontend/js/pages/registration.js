@@ -18,8 +18,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (startButton && usernameInput) {
         startButton.addEventListener('click', async () => {
             const username = usernameInput.value.trim();
-            //websocket.userId = username; // 设置WebSocket的用户ID
-            //websocket.connect(); // 尝试连接WebSocket
             // 简单的输入校验
             if (!username) {
                 alert('请输入用户ID');
