@@ -157,7 +157,7 @@ async function initMainApp() {
                 
             } catch (error) {
                 console.error('数据加载失败，使用默认配置:', error);
-                await handleInitializationFailure(topicId);
+                //await handleInitializationFailure(topicId);
                 startButton.disabled = false;
             }
             
@@ -184,8 +184,8 @@ function getRequiredDOMElements() {
 
 // 从URL获取topicId
 function getTopicIdFromURL() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const topicId = urlParams.get('topic') || '1_1'; // 使用默认值
+    const topicData = getUrlParam('topic');
+    const topicId = (topicData && topicData.id) ? topicData.id : '1_1'; // 使用默认值
     currentTopicId = topicId;
     return topicId;
 }
