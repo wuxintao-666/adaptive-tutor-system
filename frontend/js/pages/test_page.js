@@ -141,9 +141,10 @@ function setupSubmitLogic() {
         submitButton.textContent = '批改中...';
         
         try {
-            const topicId = new URLSearchParams(window.location.search).get('topic');
+            //const topicId = new URLSearchParams(window.location.search).get('topic');
+            const topicId = '1_1'; // TODO: 临时硬编码，后续改为动态获取
             if (!topicId) throw new Error("主题ID无效。");
-            
+            console.log('提交测试，主题ID:', topicId);
             const submissionData = {
                 topic_id: topicId,
                 code: {
@@ -153,21 +154,33 @@ function setupSubmitLogic() {
                 }
             };
             
-            const result = await window.apiClient.post('/submission/submit-test', submissionData);
-            
-            if (result.code === 200) {
-                displayTestResult(result.data);
-                if (result.data.passed) {
-                    alert("测试完成！即将跳转回到知识图谱界面");
-                    setTimeout(() => { window.location.href = '/pages/knowledge_graph.html'; }, 3000);
-                } else {
-                    // TODO: 可以考虑直接在这里主动触发AI
-                    // 测试未通过，给用户一些鼓励和建议
-                    alert("测试未通过，请查看详细结果并继续改进代码。");
-                }
-            } else {
-                throw new Error(result.message || '提交失败');
-            }
+            await window.apiClient.post('/submission/submit-test2', submissionData);
+            websocket.subscribe("submission_result", (msg) => {
+            console.log("[SubmitModule] 收到最终结果:", msg);
+                    displayTestResult(msg);
+                    if(msg.passed) {
+                        alert("测试完成！即将跳转回到知识图谱界面");
+                        setTimeout(() => { window.location.href = '/pages/knowledge_graph.html'; }, 3000);
+                    } else {
+                         alert("测试未通过，请查看详细结果并继续改进代码。");
+                    }
+        
+             });
+
+
+            // if (result.code === 200) {
+            //     displayTestResult(result.data);
+            //     if (result.data.passed) {
+            //         alert("测试完成！即将跳转回到知识图谱界面");
+            //         setTimeout(() => { window.location.href = '/pages/knowledge_graph.html'; }, 3000);
+            //     } else {
+            //         // TODO: 可以考虑直接在这里主动触发AI
+            //         // 测试未通过，给用户一些鼓励和建议
+            //         alert("测试未通过，请查看详细结果并继续改进代码。");
+            //     }
+            // } else {
+            //     throw new Error(result.message || '提交失败');
+            // }
         } catch (error) {
             console.error('提交测试时出错:', error);
             alert('提交测试时出错: ' + (error.message || '未知错误'));

@@ -27,15 +27,15 @@ class ChatModule {
       this.addMessageToUI('ai', msg.ai_response);
     });
 
-    websocket.subscribe("submission_progress", (msg) => {
-      console.log("[ChatModule] 收到进度:", msg);
-      this.addMessageToUI('ai', `进度: ${msg.data.progress * 100}%`);
-    });
+    // websocket.subscribe("submission_progress", (msg) => {
+    //   console.log("[ChatModule] 收到进度:", msg);
+    //   this.addMessageToUI('ai', `进度: ${msg.data.progress * 100}%`);
+    // });
 
-    websocket.subscribe("submission_result", (msg) => {
-      console.log("[ChatModule] 收到最终结果:", msg);
-      this.addMessageToUI('ai', msg.data.message);
-    });
+    // websocket.subscribe("submission_result", (msg) => {
+    //   console.log("[ChatModule] 收到最终结果:", msg);
+    //   this.addMessageToUI('ai', msg.data.message);
+    // });
   }
 
   /**
