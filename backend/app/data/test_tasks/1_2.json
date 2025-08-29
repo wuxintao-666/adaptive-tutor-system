@@ -21,7 +21,7 @@
       "selector": "h2",
       "css_property": "font-weight",
       "assertion_type": "equals",
-      "value": "bold",
+      "value": "700",
       "feedback": "请使用font-weight:bold来设置粗体样式。"
     },
     {
