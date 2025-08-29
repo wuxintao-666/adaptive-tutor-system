@@ -192,7 +192,15 @@ function setupSubmitLogic() {
         }
     });
 }
-
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
 // 显示测试结果
 function displayTestResult(result) {
     const testResultsContent = document.getElementById('test-results-content');
@@ -203,9 +211,12 @@ function displayTestResult(result) {
         return;
     }
     
-    let content = `<h4>${result.passed ? '✅ 恭喜！通过测试！' : '❌ 未通过测试'}</h4><p>${result.message || ''}</p>`;
+    let content = `<h4>${result.passed ? '✅ 恭喜！通过测试！' : '❌ 未通过测试'}</h4>`;
+    content += `<p>${escapeHtml(result.message) || ''}</p>`;
+
     if (result.details && result.details.length > 0) {
-        content += `<h5>详细信息:</h5><ul>${result.details.map(d => `<li>${d}</li>`).join('')}</ul>`;
+        content += `<h5>详细信息:</h5>`;
+        content += `<ul>${result.details.map(d => `<li>${escapeHtml(d)}</li>`).join('')}</ul>`;
     }
     
     testResultsContent.innerHTML = content;
