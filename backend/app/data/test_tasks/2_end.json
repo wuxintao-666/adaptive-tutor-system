@@ -10,7 +10,7 @@
   "checkpoints": [
     {
       "name": "div元素存在检查",
-      "type": "assert_attribute",
+      "type": "assert_element",
       "selector": "div",
       "attribute": "",
       "assertion_type": "exists",
@@ -34,7 +34,7 @@
     },
     {
       "name": "h3元素存在检查",
-      "type": "assert_attribute",
+      "type": "assert_element",
       "selector": "h3",
       "attribute": "",
       "assertion_type": "exists",
@@ -65,7 +65,7 @@
     },
     {
       "name": "ol元素存在检查",
-      "type": "assert_attribute",
+      "type": "assert_element",
       "selector": "ol",
       "attribute": "",
       "assertion_type": "exists",
@@ -98,7 +98,7 @@
     },
     {
       "name": "ul元素存在检查",
-      "type": "assert_attribute",
+      "type": "assert_element",
       "selector": "ul",
       "attribute": "",
       "assertion_type": "exists",

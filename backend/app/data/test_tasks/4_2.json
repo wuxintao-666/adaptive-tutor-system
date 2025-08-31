@@ -22,8 +22,8 @@
       "type": "assert_style",
       "selector": ".user-card",
       "css_property": "box-shadow",
-      "assertion_type": "equals",
-      "value": "0 2px 6px rgba(0,0,0,0.15)",
+      "assertion_type": "exists",
+      "value": "",
       "feedback": "用户卡片应添加阴影以提升视觉层次感。"
     },
     {

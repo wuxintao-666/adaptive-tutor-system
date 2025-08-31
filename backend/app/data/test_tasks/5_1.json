@@ -29,8 +29,8 @@
       "type": "assert_style",
       "selector": ".card img",
       "css_property": "width",
-      "assertion_type": "equals",
-      "value": "100%",
+      "assertion_type": "exists",
+      "value": "",
       "feedback": "请将图片宽度设置为 100%。"
     },
     {

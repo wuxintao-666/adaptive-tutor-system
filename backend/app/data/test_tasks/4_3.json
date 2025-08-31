@@ -59,7 +59,7 @@
       "selector": ".nav-links",
       "css_property": "gap",
       "assertion_type": "equals",
-      "value": "1.5rem",
+      "value": "24px",
       "feedback": "请为 .nav-links 设置 gap 为 1.5rem。"
     }
   ],

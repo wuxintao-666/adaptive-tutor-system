@@ -184,15 +184,20 @@ class SandboxService:
                 css_property = assertion.css_property
                 assertion_op = assertion.assertion_type
                 expected_value = assertion.value
-                
                 # 获取元素的实际样式值
-                actual_value = page.locator(selector).evaluate(
-                    """(element, prop) => {
-                        return window.getComputedStyle(element).getPropertyValue(prop);
-                    }""", 
-                    css_property
-                )
-                
+                try:
+                    actual_value = page.locator(selector).nth(0).evaluate(
+                        """(element, prop) => {
+                            return window.getComputedStyle(element).getPropertyValue(prop);
+                        }""", 
+                        css_property
+                    )
+                except Exception as e:
+                    print("evaluate 执行报错:", repr(e))
+                    raise
+
+                print(f"实际样式值: {actual_value}")
+                print(f"期望样式值: {expected_value}")
                 # 比较样式值
                 passed = self._compare_css_values(actual_value, expected_value, assertion_op)
                 if not passed:
@@ -232,7 +237,7 @@ class SandboxService:
                 # 检查元素是否存在
                 locator = page.locator(selector)
                 count = locator.count()
-                
+                print(f"Selector '{selector}' matched {count} elements." )
                 if count == 0:
                     return False, f"找不到匹配选择器 '{selector}' 的元素"
                 
@@ -259,17 +264,21 @@ class SandboxService:
                         return False, f"元素 {selector} 不应该有属性 '{attribute}'，但实际存在"
                 else:
                     # 获取属性值并比较
-                    actual_value = locator.evaluate(
-                        """(element, attr) => {
-                            return element.getAttribute(attr);
-                        }""", 
-                        attribute
-                    )
-                    
+                    try:
+                        print("我到这了")
+                        actual_value = locator.evaluate(
+                            """(element, attr) => {
+                                return element.getAttribute(attr);
+                            }""", 
+                            attribute
+                        )
+                    except Exception as e:
+                        print("evaluate 执行报错:", repr(e))
                     # 如果元素没有这个属性
                     if actual_value is None:
                         return False, f"元素 {selector} 没有属性 '{attribute}'"
-                    
+                    print(f"Actual value: {actual_value}")
+                    print(f"Expected value: {expected_value}")  
                     # 比较属性值
                     if assertion_op == "equals":
                         if actual_value != expected_value:
@@ -431,6 +440,11 @@ class SandboxService:
                 return actual_num >= expected_num
             elif assertion_op == "less_than_or_equal":
                 return actual_num <= expected_num
+            elif assertion_op == "contains":
+                return str(expected_value) in str(actual_value)
+            elif assertion_op == "exists":
+                print("我到这了")
+                return actual_value != "" and actual_value != "none"
         except (ValueError, TypeError):
             # 如果解析失败，回退到字符串比较
             pass

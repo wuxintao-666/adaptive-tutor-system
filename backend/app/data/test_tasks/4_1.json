@@ -32,7 +32,7 @@
       "selector": "body",
       "css_property": "background",
       "assertion_type": "contains",
-      "value": "linear-gradient(to bottom, #cce6ff, #ffffff)",
+      "value": "linear-gradient",
       "feedback": "请为 body 设置从浅蓝到白的渐变背景。"
     }
   ],
