@@ -18,6 +18,13 @@ class EventType(str, Enum):
     CLICK="click"
     KNOWLEDGE_LEVEL_ACCESS = "knowledge_level_access"
     STATE_SNAPSHOT = "state_snapshot"
+    PAGE_CLICK="page_click"
+    SIGNIFICANT_EDITS = "significant_edits"
+    LARGE_ADDITION = "large_addition"
+    CODING_PROBLEM = "coding_problem"
+    CODING_SESSION_SUMMARY = "coding_session_summary"
+    IDLE_HINT_DISPLAYED = "idle_hint_displayed"
+    PAGE_FOCUS_CHANGE = "page_focus_change"
 
 
 
@@ -127,7 +134,7 @@ class BehaviorEvent(BaseModel):
 
     participant_id: str = Field(..., description="参与者ID，用于标识特定用户")
     event_type: EventType = Field(..., description="事件类型")
-    event_data: EventDataType = Field(..., description="事件数据，根据事件类型有不同的结构")
+    event_data: Dict[str, Any]  = Field(..., description="事件数据，根据事件类型有不同的结构")
     timestamp: Optional[datetime] = Field(None, description="事件发生的时间戳，可选字段，默认为当前时间")
 
     
